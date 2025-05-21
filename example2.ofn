@@ -1,0 +1,59 @@
+Prefix(ex:=<http://example.org#>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+
+Ontology(
+Declaration(Class(ex:Course))
+Declaration(Class(ex:Professor))
+Declaration(Class(ex:Student))
+Declaration(Class(ex:Learner))  # Nouvelle classe
+EquivalentClasses(ex:Student ex:Learner)  # Déclaration d'équivalence
+
+Declaration(ObjectProperty(ex:enrolledIn))
+Declaration(ObjectProperty(ex:teaches))
+Declaration(NamedIndividual(ex:Alice))
+Declaration(NamedIndividual(ex:Bob))
+Declaration(NamedIndividual(ex:Math101))
+
+############################
+#   Object Properties
+############################
+
+AnnotationAssertion(rdfs:label ex:enrolledIn "enrolledIn")
+ObjectPropertyDomain(ex:enrolledIn ex:Student)
+ObjectPropertyRange(ex:enrolledIn ex:Course)
+
+AnnotationAssertion(rdfs:label ex:teaches "teaches")
+ObjectPropertyDomain(ex:teaches ex:Professor)
+ObjectPropertyRange(ex:teaches ex:Course)
+
+############################
+#   Classes
+############################
+
+AnnotationAssertion(rdfs:label ex:Course "Course")
+AnnotationAssertion(rdfs:label ex:Professor "Professor")
+AnnotationAssertion(rdfs:label ex:Student "Student")
+AnnotationAssertion(rdfs:label ex:Learner "Learner")
+
+############################
+#   Named Individuals
+############################
+
+ClassAssertion(ex:Student ex:Alice)
+ObjectPropertyAssertion(ex:enrolledIn ex:Alice ex:Math101)
+
+ClassAssertion(ex:Professor ex:Bob)
+ObjectPropertyAssertion(ex:teaches ex:Bob ex:Math101)
+
+AnnotationAssertion(rdfs:label ex:Math101 "Mathematics 101")
+ClassAssertion(ex:Course ex:Math101)
+
+Declaration(Class(ex:PhDStudent))
+SubClassOf(ex:PhDStudent ex:Student)
+AnnotationAssertion(rdfs:label ex:PhDStudent "PhD Student")
+
+)
