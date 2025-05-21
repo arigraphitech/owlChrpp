@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:ex="http://example.org#">
+
+    <!-- Définition des Classes -->
+    <rdf:Description rdf:about="http://example.org#Student">
+        <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+        <rdfs:label>Student</rdfs:label>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="http://example.org#Course">
+        <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+        <rdfs:label>Course</rdfs:label>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="http://example.org#Professor">
+        <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+        <rdfs:label>Professor</rdfs:label>
+    </rdf:Description>
+
+    <!-- Définition des Propriétés -->
+    <rdf:Description rdf:about="http://example.org#enrolledIn">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <rdfs:domain rdf:resource="http://example.org#Student"/>
+        <rdfs:range rdf:resource="http://example.org#Course"/>
+        <rdfs:label>enrolledIn</rdfs:label>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="http://example.org#teaches">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <rdfs:domain rdf:resource="http://example.org#Professor"/>
+        <rdfs:range rdf:resource="http://example.org#Course"/>
+        <rdfs:label>teaches</rdfs:label>
+    </rdf:Description>
+
+    <!-- Instances -->
+    <rdf:Description rdf:about="http://example.org#Alice">
+        <rdf:type rdf:resource="http://example.org#Student"/>
+        <ex:enrolledIn rdf:resource="http://example.org#Math101"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="http://example.org#Bob">
+        <rdf:type rdf:resource="http://example.org#Professor"/>
+        <ex:teaches rdf:resource="http://example.org#Math101"/>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="http://example.org#Math101">
+        <rdf:type rdf:resource="http://example.org#Course"/>
+        <rdfs:label>Mathematics 101</rdfs:label>
+    </rdf:Description>
+
+</rdf:RDF>

@@ -1,0 +1,218 @@
+#include <iostream>
+#include <string>
+#include <chrpp.hh>
+#include "parsercowl.h"
+#include <options.hpp>
+const std::string owlThing = "owl:Thing";
+const std::string owlNothing = "owl:Nothing";
+
+/**
+ * Hash data structure needed for std::string
+ */
+template <>
+struct chr::XXHash< std::string >
+{
+	static void update(const std::string& b)
+	{
+		for (auto&& e : b)
+			XXHash<char>::update(e);
+	}
+};
+
+bool guard_condition(const std::string& A, const std::string& B, const std::string& C) {
+    return A != B && B != C && A != C;
+}
+
+bool different(const std::string& A, const std::string& B){
+    return A!=B;
+}
+
+/**
+*
+*\ingroup Examples
+
+
+<CHR name="OWL2">
+    // === Contraintes ===
+    <chr_constraint> 
+			owlClass(+std::string),
+			owlObjectProperty(+std::string),
+			owlDataProperty(+std::string),
+            owlNamedIndividual(+std::string),
+			owlSubclassOf(+std::string,+std::string),
+			owlEquivalentClass(+std::string,+std::string),
+			owlSubPropertyOf(+std::string,+std::string),
+			owlEquivalentProperty(+std::string,+std::string),
+			owlObjectPropertyDomain(+std::string,+std::string),
+			owlObjectPropertyRange(+std::string,+std::string),
+			owlClassAssertion(+std::string,+std::string),
+			owlDisjointClass(+std::string,+std::string),
+            owlNegativeObjectAssertion(+std::string,+std::string,+std::string),
+            owlObjectPropertyAssertion(+std::string,+std::string,+std::string),
+            owlSameIndividual(+std::string,+std::string),
+            owlDiffrentIndividual(+std::string,+std::string),
+            owlInverseObjectProperty(+std::string,+std::string),
+            owlSymmetricObjectProperty(+std::string),
+            owlAsymmetricObjectProperty(+std::string),
+            owlDisjointObjectProperty(+std::string,+std::string),
+            owlReflexiveObjectProperty(+std::string),
+            owlIrreflexiveObjectProperty(+std::string),
+            owlFunctionalObjectProperty(+std::string),
+            owlInverseFunctionalObjectProperty(+std::string),
+            owlTransitiveObjectProperty(+std::string)
+
+//suppression des doublons 
+owlClass(C) #passive \ owlClass(C) <=> true ;;
+owlObjectProperty(P) #passive \ owlObjectProperty(P) <=> true ;;
+owlDataProperty(P) #passive \ owlDataProperty(P) <=> true ;;
+owlObjectPropertyDomain(P,C) #passive \ owlObjectPropertyDomain(P,C) <=> true ;;
+owlObjectPropertyRange(P,C) #passive \ owlObjectPropertyRange(P,C) <=> true ;;
+owlDisjointClass(A,B) #passive \ owlDisjointClass(A,B) <=> true ;;
+owlNegativeObjectAssertion(X,P,Y) #passive \ owlNegativeObjectAssertion(X,P,Y) <=> true ;;
+owlSameIndividual(X,Y) #passive \ owlSameIndividual(X,Y) <=> true ;;
+owlDiffrentIndividual(X,Y) #passive \ owlDiffrentIndividual(X,Y) <=> true ;;
+owlInverseObjectProperty(P1,P2) #passive \ owlInverseObjectProperty(P1,P2) <=> true ;;
+owlSymmetricObjectProperty(P) #passive \ owlSymmetricObjectProperty(P) <=> true ;;
+owlAsymmetricObjectProperty(P) #passive \ owlAsymmetricObjectProperty(P) <=> true ;;
+owlDisjointObjectProperty(P1,P2) #passive \ owlDisjointObjectProperty(P1,P2) <=> true ;;
+owlReflexiveObjectProperty(P) #passive \ owlReflexiveObjectProperty(P) <=> true ;;
+owlIrreflexiveObjectProperty(P) #passive \ owlIrreflexiveObjectProperty(P) <=> true ;;
+owlFunctionalObjectProperty(P) #passive \ owlFunctionalObjectProperty(P) <=> true ;;
+owlInverseFunctionalObjectProperty(P) #passive \ owlInverseFunctionalObjectProperty(P) <=> true ;;
+owlTransitiveObjectProperty(P) #passive \ owlTransitiveObjectProperty(P) <=> true ;;
+owlSubclassOf(A,B) #passive \ owlSubclassOf(A,B) <=> true ;;
+owlSubPropertyOf(A,B) #passive \ owlSubPropertyOf(A,B) <=> true ;;
+owlClassAssertion(X,A) #passive \ owlClassAssertion(X,A) <=> true ;;
+owlObjectPropertyAssertion(X,P,Y) #passive \ owlObjectPropertyAssertion(X,P,Y) <=> true ;;
+owlEquivalentClass(A,B) #passive \ owlEquivalentClass(A,B) <=> true ;;
+owlEquivalentProperty(A,B) #passive \ owlEquivalentProperty(A,B) <=> true ;;
+
+
+//onto validity 
+//owlDisjointClass(A,B) is true if the classes A and B are disjoin 
+DisjointClass @ owlDisjointClass(A,B), owlClassAssertion(X,A), owlClassAssertion(X,B) <=> failure();;
+//owlNegativeObjectAssertion(X,P,Y) is true if the two individuals X,Y are not connected by the property P
+NegativeObjectAssertion @ owlNegativeObjectAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Y) <=> failure() ;;
+//owlDisjointObjectProperty(P1,P2) is true if the two properties P1 and P2 are disjoin
+DisjointProperty @ owlDisjointObjectProperty(P1,P2),owlObjectPropertyAssertion(X,P1,Y),owlObjectPropertyAssertion(X,P2,Y) <=> failure() ;;
+//owlIrreflexiveObjectProperty(P) is true if the property P is an irreflexive object property
+irreflexiveProperty @ owlIrreflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,X)<=> failure();;
+
+
+//onto schema inference
+
+// SubClassOf  
+owlClass(A) ==> owlSubclassOf(A,A);;
+owlSubclassOf(A,B), owlSubclassOf(B,C) ==> guard_condition(A,B,C) | owlSubclassOf(A,C);;
+
+// Equivalent classes
+owlClass(C) ==>  owlEquivalentClass(C,C);;
+owlEquivalentClass(A,B) ==> different(A,B) | owlSubclassOf(A,B), owlSubclassOf(B,A);;
+owlSubclassOf(A,B), owlSubclassOf(B,A) ==> different(A,B) | owlEquivalentClass(A,B);;
+
+// Thing et Nothing
+owlClass(C) ==>  owlSubclassOf(C,owlThing);;
+owlClass(C) ==>  owlSubclassOf(owlNothing,C);;
+
+//property 
+owlObjectProperty(P) ==> owlSubPropertyOf(P,P), owlEquivalentProperty(P,P);;
+owlDataProperty(P) ==> owlSubPropertyOf(P,P), owlEquivalentProperty(P,P);;
+owlSubPropertyOf(A,B), owlSubPropertyOf(B,C) ==> guard_condition(A,B,C) | owlSubPropertyOf(A,C);;
+owlEquivalentProperty(A,B) ==> different(A,B) | owlSubPropertyOf(A,B), owlSubPropertyOf(B,A);;
+owlSubPropertyOf(A,B), owlSubPropertyOf(B,A) ==> different(A,B) | owlEquivalentProperty(A,B);;
+
+
+//domain et range
+owlObjectPropertyDomain(P,C1), owlSubclassOf(C1,C2) ==> different(C1,C2) | owlObjectPropertyDomain(P,C2);;
+owlObjectPropertyDomain(P2,C), owlSubPropertyOf(P1,P2) ==> different(P1,P2) | owlObjectPropertyDomain(P1,C);;
+owlObjectPropertyRange(P,C1), owlSubclassOf(C1,C2) ==> different(C1,C2) | owlObjectPropertyRange(P,C2);;
+owlObjectPropertyRange(P2,C), owlSubPropertyOf(P1,P2) ==>  different(P1,P2) | owlObjectPropertyRange(P1,C);;
+
+
+//owlClassAssertion(X,A) is true if X is an instance of A
+//owlSubclassOf(A,B) is true if A is a subclass of B
+subclass @ owlSubclassOf(A,B) ,owlClassAssertion(X,A) ==> different(A,B) |  owlClassAssertion(X,B) ;;
+
+//owlEquivalentClass(A,B) is true if the class A is equivalent with the class B
+equivalentClass @ owlEquivalentClass(A,B),owlClassAssertion(X,A) ==> different(A,B) |owlClassAssertion(X,B);; 
+
+//ObjectPropertyAssertion(X,P,Y) is true if the individual X has the property P with the value Y
+// owlSubPropertyOf(P2,P1)  is true if P2 is a subPropertyof the property P1
+subproperty @ owlSubPropertyOf(P2,P1) , owlObjectPropertyAssertion(X,P2,Y) ==> different(P2,P1) | owlObjectPropertyAssertion(X,P1,Y) ;;
+
+//owlObjectPropertyDomain(P,DP) is true if the property P has the domain DP (an object)
+//owlObjectPropertyRange(P,DP) is true if the property P has the range DP (an object)
+objectPropertydomain @ owlObjectPropertyDomain(P,DP) , owlObjectPropertyAssertion(X,P,Y) ==> owlClassAssertion(X,DP) ;;
+objectPropertyCoDomain @ owlObjectPropertyRange(P,DP) , owlObjectPropertyAssertion(X,P,Y) ==> owlClassAssertion(Y,DP) ;;
+
+//owlSameIndividual(X,Y) is true if X and Y refer to (denote) the same individual 
+sameIndividual @ owlSameIndividual(X,Y) ==> different(X,Y) | X %= Y ;;
+
+//owlDiffrentIndividual(X,Y) is true if it's excluded that X and Y are the same individual 
+DifferentIndividual @ owlDiffrentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  failure();;
+
+//owlInverseObjectProperty( P1,P2 ) is true if P1 is the inverse object property of P2
+inverseProperty @ owlInverseObjectProperty(P1,P2) , owlObjectPropertyAssertion(X,P1,Y) ==> owlObjectPropertyAssertion(Y,P2,X);;
+owlInverseObjectProperty(P1,P2) ==> owlInverseObjectProperty(P2,P1)  ;;
+
+//owlSymmetricObjectProperty(P) is true if P is a symmetric object property
+symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> owlObjectPropertyAssertion(Y,P,X) ;;
+
+//owlAsymmetricObjectProperty(P) is true if P is an asymmetric object property
+AsymmetricProperty1 @ owlAsymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> owlNegativeObjectAssertion(X,P,Y) ;;
+
+//owlreflexiveProperty(P) is true if P is a reflexive object property
+reflexiveProperty @ owlReflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> owlObjectPropertyAssertion(X,P,X),owlObjectPropertyAssertion(Y,P,Y);;
+
+//owlFunctionalObjectProperty(P) is true if P is a functional object property
+functionalProperty @ owlFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Z) ==> different(Y,Z) | owlSameIndividual(Y,Z);;
+
+//owlInverseFunctionalObjectProperty(P) is true if P is an inverse functional object property
+inverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Z),owlObjectPropertyAssertion(Y,P,Z) ==> different(X,Y) | owlSameIndividual(X,Y);;
+
+//owlTransitiveObjectProperty(P) is true if P is a transitive object property
+transitiveProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> guard_condition(X,Y,Z) | owlObjectPropertyAssertion(X,P,Z);;
+
+</CHR>
+*/
+
+template <typename T>
+void print(T& pb)
+{
+    auto it = pb.chr_store_begin();
+    while (!it.at_end())
+    {
+        std::cout << it.to_string() << std::endl;
+        ++it;
+    }
+}
+
+int main()
+{
+    TRACE(chr::Log::register_flags(chr::Log::ALL);)
+
+    auto space = OWL2::create();
+    using namespace std;
+    ParserCowl<decltype(*space)> parser("example2.ofn",*space);
+
+    // === Injection de faits OWL ===
+    CHR_RUN(
+        space->owlClass(std::string("Person"));
+        space->owlClass(std::string("Student"));
+        space->owlClass(std::string("Employee"));
+ 
+        space->owlSubclassOf(std::string("Student"), std::string("Person"));
+        space->owlSubclassOf(std::string("Employee"), std::string("Person"));
+
+        space->owlObjectProperty(std::string("hasFriend"));
+        space->owlObjectPropertyDomain(std::string("hasFriend"),std::string( "Person"));
+        space->owlObjectPropertyRange(std::string("hasFriend"),std::string( "Person"));
+
+        space->owlSubPropertyOf(std::string("hasFriend"), std::string("relatedTo"));
+    )
+
+    print(*space);
+    chr::Statistics::print(std::cout);
+
+    return 0;
+}
