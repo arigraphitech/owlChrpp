@@ -27,6 +27,11 @@ bool different(const std::string& A, const std::string& B){
     return A!=B;
 }
 
+void afficher(std::string x){
+    std::cout<<x<<std::endl;
+}
+
+
 /**
 *
 *\ingroup Examples
@@ -59,7 +64,9 @@ bool different(const std::string& A, const std::string& B){
             owlIrreflexiveObjectProperty(+std::string),
             owlFunctionalObjectProperty(+std::string),
             owlInverseFunctionalObjectProperty(+std::string),
-            owlTransitiveObjectProperty(+std::string)
+            owlTransitiveObjectProperty(+std::string),
+            querySuperClassOf(+std::string),
+            res(+std::string)
 
 //suppression des doublons 
 owlClass(C) #passive \ owlClass(C) <=> true ;;
@@ -173,6 +180,12 @@ inverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAsser
 //owlTransitiveObjectProperty(P) is true if P is a transitive object property
 transitiveProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> guard_condition(X,Y,Z) | owlObjectPropertyAssertion(X,P,Z);;
 
+//querries
+//querySuperClassOf recupere toutes les super classes d'une classe ainsi que leur superClass jusqu'a la racine
+querySuperClassOf(X),owlSubclassOf(X,Y) ==> different(X,Y) | res(Y) , querySuperClassOf(Y) ;;
+querySuperClassOf(X) ==> res(X) ;;
+res(X) ==> afficher(X);;
+
 </CHR>
 */
 
@@ -199,9 +212,11 @@ int main()
     CHR_RUN(
         space->owlClass(std::string("Person"));
         space->owlClass(std::string("Student"));
+        space->owlClass(std::string("MasterStudent"));
         space->owlClass(std::string("Employee"));
- 
+
         space->owlSubclassOf(std::string("Student"), std::string("Person"));
+        space->owlSubclassOf(std::string("MasterStudent"), std::string("Student"));
         space->owlSubclassOf(std::string("Employee"), std::string("Person"));
 
         space->owlObjectProperty(std::string("hasFriend"));
@@ -209,6 +224,7 @@ int main()
         space->owlObjectPropertyRange(std::string("hasFriend"),std::string( "Person"));
 
         space->owlSubPropertyOf(std::string("hasFriend"), std::string("relatedTo"));
+        space->querySuperClassOf(std::string("MasterStudent"));
     )
 
     print(*space);
