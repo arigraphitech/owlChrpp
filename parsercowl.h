@@ -1,8 +1,12 @@
 #pragma once
 #include "Parser.h"
 #include <fstream>
+
 #include <string>
+#include <cstring>
+using namespace std;
 using namespace std::string_literals;
+using std::string;
 
 
 extern "C" {
@@ -10,6 +14,7 @@ extern "C" {
 #include "ulib.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 }
 
 template <typename T>
@@ -51,7 +56,7 @@ public:
 
 template <typename T>
 ParserCowl<T>::ParserCowl(std::string const &  onto,T & space)
-    :Parser<T>(onto,space){}
+    :Parser<T>(onto,&space){}
 
 template <typename T>
 void ParserCowl<T>::convertToFunctional(const std::string &originPath, const std::string &destPath)
@@ -308,9 +313,7 @@ void ParserCowl<T>:: iterateNegDataPropAssert(void *stream, CowlAny *axiom){
     CowlLiteral *objet=cowl_data_prop_assert_axiom_get_object((CowlDataPropAssertAxiom *)axiom);
     CowlDataPropExp *prop=cowl_data_prop_assert_axiom_get_prop((CowlDataPropAssertAxiom *)axiom);
     CowlDatatype * dataType=cowl_literal_get_datatype(objet);
-
-
-    cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet)));
+     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet)));
     cowl_write_static((UOStream *)stream, " not ");
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp*)prop)));
     cowl_write_static((UOStream *)stream, " ");
@@ -501,7 +504,7 @@ template <typename T>
 bool ParserCowl<T>::load()
 {
     //test
-    this->space->owlClass(chr::Logical_var_ground<std::string>("Ari"));
+   // this->space->owlClass(chr::Logical_var_ground<std::string>("Ari"));
 
     std::ifstream f("example2.ofn");
             if (!f) {

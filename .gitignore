@@ -1,0 +1,47 @@
+# Fichiers de build CMake
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CMakeLists.txt.user
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+# Executables
+owl
+owl.cpp
+ParserProject
+*.exe
+*.out
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+
+# Fichiers temporaires et de log
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Dossiers de bibliothèques externes (optionnel)
+lib/cowl/build/
+lib/cowl/lib/ulib/build/
+
+# Dossiers générés par l'IDE
+.vscode/
+.idea/
+
+# Fichiers Python (si jamais)
+__pycache__/
+*.pyc
+
+# Doxygen docs
+html/
+latex/
+
+# Autres fichiers à ignorer
+.DS_Store
+Thumbs.db

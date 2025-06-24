@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
-#include <chrpp.hh>
+#include <cstring>
+#include <./chrpp.hh>
 #include "parsercowl.h"
 #include <options.hpp>
 const std::string owlThing = "owl:Thing";
@@ -9,15 +10,7 @@ const std::string owlNothing = "owl:Nothing";
 /**
  * Hash data structure needed for std::string
  */
-template <>
-struct chr::XXHash< std::string >
-{
-	static void update(const std::string& b)
-	{
-		for (auto&& e : b)
-			XXHash<char>::update(e);
-	}
-};
+
 
 bool guard_condition(const std::string& A, const std::string& B, const std::string& C) {
     return A != B && B != C && A != C;
@@ -27,6 +20,11 @@ bool different(const std::string& A, const std::string& B){
     return A!=B;
 }
 
+void afficher(std::string x){
+    std::cout<<x<<std::endl;
+}
+
+
 /**
 *
 *\ingroup Examples
@@ -34,7 +32,7 @@ bool different(const std::string& A, const std::string& B){
 
 <CHR name="OWL2">
     // === Contraintes ===
-    <chr_constraint> 
+    <chr_constraint>
 			owlClass(+std::string),
 			owlObjectProperty(+std::string),
 			owlDataProperty(+std::string),
@@ -59,9 +57,11 @@ bool different(const std::string& A, const std::string& B){
             owlIrreflexiveObjectProperty(+std::string),
             owlFunctionalObjectProperty(+std::string),
             owlInverseFunctionalObjectProperty(+std::string),
-            owlTransitiveObjectProperty(+std::string)
+            owlTransitiveObjectProperty(+std::string),
+            querySuperClassOf(+std::string),
+            res(+std::string)
 
-//suppression des doublons 
+//suppression des doublons
 owlClass(C) #passive \ owlClass(C) <=> true ;;
 owlObjectProperty(P) #passive \ owlObjectProperty(P) <=> true ;;
 owlDataProperty(P) #passive \ owlDataProperty(P) <=> true ;;
@@ -88,8 +88,8 @@ owlEquivalentClass(A,B) #passive \ owlEquivalentClass(A,B) <=> true ;;
 owlEquivalentProperty(A,B) #passive \ owlEquivalentProperty(A,B) <=> true ;;
 
 
-//onto validity 
-//owlDisjointClass(A,B) is true if the classes A and B are disjoin 
+//onto validity
+//owlDisjointClass(A,B) is true if the classes A and B are disjoin
 DisjointClass @ owlDisjointClass(A,B), owlClassAssertion(X,A), owlClassAssertion(X,B) <=> failure();;
 //owlNegativeObjectAssertion(X,P,Y) is true if the two individuals X,Y are not connected by the property P
 NegativeObjectAssertion @ owlNegativeObjectAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Y) <=> failure() ;;
@@ -101,7 +101,7 @@ irreflexiveProperty @ owlIrreflexiveObjectProperty(P),owlObjectPropertyAssertion
 
 //onto schema inference
 
-// SubClassOf  
+// SubClassOf
 owlClass(A) ==> owlSubclassOf(A,A);;
 owlSubclassOf(A,B), owlSubclassOf(B,C) ==> guard_condition(A,B,C) | owlSubclassOf(A,C);;
 
@@ -114,7 +114,7 @@ owlSubclassOf(A,B), owlSubclassOf(B,A) ==> different(A,B) | owlEquivalentClass(A
 owlClass(C) ==>  owlSubclassOf(C,owlThing);;
 owlClass(C) ==>  owlSubclassOf(owlNothing,C);;
 
-//property 
+//property
 owlObjectProperty(P) ==> owlSubPropertyOf(P,P), owlEquivalentProperty(P,P);;
 owlDataProperty(P) ==> owlSubPropertyOf(P,P), owlEquivalentProperty(P,P);;
 owlSubPropertyOf(A,B), owlSubPropertyOf(B,C) ==> guard_condition(A,B,C) | owlSubPropertyOf(A,C);;
@@ -134,7 +134,7 @@ owlObjectPropertyRange(P2,C), owlSubPropertyOf(P1,P2) ==>  different(P1,P2) | ow
 subclass @ owlSubclassOf(A,B) ,owlClassAssertion(X,A) ==> different(A,B) |  owlClassAssertion(X,B) ;;
 
 //owlEquivalentClass(A,B) is true if the class A is equivalent with the class B
-equivalentClass @ owlEquivalentClass(A,B),owlClassAssertion(X,A) ==> different(A,B) |owlClassAssertion(X,B);; 
+equivalentClass @ owlEquivalentClass(A,B),owlClassAssertion(X,A) ==> different(A,B) |owlClassAssertion(X,B);;
 
 //ObjectPropertyAssertion(X,P,Y) is true if the individual X has the property P with the value Y
 // owlSubPropertyOf(P2,P1)  is true if P2 is a subPropertyof the property P1
@@ -145,10 +145,10 @@ subproperty @ owlSubPropertyOf(P2,P1) , owlObjectPropertyAssertion(X,P2,Y) ==> d
 objectPropertydomain @ owlObjectPropertyDomain(P,DP) , owlObjectPropertyAssertion(X,P,Y) ==> owlClassAssertion(X,DP) ;;
 objectPropertyCoDomain @ owlObjectPropertyRange(P,DP) , owlObjectPropertyAssertion(X,P,Y) ==> owlClassAssertion(Y,DP) ;;
 
-//owlSameIndividual(X,Y) is true if X and Y refer to (denote) the same individual 
+//owlSameIndividual(X,Y) is true if X and Y refer to (denote) the same individual
 sameIndividual @ owlSameIndividual(X,Y) ==> different(X,Y) | X %= Y ;;
 
-//owlDiffrentIndividual(X,Y) is true if it's excluded that X and Y are the same individual 
+//owlDiffrentIndividual(X,Y) is true if it's excluded that X and Y are the same individual
 DifferentIndividual @ owlDiffrentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  failure();;
 
 //owlInverseObjectProperty( P1,P2 ) is true if P1 is the inverse object property of P2
@@ -173,6 +173,12 @@ inverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAsser
 //owlTransitiveObjectProperty(P) is true if P is a transitive object property
 transitiveProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> guard_condition(X,Y,Z) | owlObjectPropertyAssertion(X,P,Z);;
 
+//querries
+//querySuperClassOf recupere toutes les super classes d'une classe ainsi que leur superClass jusqu'a la racine
+querySuperClassOf(X),owlSubclassOf(X,Y) ==> different(X,Y) | res(Y) , querySuperClassOf(Y) ;;
+querySuperClassOf(X) ==> res(X) ;;
+res(X) ==> afficher(X);;
+
 </CHR>
 */
 
@@ -193,15 +199,17 @@ int main()
 
     auto space = OWL2::create();
     using namespace std;
-    ParserCowl<decltype(*space)> parser("example2.ofn",*space);
+    ParserCowl<OWL2> parser("example2.ofn",*space);
 
     // === Injection de faits OWL ===
     CHR_RUN(
         space->owlClass(std::string("Person"));
         space->owlClass(std::string("Student"));
+        space->owlClass(std::string("MasterStudent"));
         space->owlClass(std::string("Employee"));
- 
+
         space->owlSubclassOf(std::string("Student"), std::string("Person"));
+        space->owlSubclassOf(std::string("MasterStudent"), std::string("Student"));
         space->owlSubclassOf(std::string("Employee"), std::string("Person"));
 
         space->owlObjectProperty(std::string("hasFriend"));
@@ -209,6 +217,7 @@ int main()
         space->owlObjectPropertyRange(std::string("hasFriend"),std::string( "Person"));
 
         space->owlSubPropertyOf(std::string("hasFriend"), std::string("relatedTo"));
+        space->querySuperClassOf(std::string("MasterStudent"));
     )
 
     print(*space);

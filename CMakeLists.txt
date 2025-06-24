@@ -38,15 +38,20 @@ add_custom_command(
 # Ajoute COWL comme sous-module (inclut aussi uLib)
 add_subdirectory(lib/cowl EXCLUDE_FROM_ALL)
 
+link_directories(${CMAKE_SOURCE_DIR}/lib/cowl/build/lib/ulib)
 # Ajoute les fichiers sources de ton projet
 add_executable(ParserProject
     parsercowl.h
     Parser.h
+    AnySimpleType.h
+    stringType.h
     ${GENERATED_CPP} # Ajoute le fichier généré à la compilation
 )
 
 # Lier la lib COWL (et uLib automatiquement)
 target_link_libraries(ParserProject PRIVATE cowl)
+
+target_link_libraries(ParserProject PRIVATE cowl ulib)
 
 # Inclure les headers de COWL
 target_include_directories(ParserProject PRIVATE lib/cowl/include)
