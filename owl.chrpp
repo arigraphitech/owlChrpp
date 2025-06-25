@@ -33,6 +33,7 @@ void afficher(std::string x){
 <CHR name="OWL2">
     // === Contraintes ===
     <chr_constraint>
+            owlPrefix(+std::string,+std::string),
 			owlClass(+std::string),
 			owlObjectProperty(+std::string),
 			owlDataProperty(+std::string),
@@ -44,37 +45,41 @@ void afficher(std::string x){
 			owlObjectPropertyDomain(+std::string,+std::string),
 			owlObjectPropertyRange(+std::string,+std::string),
 			owlClassAssertion(+std::string,+std::string),
-			owlDisjointClass(+std::string,+std::string),
+			owlDisjointClass(+std::vector <[std::string]>),
             owlNegativeObjectAssertion(+std::string,+std::string,+std::string),
             owlObjectPropertyAssertion(+std::string,+std::string,+std::string),
             owlSameIndividual(+std::string,+std::string),
-            owlDiffrentIndividual(+std::string,+std::string),
+            owlDifferentIndividual(+std::string,+std::string),
             owlInverseObjectProperty(+std::string,+std::string),
             owlSymmetricObjectProperty(+std::string),
             owlAsymmetricObjectProperty(+std::string),
-            owlDisjointObjectProperty(+std::string,+std::string),
+            owlDisjointObjectProperty(+std::vector <[std::string]>),
             owlReflexiveObjectProperty(+std::string),
             owlIrreflexiveObjectProperty(+std::string),
             owlFunctionalObjectProperty(+std::string),
             owlInverseFunctionalObjectProperty(+std::string),
             owlTransitiveObjectProperty(+std::string),
+            owlDataPropertyAssertion(+std::string,+std::string,+Value),
             querySuperClassOf(+std::string),
+            querySubClassOf(+std::string),
+            queryClassification(+std::string),
             res(+std::string)
 
 //suppression des doublons
+res(X) #passive \ res(X) <=> true ;;
 owlClass(C) #passive \ owlClass(C) <=> true ;;
 owlObjectProperty(P) #passive \ owlObjectProperty(P) <=> true ;;
 owlDataProperty(P) #passive \ owlDataProperty(P) <=> true ;;
 owlObjectPropertyDomain(P,C) #passive \ owlObjectPropertyDomain(P,C) <=> true ;;
 owlObjectPropertyRange(P,C) #passive \ owlObjectPropertyRange(P,C) <=> true ;;
-owlDisjointClass(A,B) #passive \ owlDisjointClass(A,B) <=> true ;;
+owlDisjointClass(L) #passive \ owlDisjointClass(L) <=> true ;;
 owlNegativeObjectAssertion(X,P,Y) #passive \ owlNegativeObjectAssertion(X,P,Y) <=> true ;;
+owlDisjointObjectProperty(L) #passive \ owlDisjointObjectProperty(L) <=> true ;;
 owlSameIndividual(X,Y) #passive \ owlSameIndividual(X,Y) <=> true ;;
-owlDiffrentIndividual(X,Y) #passive \ owlDiffrentIndividual(X,Y) <=> true ;;
+owlDifferentIndividual(X,Y) #passive \ owlDifferentIndividual(X,Y) <=> true ;;
 owlInverseObjectProperty(P1,P2) #passive \ owlInverseObjectProperty(P1,P2) <=> true ;;
 owlSymmetricObjectProperty(P) #passive \ owlSymmetricObjectProperty(P) <=> true ;;
 owlAsymmetricObjectProperty(P) #passive \ owlAsymmetricObjectProperty(P) <=> true ;;
-owlDisjointObjectProperty(P1,P2) #passive \ owlDisjointObjectProperty(P1,P2) <=> true ;;
 owlReflexiveObjectProperty(P) #passive \ owlReflexiveObjectProperty(P) <=> true ;;
 owlIrreflexiveObjectProperty(P) #passive \ owlIrreflexiveObjectProperty(P) <=> true ;;
 owlFunctionalObjectProperty(P) #passive \ owlFunctionalObjectProperty(P) <=> true ;;
@@ -89,12 +94,12 @@ owlEquivalentProperty(A,B) #passive \ owlEquivalentProperty(A,B) <=> true ;;
 
 
 //onto validity
-//owlDisjointClass(A,B) is true if the classes A and B are disjoin
-DisjointClass @ owlDisjointClass(A,B), owlClassAssertion(X,A), owlClassAssertion(X,B) <=> failure();;
+//owlDisjointClass(L) is true if the vector of classes are disjoin
+DisjointClass @ owlDisjointClass(L), owlClassAssertion(X,A), owlClassAssertion(X,B) <=>  contains(A,L) && contains(B,L) | failure();;
 //owlNegativeObjectAssertion(X,P,Y) is true if the two individuals X,Y are not connected by the property P
 NegativeObjectAssertion @ owlNegativeObjectAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Y) <=> failure() ;;
-//owlDisjointObjectProperty(P1,P2) is true if the two properties P1 and P2 are disjoin
-DisjointProperty @ owlDisjointObjectProperty(P1,P2),owlObjectPropertyAssertion(X,P1,Y),owlObjectPropertyAssertion(X,P2,Y) <=> failure() ;;
+//owlDisjointObjectProperty(L) is true if the list of properties L are disjoin
+DisjointProperty @ owlDisjointObjectProperty(L),owlObjectPropertyAssertion(X,P1,Y),owlObjectPropertyAssertion(X,P2,Y) <=> contains(P1,L) && contains(P2,L) | failure() ;;
 //owlIrreflexiveObjectProperty(P) is true if the property P is an irreflexive object property
 irreflexiveProperty @ owlIrreflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,X)<=> failure();;
 
@@ -148,8 +153,8 @@ objectPropertyCoDomain @ owlObjectPropertyRange(P,DP) , owlObjectPropertyAsserti
 //owlSameIndividual(X,Y) is true if X and Y refer to (denote) the same individual
 sameIndividual @ owlSameIndividual(X,Y) ==> different(X,Y) | X %= Y ;;
 
-//owlDiffrentIndividual(X,Y) is true if it's excluded that X and Y are the same individual
-DifferentIndividual @ owlDiffrentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  failure();;
+//owlDifferentIndividual(X,Y) is true if it's excluded that X and Y are the same individual
+DifferentIndividual @ owlDifferentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  failure();;
 
 //owlInverseObjectProperty( P1,P2 ) is true if P1 is the inverse object property of P2
 inverseProperty @ owlInverseObjectProperty(P1,P2) , owlObjectPropertyAssertion(X,P1,Y) ==> owlObjectPropertyAssertion(Y,P2,X);;
@@ -175,9 +180,19 @@ transitiveProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X
 
 //querries
 //querySuperClassOf recupere toutes les super classes d'une classe ainsi que leur superClass jusqu'a la racine
-querySuperClassOf(X),owlSubclassOf(X,Y) ==> different(X,Y) | res(Y) , querySuperClassOf(Y) ;;
-querySuperClassOf(X) ==> res(X) ;;
+querySuperClassOf(X)\ owlSubclassOf(X,Y) <=> different(X,Y) | res(Y) , querySuperClassOf(Y) ;;
+querySuperClassOf(X) <=> res(X) ;;
 res(X) ==> afficher(X);;
+
+//querySubClassOf recupere toutes les sous classes d'une classe
+querySubClassOf(X) \ owlSubclassOf(Y,X) <=> different(X,Y) | res(Y) , querySubClassOf(Y) ;;
+querySubClassOf(X) <=> res(X) ;;
+
+//queryClassification prend en paramettre un indivus et recupere toutes les classes dont elle est instance
+queryClassification(X) , owlClassAssertion(X,C) ==> res(C) ;;
+queryClassification(X) <=> true ;;
+
+
 
 </CHR>
 */
