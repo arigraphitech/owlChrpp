@@ -262,8 +262,8 @@ r5 @ owlIntersectionOf(C,ITEND,ITEND,I) \ owlCandidatsIntersection(X,C,I)  <=> o
 
 r4 @ owlIntersectionOf(C,ITEND,ITEND,I) , owlCandidatsIntersection(X,C,J)  <=>  success()  ;;
 
-
-
+//inference sense inverse
+owlIntersectionClass(C,C1,_),owlClassAssertion(X,C) ==> owlClassAssertion(X,C1) ;;
 </CHR>
 */
 
@@ -318,6 +318,8 @@ int main()
   // space->owlClassAssertion(std::string("Y"),std::string("c3"));
   // space->popInd(classes.begin(),classes.end(),0)
    space->owlIntersectionOf(std::string("C"),classes.begin(),classes.end(),0);
+   space->owlClassAssertion(std::string("k"),std::string("C"));
+   space->queryClassification(std::string("k"));
   )
 
    print(*space);
