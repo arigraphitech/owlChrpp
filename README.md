@@ -4,6 +4,8 @@ owlFunctional contient la def de l'union et intersection (premier test avc liste
 
 owlPropertyChain contient la def des proprietes des ChainProperty avec un exemple sans passer par des listes (sans parseur) 
 
+owlComplement contient la def du complement et l'intersection et l'union sans liste
+
 pour executer : 
 
 ../chrpp/chrppc/chrppc owl.chrpp -sout > owl.cpp
