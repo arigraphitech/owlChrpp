@@ -1,0 +1,77 @@
+Prefix(:=<http://swot.sisinflab.poliba.it/test_import#>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+
+
+Ontology(<http://swot.sisinflab.poliba.it/test_import>
+
+Declaration(Class(:ClassA))
+Declaration(ObjectProperty(:ObjectPropertyA))
+Declaration(ObjectProperty(:ObjectPropertyB))
+Declaration(DataProperty(:DataPropertyA))
+Declaration(AnnotationProperty(:AnnotationPropertyA))
+Declaration(AnnotationProperty(:AnnotationPropertyB))
+Declaration(NamedIndividual(:IndividualA))
+Declaration(NamedIndividual(:IndividualB))
+
+############################
+#   Object Properties
+############################
+
+# Object Property: :ObjectPropertyA (:ObjectPropertyA)
+
+EquivalentObjectProperties(:ObjectPropertyA ObjectInverseOf(:ObjectPropertyB))
+
+
+############################
+#   Classes
+############################
+
+# Class: :ClassA (:ClassA)
+
+SubClassOf(:ClassA ObjectAllValuesFrom(:ObjectPropertyA owl:Thing))
+SubClassOf(:ClassA ObjectSomeValuesFrom(:ObjectPropertyA owl:Thing))
+
+
+############################
+#   Named Individuals
+############################
+
+# Individual: :IndividualA (:IndividualA)
+
+ObjectPropertyAssertion(:ObjectPropertyA :IndividualA :IndividualB)
+
+# Individual: :IndividualB (:IndividualB)
+
+DataPropertyAssertion(:DataPropertyA :IndividualA "true"^^xsd:boolean)
+DataPropertyAssertion(:DataPropertyA :IndividualB "String with inner language tag@en"^^rdf:PlainLiteral)
+
+
+############################
+#   Anonymous Individuals
+############################
+
+# Individual: _:genid2147483648 (_:genid2147483648)
+
+ClassAssertion(:ClassA _:genid2147483648)
+
+
+############################
+#   Annotation Properties
+############################
+
+# Annotation Property: :AnnotationPropertyA (:AnnotationPropertyA)
+
+SubAnnotationPropertyOf(
+Annotation(
+Annotation(rdfs:comment "This is a nested annotation"@EN)
+rdfs:label "Annotation Property A"^^xsd:string)
+Annotation(rdfs:comment "Test axiom annotations"^^xsd:string)
+:AnnotationPropertyA :AnnotationPropertyB)
+
+AnnotationPropertyDomain(:AnnotationPropertyA owl:Thing)
+AnnotationPropertyRange(:AnnotationPropertyA owl:Thing)
+)

@@ -1,9 +1,12 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <vector>
+#include <algorithm>
 #include <./chrpp.hh>
 #include "parsercowl.h"
 #include <options.hpp>
+
 const std::string owlThing = "owl:Thing";
 const std::string owlNothing = "owl:Nothing";
 
@@ -95,11 +98,11 @@ owlEquivalentProperty(A,B) #passive \ owlEquivalentProperty(A,B) <=> true ;;
 
 //onto validity
 //owlDisjointClass(L) is true if the vector of classes are disjoin
-DisjointClass @ owlDisjointClass(L), owlClassAssertion(X,A), owlClassAssertion(X,B) <=>  contains(A,L) && contains(B,L) | failure();;
+//DisjointClass @ owlDisjointClass(L), owlClassAssertion(X,A), owlClassAssertion(X,B) <=>  contains(A,L) && contains(B,L) | failure();;
 //owlNegativeObjectAssertion(X,P,Y) is true if the two individuals X,Y are not connected by the property P
 NegativeObjectAssertion @ owlNegativeObjectAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Y) <=> failure() ;;
 //owlDisjointObjectProperty(L) is true if the list of properties L are disjoin
-DisjointProperty @ owlDisjointObjectProperty(L),owlObjectPropertyAssertion(X,P1,Y),owlObjectPropertyAssertion(X,P2,Y) <=> contains(P1,L) && contains(P2,L) | failure() ;;
+//DisjointProperty @ owlDisjointObjectProperty(L),owlObjectPropertyAssertion(X,P1,Y),owlObjectPropertyAssertion(X,P2,Y) <=> contains(P1,L) && contains(P2,L) | failure() ;;
 //owlIrreflexiveObjectProperty(P) is true if the property P is an irreflexive object property
 irreflexiveProperty @ owlIrreflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,X)<=> failure();;
 
