@@ -6,21 +6,63 @@ Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
 Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
 
 Ontology(
+
+############################
+#   Class declarations
+############################
+
 Declaration(Class(ex:Course))
 Declaration(Class(ex:Professor))
 Declaration(Class(ex:Student))
-Declaration(Class(ex:Learner))  # Nouvelle classe
-EquivalentClasses(ex:Student ex:Learner)  # Déclaration d'équivalence
+Declaration(Class(ex:Learner))
+EquivalentClasses(ex:Student ex:Learner)
+
+############################
+#   Object properties
+############################
 
 Declaration(ObjectProperty(ex:enrolledIn))
 Declaration(ObjectProperty(ex:teaches))
+
+# --- Nouveau test EquivalentObjectProperties ---
+# ex:instructs et ex:educates sont équivalentes à ex:teaches
+Declaration(ObjectProperty(ex:instructs))
+Declaration(ObjectProperty(ex:educates))
+
+AnnotationAssertion(rdfs:label ex:instructs "instructs")
+AnnotationAssertion(rdfs:label ex:educates "educates")
+
+EquivalentObjectProperties(ex:teaches ex:instructs ex:educates)
+
+# Domaine et portée des propriétés équivalentes
+ObjectPropertyDomain(ex:instructs ex:Professor)
+ObjectPropertyRange(ex:instructs ex:Course)
+ObjectPropertyDomain(ex:educates ex:Professor)
+ObjectPropertyRange(ex:educates ex:Course)
+
+############################
+#   Data properties
+############################
+
+# Une propriété de données pour indiquer l’âge d’un étudiant
+Declaration(DataProperty(ex:hasAge))
+AnnotationAssertion(rdfs:label ex:hasAge "hasAge")
+DataPropertyDomain(ex:hasAge ex:Student)
+DataPropertyRange(ex:hasAge xsd:integer)
+
+# Une autre propriété de données pour le nom complet (facultatif)
+Declaration(DataProperty(ex:fullName))
+AnnotationAssertion(rdfs:label ex:fullName "fullName")
+DataPropertyDomain(ex:fullName ex:Professor)
+DataPropertyRange(ex:fullName xsd:string)
+
+############################
+#   Individuals
+############################
+
 Declaration(NamedIndividual(ex:Alice))
 Declaration(NamedIndividual(ex:Bob))
 Declaration(NamedIndividual(ex:Math101))
-
-############################
-#   Object Properties
-############################
 
 AnnotationAssertion(rdfs:label ex:enrolledIn "enrolledIn")
 ObjectPropertyDomain(ex:enrolledIn ex:Student)
@@ -30,24 +72,25 @@ AnnotationAssertion(rdfs:label ex:teaches "teaches")
 ObjectPropertyDomain(ex:teaches ex:Professor)
 ObjectPropertyRange(ex:teaches ex:Course)
 
-############################
-#   Classes
-############################
-
 AnnotationAssertion(rdfs:label ex:Course "Course")
 AnnotationAssertion(rdfs:label ex:Professor "Professor")
 AnnotationAssertion(rdfs:label ex:Student "Student")
 AnnotationAssertion(rdfs:label ex:Learner "Learner")
 
-############################
-#   Named Individuals
-############################
-
 ClassAssertion(ex:Student ex:Alice)
 ObjectPropertyAssertion(ex:enrolledIn ex:Alice ex:Math101)
 
+# Exemple d’utilisation des data properties
+DataPropertyAssertion(ex:hasAge ex:Alice "22"^^xsd:integer)
+DataPropertyAssertion(ex:fullName ex:Bob "Robert Brown"^^xsd:string)
+
 ClassAssertion(ex:Professor ex:Bob)
 ObjectPropertyAssertion(ex:teaches ex:Bob ex:Math101)
+
+# Grâce à EquivalentObjectProperties,
+# les assertions suivantes sont logiquement équivalentes :
+ObjectPropertyAssertion(ex:instructs ex:Bob ex:Math101)
+ObjectPropertyAssertion(ex:educates ex:Bob ex:Math101)
 
 AnnotationAssertion(rdfs:label ex:Math101 "Mathematics 101")
 ClassAssertion(ex:Course ex:Math101)
@@ -55,5 +98,35 @@ ClassAssertion(ex:Course ex:Math101)
 Declaration(Class(ex:PhDStudent))
 SubClassOf(ex:PhDStudent ex:Student)
 AnnotationAssertion(rdfs:label ex:PhDStudent "PhD Student")
+
+############################
+#   Disjointness axioms
+############################
+
+DisjointClasses(ex:Professor ex:Student)
+DisjointClasses(ex:Course ex:Professor ex:Student)
+
+############################
+#   SameIndividual / DifferentIndividuals tests
+############################
+
+# --- Tests de paires ---
+Declaration(NamedIndividual(ex:AliceAlias))
+SameIndividual(ex:Alice ex:AliceAlias)
+
+Declaration(NamedIndividual(ex:Robert))
+SameIndividual(ex:Bob ex:Robert)
+
+DifferentIndividuals(ex:Alice ex:Bob)
+
+# --- Tests de liste ---
+Declaration(NamedIndividual(ex:AliceClone1))
+Declaration(NamedIndividual(ex:AliceClone2))
+SameIndividual(ex:Alice ex:AliceClone1 ex:AliceClone2)
+
+Declaration(NamedIndividual(ex:Charlie))
+Declaration(NamedIndividual(ex:Dave))
+Declaration(NamedIndividual(ex:Eve))
+DifferentIndividuals(ex:Alice ex:Charlie ex:Dave ex:Eve)
 
 )

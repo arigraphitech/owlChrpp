@@ -14,15 +14,16 @@ endif()
 
 # === Partie CHRPP ===
 # Définis où se trouve CHRPP (adapte le chemin si nécessaire)
-set(CHRPP_ROOT /home/etud/Téléchargements/stage/chrpp)
+set(CHRPP_ROOT ${CMAKE_SOURCE_DIR}/../../chrpp)
 set(CHRPP_COMPILER ${CHRPP_ROOT}/chrppc/chrppc)
-set(CHRPP_RUNTIME ${CHRPP_ROOT}/runtime)
+set(CHRPP_COMPILER $ENV{HOME}/chrpp/chrppc/chrppc)
+set(CHRPP_RUNTIME $ENV{HOME}/chrpp/runtime)
 
 # Inclut le runtime CHRPP
 include_directories(${CHRPP_RUNTIME})
 
 # Fichier CHR++ source
-set(CHR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/owlFunctional.chrpp)
+set(CHR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/owl.chrpp)
 # Fichier C++ généré
 set(GENERATED_CPP ${CMAKE_CURRENT_BINARY_DIR}/owl.cpp)
 
