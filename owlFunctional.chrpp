@@ -4,8 +4,9 @@
 #include <set>
 #include <algorithm>
 #include <chrpp.hh>
-#include "stringType.h"
+#include "AnySimpleType.h"
 #include "parsercowl.h"
+
 const std::string owlThing = "owl:Thing";
 const std::string owlNothing = "owl:Nothing";
 const std::string emptyString = "";
@@ -36,7 +37,26 @@ bool operator<(const Logical_var<T>& a, const Logical_var<T>& b) {
     }
     // Comparaison par adresse pour les variables non-ground
     return &a < &b;
-}
+};
+
+template<>
+struct Type_instruction_wrapper<std::shared_ptr<AnySimpleType>, false> {
+    static std::string to_string(const std::shared_ptr<AnySimpleType>& ptr) {
+        if (!ptr) return "null";
+        return "AnySimpleType(id=" + ptr->toString() + ")";
+    }
+
+    static void update_hash(const std::shared_ptr<AnySimpleType>& ptr) {
+        if (ptr) {
+            XXHash<unsigned int>::update(ptr->getId());
+        }
+    }
+
+    static bool is_equal(const std::shared_ptr<AnySimpleType>& a, const std::shared_ptr<AnySimpleType>& b) {
+        if (!a || !b) return a == b;
+        return a->getId() == b->getId(); 
+    }
+};
 }
 
 
@@ -60,6 +80,8 @@ struct chr::XXHash<Value>
         chr::XXHash<std::string>::update(composite);
     }
 };
+
+
 using iterator = std::vector<std::string>::iterator;
 using iteratorSet = std::set<std::string>::iterator;
 using set = std::set<std::string>;
@@ -138,6 +160,11 @@ std::string constructFullUri(const std::string& prefix,
 }
 
 
+bool invalidType(const std::shared_ptr<AnySimpleType> dr,const Value & v){
+    std::cout<<"dr id: "<<dr->getId()<<" v type id: "<<v.typeVal->getId()<<std::endl;
+    return (dr->getId() != v.typeVal->getId());
+}
+
 /**
 *
 *\ingroup Examples
@@ -179,6 +206,8 @@ std::string constructFullUri(const std::string& prefix,
             owlInverseFunctionalObjectProperty(?std::string),
             owlTransitiveObjectProperty(?std::string),
             owlDataPropertyAssertion(?std::string,?std::string,+Value),
+            owlNegativeDataAssertion(?std::string,?std::string,+Value),
+            owlDataPropertyRange(?std::string,+std::shared_ptr<[AnySimpleType]>),
             owlUnionClass(?std::string,?std::string),
             owlUnionOf(?std::string,+LogicalVarSet),
             owlUnionOfLoop(?std::string,+iteratorSet,+iteratorSet),
@@ -251,7 +280,8 @@ NegativeObjectAssertion @ owlNegativeObjectAssertion(X,P,Y),owlObjectPropertyAss
 DisjointObjProperty @ owlDisjointObjectProperty(L),owlObjectPropertyAssertion(X,P1,Y),owlObjectPropertyAssertion(X,P2,Y) <=> contains(P1,L) && contains(P2,L) | failure() ;;
 //owlDisjointDataProperty(L) is true if the list of data properties L are disjoin
 DisjointDataProperty @ owlDisjointDataProperty(L),owlDataPropertyAssertion(X,P1,Y),owlDataPropertyAssertion(X,P2,Y) <=> contains(P1,L) && contains(P2,L) | failure() ;;
-
+//owlNegativeDataAssertion(X,P,Y) is true if the individual X and the value Y are not connected by the property P
+NegativeDataAssertion @ owlNegativeDataAssertion(X,P,Y),owlDataPropertyAssertion(X,P,Y) <=> failure() ;;
 
 //owlIrreflexiveObjectProperty(P) is true if the property P is an irreflexive object property
 irreflexiveProperty @ owlIrreflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,X)<=> failure();;
@@ -276,7 +306,8 @@ owlClass(C) ==>  owlSubclassOf(owlNothing,C);;
 
 //property
 owlObjectProperty(P) ==> owlSubObjectPropertyOf(P,P), owlEquivalentObjectProperty(P,P);;
-owlDataProperty(P) ==> owlSubDataPropertyOf(P,P), owlEquivalentDataProperty(P,P);;
+owlDataProperty(P) ==>  owlEquivalentDataProperty(P,P);;
+//owlDataProperty(P) ==> owlSubDataPropertyOf(P,P) ;; //fonctionne pas jsp prk
 
 owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,C) ==> different(A,B,C) | owlSubObjectPropertyOf(A,C);;
 owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,C) ==> different(A,B,C) | owlSubDataPropertyOf(A,C);;
@@ -292,6 +323,14 @@ owlObjectPropertyDomain(P2,C), owlSubObjectPropertyOf(P1,P2) ==> !(P1==P2) | owl
 owlObjectPropertyRange(P,C1), owlSubclassOf(C1,C2) ==> !(C1==C2) | owlObjectPropertyRange(P,C2);;
 owlObjectPropertyRange(P2,C), owlSubObjectPropertyOf(P1,P2) ==>  !(P1==P2) | owlObjectPropertyRange(P1,C);;
 
+owlDataPropertyDomain(P2,C), owlSubDataPropertyOf(P1,P2) ==> different(P1,P2) | owlDataPropertyDomain(P1,C);;
+owlDataPropertyRange(P2,C), owlSubDataPropertyOf(P1,P2) ==>  different(P1,P2) | owlDataPropertyRange(P1,C);;
+
+
+//owlDataPropertyDomain(P,DP) is true if the property P has the domain DP (an object)
+//owlDataPropertyRange(P,DP) is true if the property P has the range DP (a DataType)
+DataPropertyDomain @ owlDataPropertyDomain(P,DP) , owlDataPropertyAssertion(X,P,_) ==> owlClassAssertion(X,DP,true) ;;
+DataPropertyRange @ owlDataPropertyRange(P,DR) , owlDataPropertyAssertion(_,P,Y) <=> invalidType(DR,Y) | failure();;
 
 //owlClassAssertion(X,A,true) is true if X is an instance of A
 //owlSubclassOf(A,B) is true if A is a subclass of B
@@ -426,9 +465,9 @@ owlMaxQualifiedCardinality(X,P,C,0) , owlClassAssertion(U,X,true) , owlObjectPro
 owlMaxQualifiedCardinality(X,P,C,1) , owlClassAssertion(U,X,true) , owlObjectPropertyAssertion(U,P,Y1) , owlClassAssertion(Y1,C,true) , owlObjectPropertyAssertion(U,P,Y2) , owlClassAssertion(Y2,C,true) <=>  !(Y1==Y2) | owlSameIndividual(Y1,Y2) ;;
 
 owlHasValueObject(C,P,Y),owlObjectProperty(P),owlClassAssertion(U,C,true) ==> owlObjectPropertyAssertion(U,P,Y) ;;
-owlHasValueData(C,P,Y),owlDataProperty(P), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,Y) ;;
+//owlHasValueData(C,P,Y),owlDataProperty(P), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,Y) ;;
 owlHasValueObject(C,P,Y),owlObjectPropertyAssertion(U,P,Y) ==> owlClassAssertion(U,C,true) ;;
-owlHasValueData(C,P,Y),owlDataPropertyAssertion(U,P,Y) ==> owlClassAssertion(U,C,true) ;;
+//owlHasValueData(C,P,Y),owlDataPropertyAssertion(U,P,Y) ==> owlClassAssertion(U,C,true) ;;
 
 //owlOneOf(C, S) ==> owlOneOfLoop(C, (*S).begin(), (*S).end()) ;;
 //owlOneOfLoop(C,ITEND,ITEND) <=> success();;
@@ -520,17 +559,26 @@ int main(int argc, char* argv[])
     
     //std::vector<std::string> classes={"c1","c2","c3"};
     auto space = OWL2::create();
+    std::shared_ptr<AnySimpleType> typeVal = std::make_shared<StringType>();
+    std::shared_ptr<AnySimpleType> typeVal2 = std::make_shared<IntegerType>();
+    Value v={"arina",typeVal};
+        chr::Logical_var<std::string> d ;
+        chr::Logical_var<std::string> d2 ;
+        chr::Logical_var<std::string> m ;
+        chr::Logical_var<std::string> x;
 
-    chr::Logical_var<std::string> c1 ;
-    chr::Logical_var<std::string> c2 ;
-    chr::Logical_var<std::string> c3 ;
-    chr::Logical_var<std::string> x  ;
-    chr::Logical_var<std::string> y  ;
-    chr::Logical_var<std::string> d  ;
-    chr::Logical_var<std::string> f ;
- CHR_RUN(
-    // Utilisation du parser COWL avec le fichier spécifié
+ CHR_RUN(   
     ParserCowl<OWL2> parser(filename, *space);
+
+    // Utilisation du parser COWL avec le fichier spécifié
+   space->logicalName(std::string("http://example.org#i"), x);
+   space->logicalName(std::string("http://example.org#Property"), d);
+   space->logicalName(std::string("http://example.org#Property2"), d2);
+   space->logicalName(std::string("http://example.org#TestDomain"), m);
+
+   space->owlDataProperty(d);
+    space->owlDataProperty(d2);
+    space->owlSubDataPropertyOf(d2,d);
     parser.load();
     //space->querySuperClassOfUri(std::string("PhDStudent"));
     // Contraintes déclarées en dur pour test (commentées)
@@ -541,7 +589,7 @@ int main(int argc, char* argv[])
     space->logicalName(std::string("http://ex.org#c3"), c3);
     space->owlClass(y);
     */
-  //  space->owlNamedIndividual(x);
+   //space->owlNamedIndividual(x);
    // space->owlNamedIndividual(y);
    // space->owlSameIndividual(x,y);
    // space->owlClassAssertion(x, c1);
@@ -552,7 +600,7 @@ int main(int argc, char* argv[])
    // space->owlClassAssertion(y, c2);
 
  )
-    //print(*space);
+    print(*space);
     chr::Statistics::print(std::cout);
 
     return 0;

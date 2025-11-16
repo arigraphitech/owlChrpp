@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <unordered_map>
+#include "AnySimpleType.h"
 using namespace std;
 using namespace std::string_literals;
 using std::string;
@@ -15,6 +17,100 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+}
+
+enum class XSDType  {
+    // Numériques
+    INTEGER, NON_NEGATIVE_INTEGER, NON_POSITIVE_INTEGER,
+    POSITIVE_INTEGER, NEGATIVE_INTEGER, UNSIGNED_INT, INT,
+    SHORT, UNSIGNED_SHORT, BYTE, UNSIGNED_BYTE, LONG, UNSIGNED_LONG,
+    FLOAT, DOUBLE, DECIMAL,
+
+    // Booléens
+    BOOLEAN,
+
+    // Chaînes
+    STRING, NORMALIZED_STRING, TOKEN, LANGUAGE, NAME, NCNAME,
+    ID, IDREF, IDREFS, NMTOKEN, NMTOKENS,
+
+    // Dates / Heures
+    DATE, TIME, DATE_TIME, DURATION, G_YEAR, G_YEAR_MONTH,
+    G_MONTH, G_MONTH_DAY, G_DAY,
+
+    // Binary
+    BASE64_BINARY, HEX_BINARY,
+
+    // URI
+    ANY_URI,
+
+    // Divers
+    QNAME, NOTATION,
+
+    UNKNOWN
+};
+
+XSDType mapXsdType(const std::string& t){
+    std::string s = t;
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+
+    // numériques
+    if (s == "integer") return XSDType::INTEGER;
+    if (s == "nonNegativeInteger" || s == "nonnegativeinteger") return XSDType::NON_NEGATIVE_INTEGER;
+    if (s == "nonPositiveInteger" || s == "nonpositiveinteger") return XSDType::NON_POSITIVE_INTEGER;
+    if (s == "positiveInteger" || s == "positiveinteger") return XSDType::POSITIVE_INTEGER;
+    if (s == "negativeInteger" || s == "negativeinteger") return XSDType::NEGATIVE_INTEGER;
+    if (s == "int") return XSDType::INT;
+    if (s == "unsignedInt" || s == "unsignedint") return XSDType::UNSIGNED_INT;
+    if (s == "short") return XSDType::SHORT;
+    if (s == "unsignedShort" || s == "unsignedshort") return XSDType::UNSIGNED_SHORT;
+    if (s == "byte") return XSDType::BYTE;
+    if (s == "unsignedByte" || s == "unsignedbyte") return XSDType::UNSIGNED_BYTE;
+    if (s == "long") return XSDType::LONG;
+    if (s == "unsignedLong" || s == "unsignedlong") return XSDType::UNSIGNED_LONG;
+    if (s == "float") return XSDType::FLOAT;
+    if (s == "double") return XSDType::DOUBLE;
+    if (s == "decimal") return XSDType::DECIMAL;
+
+    // booléen
+    if (s == "boolean") return XSDType::BOOLEAN;
+
+    // string & lexical
+    if (s == "string") return XSDType::STRING;
+    if (s == "normalizedString" || s == "normalizedstring") return XSDType::NORMALIZED_STRING;
+    if (s == "token") return XSDType::TOKEN;
+    if (s == "language") return XSDType::LANGUAGE;
+    if (s == "name") return XSDType::NAME;
+    if (s == "ncname") return XSDType::NCNAME;
+    if (s == "id") return XSDType::ID;
+    if (s == "idref") return XSDType::IDREF;
+    if (s == "idrefs") return XSDType::IDREFS;
+    if (s == "nmtoken") return XSDType::NMTOKEN;
+    if (s == "nmtokens") return XSDType::NMTOKENS;
+
+    // dates & temps
+    if (s == "date") return XSDType::DATE;
+    if (s == "time") return XSDType::TIME;
+    if (s == "dateTime" || s == "datetime") return XSDType::DATE_TIME;
+    if (s == "duration") return XSDType::DURATION;
+    if (s == "gYear" || s == "gyear") return XSDType::G_YEAR;
+    if (s == "gYearMonth" || s == "gyearmonth") return XSDType::G_YEAR_MONTH;
+    if (s == "gMonth" || s == "gmonth") return XSDType::G_MONTH;
+    if (s == "gMonthDay" || s == "gmonthday") return XSDType::G_MONTH_DAY;
+    if (s == "gDay" || s == "gday") return XSDType::G_DAY;
+
+    // binary
+    if (s == "base64Binary" || s == "base64binary") return XSDType::BASE64_BINARY;
+    if (s == "hexBinary" || s == "hexbinary") return XSDType::HEX_BINARY;
+
+    // URI
+    if (s == "anyURI" || s == "anyuri") return XSDType::ANY_URI;
+
+    // divers
+    if (s == "qname") return XSDType::QNAME;
+    if (s == "notation") return XSDType::NOTATION;
+
+    return XSDType::UNKNOWN;
+
 }
 
 // Fonction utilitaire pour convertir UString* en std::string
@@ -72,11 +168,38 @@ public:
     static bool for_each(void *stream, CowlAny *axiom) ;
     bool load() override;
     void print() override;
+    
+    // Méthode helper pour obtenir ou créer une variable logique avec cache
+    chr::Logical_var<std::string>& getOrCreateLogicalVar(const std::string& uri);
+
+private:
+    // Cache pour stocker les variables logiques et éviter les doublons
+    std::unordered_map<std::string, chr::Logical_var<std::string>> logicalVarCache;
 };
 
 template <typename T>
 ParserCowl<T>::ParserCowl(std::string const &  onto,T & space)
     :Parser<T>(onto,&space){}
+
+template <typename T>
+chr::Logical_var<std::string>& ParserCowl<T>::getOrCreateLogicalVar(const std::string& uri) {
+    // Vérifier si la variable existe déjà dans le cache
+    auto it = logicalVarCache.find(uri);
+    if (it != logicalVarCache.end()) {
+        // Variable déjà existante, la retourner
+        return it->second;
+    }
+    
+    // Créer une nouvelle variable logique
+    chr::Logical_var<std::string> newVar;
+    this->space->logicalName(uri, newVar);
+    
+    // Stocker dans le cache
+    logicalVarCache[uri] = newVar;
+    
+    // Retourner la référence
+    return logicalVarCache[uri];
+}
 
 template <typename T>
 void ParserCowl<T>::convertToFunctional(const std::string &originPath, const std::string &destPath)
@@ -134,9 +257,8 @@ void ParserCowl<T>::printPrefixes(ParserCowl<T>* parser, CowlOntology *ontology)
         
         // Créer des variables logiques et instancier la contrainte owlPrefix
         if (parser != nullptr) {
-            chr::Logical_var<std::string> prefixVar, nsVar;
-            parser->space->logicalName(prefixStr, prefixVar);
-            parser->space->logicalName(nsStr, nsVar);
+            chr::Logical_var<std::string>& prefixVar = parser->getOrCreateLogicalVar(prefixStr);
+            chr::Logical_var<std::string>& nsVar = parser->getOrCreateLogicalVar(nsStr);
             parser->space->owlPrefix(prefixVar, nsVar);
         }
     }
@@ -157,24 +279,21 @@ void ParserCowl<T>::iterateDecl(ParserCowl<T>* parser,CowlAny *axiom){
     
     std::string uri_str = ustring_to_string(cowl_string_get_raw(short_iri));
     
-    // Créer une variable logique pour cette entité
-    chr::Logical_var<std::string> entityVar;
+    // Obtenir ou créer la variable logique pour cette entité (avec cache)
+    chr::Logical_var<std::string>& entityVar = parser->getOrCreateLogicalVar(uri_str);
     
         switch (type) {
             case COWL_ET_CLASS:
                 cowl_write_static((UOStream *)stream, "Classe ");
-            // Associer l'URI à la variable logique et déclarer la classe
-            parser->space->logicalName(uri_str, entityVar);
+            // Déclarer la classe
             parser->space->owlClass(entityVar);
                 break;
             case COWL_ET_OBJ_PROP:
                 cowl_write_static((UOStream *)stream, "Propriété d'objet ");
-            parser->space->logicalName(uri_str, entityVar);
             parser->space->owlObjectProperty(entityVar);
                 break;
             case COWL_ET_DATA_PROP:
                 cowl_write_static((UOStream *)stream, "Propriété de données  ");
-            parser->space->logicalName(uri_str, entityVar);
             parser->space->owlDataProperty(entityVar);
                 break;
             case COWL_ET_ANNOT_PROP:
@@ -182,7 +301,6 @@ void ParserCowl<T>::iterateDecl(ParserCowl<T>* parser,CowlAny *axiom){
                 break;
             case COWL_ET_NAMED_IND:
                 cowl_write_static((UOStream *)stream, "Individu ");
-            parser->space->logicalName(uri_str, entityVar);
             parser->space->owlNamedIndividual(entityVar);
                 break;
             case COWL_ET_DATATYPE:
@@ -239,10 +357,9 @@ void ParserCowl<T>::iterateEquivClass(ParserCowl<T>* parser, CowlAny* axiom) {
             CowlString* name = cowl_iri_get_rem(iri);
 
             std::string classUri = ustring_to_string(cowl_string_get_raw(name));
-            chr::Logical_var<std::string> classVar;
 
-            // Récupère ou crée la variable logique pour cette classe
-            parser->space->logicalName(classUri, classVar);
+            // Récupère ou crée la variable logique pour cette classe (avec cache)
+            chr::Logical_var<std::string>& classVar = parser->getOrCreateLogicalVar(classUri);
 
             classVars.push_back(classVar);
             classUris.push_back(classUri);
@@ -283,10 +400,9 @@ void ParserCowl<T>:: iterateDisjClass(ParserCowl<T>* parser, CowlAny *axiom){
         CowlIRI *iri = cowl_class_get_iri(cls);
         CowlString *name = cowl_iri_get_rem(iri);  // ou get_full
         
-        // Créer variable logique et associer l'URI
-        chr::Logical_var<std::string> classVar;
+        // Obtenir ou créer variable logique (avec cache)
         std::string classUri = ustring_to_string(cowl_string_get_raw(name));
-        parser->space->logicalName(classUri, classVar);
+        chr::Logical_var<std::string>& classVar = parser->getOrCreateLogicalVar(classUri);
 
         classVars.insert(classVar);
         cowl_write_string((UOStream *)stream, name);
@@ -307,14 +423,12 @@ void ParserCowl<T>:: iterateClassAssert(ParserCowl<T>* parser, CowlAny *axiom){
     CowlString *nameClasse = cowl_iri_get_rem(iriClasse);
     CowlString *nameIndiv = cowl_iri_get_rem(iriIndiv);
 
-    // Créer des variables logiques pour la classe et l'individu
-    chr::Logical_var<std::string> classeVar, indivVar;
+    // Obtenir ou créer des variables logiques pour la classe et l'individu (avec cache)
     std::string classeUri = ustring_to_string(cowl_string_get_raw(nameClasse));
     std::string indivUri = ustring_to_string(cowl_string_get_raw(nameIndiv));
 
-    // Associer les URI aux variables logiques
-    parser->space->logicalName(classeUri, classeVar);
-    parser->space->logicalName(indivUri, indivVar);
+    chr::Logical_var<std::string>& classeVar = parser->getOrCreateLogicalVar(classeUri);
+    chr::Logical_var<std::string>& indivVar = parser->getOrCreateLogicalVar(indivUri);
 
     cowl_write_string((UOStream *)stream, nameIndiv);
     cowl_write_static((UOStream *)stream, " est instance de ");
@@ -339,16 +453,14 @@ void ParserCowl<T>:: iterateObjPropAssert(ParserCowl<T>* parser, CowlAny *axiom)
     CowlIRI *iriProp = cowl_obj_prop_get_iri(prop);
     CowlString *nameProp = cowl_iri_get_rem(iriProp);
 
-    // Créer des variables logiques pour le sujet, la propriété et l'objet
-    chr::Logical_var<std::string> sujetVar, propVar, objetVar;
+    // Obtenir ou créer des variables logiques (avec cache)
     std::string sujetUri = ustring_to_string(cowl_string_get_raw(nameSujet));
     std::string propUri = ustring_to_string(cowl_string_get_raw(nameProp));
     std::string objetUri = ustring_to_string(cowl_string_get_raw(nameObjet));
 
-    // Associer les URI aux variables logiques
-    parser->space->logicalName(sujetUri, sujetVar);
-    parser->space->logicalName(propUri, propVar);
-    parser->space->logicalName(objetUri, objetVar);
+    chr::Logical_var<std::string>& sujetVar = parser->getOrCreateLogicalVar(sujetUri);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+    chr::Logical_var<std::string>& objetVar = parser->getOrCreateLogicalVar(objetUri);
 
     cowl_write_string((UOStream *)stream, nameSujet);
         cowl_write_static((UOStream *)stream, " ");
@@ -378,15 +490,14 @@ void ParserCowl<T>:: iterateNegObjPropAssert(ParserCowl<T>* parser, CowlAny *axi
     CowlString *nameProp = cowl_iri_get_rem(iriProp);
 
     // Créer des variables logiques pour le sujet, la propriété et l'objet
-    chr::Logical_var<std::string> sujetVar, propVar, objetVar;
     std::string sujetUri = ustring_to_string(cowl_string_get_raw(nameSujet));
     std::string propUri = ustring_to_string(cowl_string_get_raw(nameProp));
     std::string objetUri = ustring_to_string(cowl_string_get_raw(nameObjet));
 
-    // Associer les URI aux variables logiques
-    parser->space->logicalName(sujetUri, sujetVar);
-    parser->space->logicalName(propUri, propVar);
-    parser->space->logicalName(objetUri, objetVar);
+    // Obtenir les références aux variables logiques depuis le cache
+    chr::Logical_var<std::string>& sujetVar = parser->getOrCreateLogicalVar(sujetUri);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+    chr::Logical_var<std::string>& objetVar = parser->getOrCreateLogicalVar(objetUri);
 
     cowl_write_string((UOStream *)stream, nameSujet);
         cowl_write_static((UOStream *)stream, " not ");
@@ -406,13 +517,12 @@ void ParserCowl<T>:: iterateSubObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     CowlObjProp * sup=(CowlObjProp*)cowl_sub_obj_prop_axiom_get_super((CowlSubObjPropAxiom *)axiom);
 
     // Créer des variables logiques pour les propriétés
-    chr::Logical_var<std::string> subVar, supVar;
     std::string subUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(sub))));
     std::string supUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(sup))));
 
-    // Associer les URI aux variables logiques
-    parser->space->logicalName(subUri, subVar);
-    parser->space->logicalName(supUri, supVar);
+    // Obtenir les références aux variables logiques depuis le cache
+    chr::Logical_var<std::string>& subVar = parser->getOrCreateLogicalVar(subUri);
+    chr::Logical_var<std::string>& supVar = parser->getOrCreateLogicalVar(supUri);
 
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(sub)));
     cowl_write_static((UOStream *)stream, " subObjectproperty de  ");
@@ -438,9 +548,8 @@ void ParserCowl<T>::iterateEquivObjProp(ParserCowl<T>* parser, CowlAny *axiom){
         CowlString *propName = cowl_iri_get_rem(cowl_obj_prop_get_iri(prop));
         
         // Créer variable logique et associer l'URI
-        chr::Logical_var<std::string> propVar;
         std::string propUri = ustring_to_string(cowl_string_get_raw(propName));
-        parser->space->logicalName(propUri, propVar);
+        chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
         
         propVars.push_back(propVar);
         cowl_write_string((UOStream *)stream, propName);
@@ -461,14 +570,13 @@ template <typename T>
 void ParserCowl<T>:: iterateObjPropDomain(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std(); 
     
-    chr::Logical_var<std::string> propVar, domVar;
-
-     CowlObjProp* prop= (CowlObjProp*)cowl_obj_prop_domain_axiom_get_prop((CowlObjPropDomainAxiom *)axiom);
-     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-        parser->space->logicalName(propUri, propVar);
+    CowlObjProp* prop= (CowlObjProp*)cowl_obj_prop_domain_axiom_get_prop((CowlObjPropDomainAxiom *)axiom);
+    std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+    
     CowlClsExp * dom=cowl_obj_prop_domain_axiom_get_domain((CowlObjPropDomainAxiom *)axiom);
     std::string domUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_class_get_iri((CowlClass *)dom))));
-        parser->space->logicalName(domUri, domVar);
+    chr::Logical_var<std::string>& domVar = parser->getOrCreateLogicalVar(domUri);
 
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " a pour domaine  ");
@@ -480,13 +588,13 @@ void ParserCowl<T>:: iterateObjPropDomain(ParserCowl<T>* parser, CowlAny *axiom)
 template <typename T>
 void ParserCowl<T>:: iterateObjPropRange(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar, domVar;
     CowlObjProp* prop= (CowlObjProp*)cowl_obj_prop_range_axiom_get_prop((CowlObjPropRangeAxiom *)axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-        parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+    
     CowlClsExp * dom=cowl_obj_prop_range_axiom_get_range((CowlObjPropRangeAxiom *)axiom);
     std::string domUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_class_get_iri((CowlClass *)dom))));
-        parser->space->logicalName(domUri, domVar);
+    chr::Logical_var<std::string>& domVar = parser->getOrCreateLogicalVar(domUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " a pour range  ");
     cowl_write_cstring((UOStream *)stream, domUri.c_str());
@@ -521,6 +629,7 @@ void ParserCowl<T>:: iterateDiffInd(ParserCowl<T>* parser, CowlAny *axiom){
 
 template <typename T>
 void ParserCowl<T>:: iterateSameInd(ParserCowl<T>* parser, CowlAny *axiom){
+    //to do
     std::set<std::string> indivNames; // Pour stocker les noms des individus same
     UOStream *stream = uostream_std();
     cowl_write_static((UOStream *)stream, "same individuals : ");
@@ -533,64 +642,379 @@ void ParserCowl<T>:: iterateSameInd(ParserCowl<T>* parser, CowlAny *axiom){
         cowl_write_static((UOStream *)stream, " , ");
         indivNames.insert(indivUri);
     }
-   //creer une map pour stocker chaque variable logique
-    //std::unordered_map<std::string, chr::Logical_var<std::string>> logicalVars;
-
-    // TEMPORAIREMENT DESACTIVE: Les variables locales causent des crashs
-    // Il faudrait stocker les variables comme membres de classe
+    
     cowl_write_static((UOStream *)stream, "\n");
 }
 
 template <typename T>
 void ParserCowl<T>:: iterateDataPropAssert(ParserCowl<T>* parser, CowlAny *axiom){
-    //to do
     UOStream *stream = uostream_std();
     CowlIndividual * sujet=cowl_data_prop_assert_axiom_get_subject((CowlDataPropAssertAxiom *)axiom);
     CowlLiteral *objet=cowl_data_prop_assert_axiom_get_object((CowlDataPropAssertAxiom *)axiom);
     CowlDataPropExp *prop=cowl_data_prop_assert_axiom_get_prop((CowlDataPropAssertAxiom *)axiom);
     CowlDatatype * dataType=cowl_literal_get_datatype(objet);
-
+    
 
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet)));
+    std::string sujetUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet))));
+    chr::Logical_var<std::string>& sujetVar = parser->getOrCreateLogicalVar(sujetUri);
     cowl_write_static((UOStream *)stream, " ");
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp*)prop)));
+    std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp *)prop))));
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_static((UOStream *)stream, " ");
     cowl_write_string((UOStream *)stream, cowl_literal_get_value(objet));
+    std::shared_ptr<AnySimpleType> typeVal;
+    Value v;
+    std::string objetValue = ustring_to_string(cowl_string_get_raw(cowl_literal_get_value(objet)));
     cowl_write_static((UOStream *)stream, " ^^ ");
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_datatype_get_iri(dataType)));
+    std::string dataTypeUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_datatype_get_iri(dataType))));
+    XSDType type = mapXsdType(dataTypeUri);
+    
+        switch (type) {
+            // Types numériques entiers
+            case XSDType::INTEGER:  
+                typeVal = std::make_shared<IntegerType>(); 
+                break;
+            case XSDType::NON_NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NonNegativeIntegerType>(); 
+                break;
+            case XSDType::NON_POSITIVE_INTEGER: 
+                typeVal = std::make_shared<NonPositiveIntegerType>(); 
+                break;
+            case XSDType::POSITIVE_INTEGER: 
+                typeVal = std::make_shared<PositiveIntegerType>(); 
+                break;
+            case XSDType::NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NegativeIntegerType>(); 
+                break;
+            case XSDType::INT: 
+                typeVal = std::make_shared<IntType>(); 
+                break;
+            case XSDType::UNSIGNED_INT: 
+                typeVal = std::make_shared<UnsignedIntType>(); 
+                break;
+            case XSDType::SHORT: 
+                typeVal = std::make_shared<ShortType>(); 
+                break;
+            case XSDType::UNSIGNED_SHORT: 
+                typeVal = std::make_shared<UnsignedShortType>(); 
+                break;
+            case XSDType::BYTE: 
+                typeVal = std::make_shared<ByteType>(); 
+                break;
+            case XSDType::UNSIGNED_BYTE: 
+                typeVal = std::make_shared<UnsignedByteType>(); 
+                break;
+            case XSDType::LONG: 
+                typeVal = std::make_shared<LongType>(); 
+                break;
+            case XSDType::UNSIGNED_LONG: 
+                typeVal = std::make_shared<UnsignedLongType>(); 
+                break;
+            
+            // Types numériques décimaux
+            case XSDType::FLOAT:  
+                typeVal = std::make_shared<FloatType>(); 
+                break;
+            case XSDType::DOUBLE: 
+                typeVal = std::make_shared<DoubleType>(); 
+                break;
+            case XSDType::DECIMAL: 
+                typeVal = std::make_shared<DecimalType>(); 
+                break;
+            
+            // Type booléen
+            case XSDType::BOOLEAN: 
+                typeVal = std::make_shared<BooleanType>(); 
+                break;
+            
+            // Types chaînes de caractères
+            case XSDType::STRING: 
+                typeVal = std::make_shared<StringType>(); 
+                break;
+            case XSDType::NORMALIZED_STRING: 
+                typeVal = std::make_shared<NormalizedStringType>(); 
+                break;
+            case XSDType::TOKEN: 
+                typeVal = std::make_shared<TokenType>(); 
+                break;
+            case XSDType::LANGUAGE: 
+                typeVal = std::make_shared<LanguageType>(); 
+                break;
+            case XSDType::NAME: 
+                typeVal = std::make_shared<NameType>(); 
+                break;
+            case XSDType::NCNAME: 
+                typeVal = std::make_shared<NCNameType>(); 
+                break;
+            case XSDType::ID: 
+                typeVal = std::make_shared<IDType>(); 
+                break;
+            case XSDType::IDREF: 
+                typeVal = std::make_shared<IDREFType>(); 
+                break;
+            case XSDType::IDREFS: 
+                typeVal = std::make_shared<IDREFSType>(); 
+                break;
+            case XSDType::NMTOKEN: 
+                typeVal = std::make_shared<NMTOKENType>(); 
+                break;
+            case XSDType::NMTOKENS: 
+                typeVal = std::make_shared<NMTOKENSType>(); 
+                break;
+            
+            // Types dates et heures
+            case XSDType::DATE: 
+                typeVal = std::make_shared<DateType>(); 
+                break;
+            case XSDType::TIME: 
+                typeVal = std::make_shared<TimeType>(); 
+                break;
+            case XSDType::DATE_TIME: 
+                typeVal = std::make_shared<DateTimeType>(); 
+                break;
+            case XSDType::DURATION: 
+                typeVal = std::make_shared<DurationType>(); 
+                break;
+            case XSDType::G_YEAR: 
+                typeVal = std::make_shared<GYearType>(); 
+                break;
+            case XSDType::G_YEAR_MONTH: 
+                typeVal = std::make_shared<GYearMonthType>(); 
+                break;
+            case XSDType::G_MONTH: 
+                typeVal = std::make_shared<GMonthType>(); 
+                break;
+            case XSDType::G_MONTH_DAY: 
+                typeVal = std::make_shared<GMonthDayType>(); 
+                break;
+            case XSDType::G_DAY: 
+                typeVal = std::make_shared<GDayType>(); 
+                break;
+            
+            // Types binaires
+            case XSDType::BASE64_BINARY: 
+                typeVal = std::make_shared<Base64BinaryType>(); 
+                break;
+            case XSDType::HEX_BINARY: 
+                typeVal = std::make_shared<HexBinaryType>(); 
+                break;
 
+            // Type URI
+            case XSDType::ANY_URI: 
+                typeVal = std::make_shared<AnyURIType>(); 
+                break;
+            
+            // Types divers
+            case XSDType::QNAME: 
+                typeVal = std::make_shared<QNameType>(); 
+                break;
+            case XSDType::NOTATION: 
+                typeVal = std::make_shared<NotationType>(); 
+                break;
+            
+            // Type inconnu
+            case XSDType::UNKNOWN:
+            default: 
+                typeVal = std::make_shared<StringType>(); // Type par défaut pour types inconnus
+                break;
+        }
+    v={objetValue, typeVal};
+    parser->space->owlDataPropertyAssertion(sujetVar, propVar, v);
     cowl_write_static((UOStream *)stream, "\n");
 }
 
 template <typename T>
 void ParserCowl<T>:: iterateNegDataPropAssert(ParserCowl<T>* parser, CowlAny *axiom){
-    //to do
     UOStream *stream = uostream_std();
     CowlIndividual * sujet=cowl_data_prop_assert_axiom_get_subject((CowlDataPropAssertAxiom *)axiom);
     CowlLiteral *objet=cowl_data_prop_assert_axiom_get_object((CowlDataPropAssertAxiom *)axiom);
     CowlDataPropExp *prop=cowl_data_prop_assert_axiom_get_prop((CowlDataPropAssertAxiom *)axiom);
     CowlDatatype * dataType=cowl_literal_get_datatype(objet);
-     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet)));
+    
+    cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet)));
+    std::string sujetUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet))));
+    chr::Logical_var<std::string>& sujetVar = parser->getOrCreateLogicalVar(sujetUri);
     cowl_write_static((UOStream *)stream, " not ");
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp*)prop)));
+    std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp *)prop))));
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_static((UOStream *)stream, " ");
     cowl_write_string((UOStream *)stream, cowl_literal_get_value(objet));
+    std::shared_ptr<AnySimpleType> typeVal;
+    Value v;
+    std::string objetValue = ustring_to_string(cowl_string_get_raw(cowl_literal_get_value(objet)));
     cowl_write_static((UOStream *)stream, " ^^ ");
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_datatype_get_iri(dataType)));
+    std::string dataTypeUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_datatype_get_iri(dataType))));
+    XSDType type = mapXsdType(dataTypeUri);
+    
+        switch (type) {
+            // Types numériques entiers
+            case XSDType::INTEGER:  
+                typeVal = std::make_shared<IntegerType>(); 
+                break;
+            case XSDType::NON_NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NonNegativeIntegerType>(); 
+                break;
+            case XSDType::NON_POSITIVE_INTEGER: 
+                typeVal = std::make_shared<NonPositiveIntegerType>(); 
+                break;
+            case XSDType::POSITIVE_INTEGER: 
+                typeVal = std::make_shared<PositiveIntegerType>(); 
+                break;
+            case XSDType::NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NegativeIntegerType>(); 
+                break;
+            case XSDType::INT: 
+                typeVal = std::make_shared<IntType>(); 
+                break;
+            case XSDType::UNSIGNED_INT: 
+                typeVal = std::make_shared<UnsignedIntType>(); 
+                break;
+            case XSDType::SHORT: 
+                typeVal = std::make_shared<ShortType>(); 
+                break;
+            case XSDType::UNSIGNED_SHORT: 
+                typeVal = std::make_shared<UnsignedShortType>(); 
+                break;
+            case XSDType::BYTE: 
+                typeVal = std::make_shared<ByteType>(); 
+                break;
+            case XSDType::UNSIGNED_BYTE: 
+                typeVal = std::make_shared<UnsignedByteType>(); 
+                break;
+            case XSDType::LONG: 
+                typeVal = std::make_shared<LongType>(); 
+                break;
+            case XSDType::UNSIGNED_LONG: 
+                typeVal = std::make_shared<UnsignedLongType>(); 
+                break;
+            
+            // Types numériques décimaux
+            case XSDType::FLOAT:  
+                typeVal = std::make_shared<FloatType>(); 
+                break;
+            case XSDType::DOUBLE: 
+                typeVal = std::make_shared<DoubleType>(); 
+                break;
+            case XSDType::DECIMAL: 
+                typeVal = std::make_shared<DecimalType>(); 
+                break;
+            
+            // Type booléen
+            case XSDType::BOOLEAN: 
+                typeVal = std::make_shared<BooleanType>(); 
+                break;
+            
+            // Types chaînes de caractères
+            case XSDType::STRING: 
+                typeVal = std::make_shared<StringType>(); 
+                break;
+            case XSDType::NORMALIZED_STRING: 
+                typeVal = std::make_shared<NormalizedStringType>(); 
+                break;
+            case XSDType::TOKEN: 
+                typeVal = std::make_shared<TokenType>(); 
+                break;
+            case XSDType::LANGUAGE: 
+                typeVal = std::make_shared<LanguageType>(); 
+                break;
+            case XSDType::NAME: 
+                typeVal = std::make_shared<NameType>(); 
+                break;
+            case XSDType::NCNAME: 
+                typeVal = std::make_shared<NCNameType>(); 
+                break;
+            case XSDType::ID: 
+                typeVal = std::make_shared<IDType>(); 
+                break;
+            case XSDType::IDREF: 
+                typeVal = std::make_shared<IDREFType>(); 
+                break;
+            case XSDType::IDREFS: 
+                typeVal = std::make_shared<IDREFSType>(); 
+                break;
+            case XSDType::NMTOKEN: 
+                typeVal = std::make_shared<NMTOKENType>(); 
+                break;
+            case XSDType::NMTOKENS: 
+                typeVal = std::make_shared<NMTOKENSType>(); 
+                break;
+            
+            // Types dates et heures
+            case XSDType::DATE: 
+                typeVal = std::make_shared<DateType>(); 
+                break;
+            case XSDType::TIME: 
+                typeVal = std::make_shared<TimeType>(); 
+                break;
+            case XSDType::DATE_TIME: 
+                typeVal = std::make_shared<DateTimeType>(); 
+                break;
+            case XSDType::DURATION: 
+                typeVal = std::make_shared<DurationType>(); 
+                break;
+            case XSDType::G_YEAR: 
+                typeVal = std::make_shared<GYearType>(); 
+                break;
+            case XSDType::G_YEAR_MONTH: 
+                typeVal = std::make_shared<GYearMonthType>(); 
+                break;
+            case XSDType::G_MONTH: 
+                typeVal = std::make_shared<GMonthType>(); 
+                break;
+            case XSDType::G_MONTH_DAY: 
+                typeVal = std::make_shared<GMonthDayType>(); 
+                break;
+            case XSDType::G_DAY: 
+                typeVal = std::make_shared<GDayType>(); 
+                break;
+            
+            // Types binaires
+            case XSDType::BASE64_BINARY: 
+                typeVal = std::make_shared<Base64BinaryType>(); 
+                break;
+            case XSDType::HEX_BINARY: 
+                typeVal = std::make_shared<HexBinaryType>(); 
+                break;
 
+            // Type URI
+            case XSDType::ANY_URI: 
+                typeVal = std::make_shared<AnyURIType>(); 
+                break;
+            
+            // Types divers
+            case XSDType::QNAME: 
+                typeVal = std::make_shared<QNameType>(); 
+                break;
+            case XSDType::NOTATION: 
+                typeVal = std::make_shared<NotationType>(); 
+                break;
+            
+            // Type inconnu
+            case XSDType::UNKNOWN:
+            default: 
+                typeVal = std::make_shared<StringType>(); // Type par défaut pour types inconnus
+                break;
+        }
+    v={objetValue, typeVal};
+    parser->space->owlNegativeDataAssertion(sujetVar, propVar, v);
     cowl_write_static((UOStream *)stream, "\n");
 }
 
 template <typename T>
 void ParserCowl<T>:: iterateDataPropDomain(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar, domVar;
     CowlDataPropExp* prop= cowl_data_prop_domain_axiom_get_prop((CowlDataPropDomainAxiom *)axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp *)prop))));
-        parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+    
     CowlClsExp * dom=cowl_data_prop_domain_axiom_get_domain((CowlDataPropDomainAxiom *)axiom);
     std::string domUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_class_get_iri((CowlClass *)dom))));
-    parser->space->logicalName(domUri, domVar);
+    chr::Logical_var<std::string>& domVar = parser->getOrCreateLogicalVar(domUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " a pour domaine  ");
     cowl_write_cstring((UOStream *)stream, domUri.c_str());
@@ -601,17 +1025,220 @@ void ParserCowl<T>:: iterateDataPropDomain(ParserCowl<T>* parser, CowlAny *axiom
 
 template <typename T>
 void ParserCowl<T>:: iterateDataPropRange(ParserCowl<T>* parser, CowlAny *axiom){
-    //to do
     UOStream *stream = uostream_std();
      CowlDataProp* prop= (CowlDataProp*)cowl_data_prop_range_axiom_get_prop((CowlDataPropRangeAxiom *)axiom);
     CowlDataRange * range=cowl_data_prop_range_axiom_get_range((CowlDataPropRangeAxiom *)axiom);
-    //retourne si c'est  un Datatype ou  Datatype restriction.ou Intersection of data ranges ...
+    
     if(cowl_data_range_get_type(range)==COWL_DRT_DATATYPE) //type simple
-    {   cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri(prop)));
+    {   
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri(prop)));
         cowl_write_static((UOStream *)stream, " a pour range  ");
         cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_get_iri(range)));
-    }else{
-                cowl_write_static((UOStream *)stream, "pas encore geree");
+
+        std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp *)prop))));
+        chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+        
+        std::string rangeUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_get_iri(range))));
+        XSDType type = mapXsdType(rangeUri);
+        std::shared_ptr<AnySimpleType> typeVal;
+        
+        switch (type) {
+            // Types numériques entiers
+            case XSDType::INTEGER:  
+                typeVal = std::make_shared<IntegerType>(); 
+                std::cout << "→ type C++ : int\n"; 
+                break;
+            case XSDType::NON_NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NonNegativeIntegerType>(); 
+                std::cout << "→ type C++ : unsigned int\n"; 
+                break;
+            case XSDType::NON_POSITIVE_INTEGER: 
+                typeVal = std::make_shared<NonPositiveIntegerType>(); 
+                std::cout << "→ type C++ : non-positive int\n"; 
+                break;
+            case XSDType::POSITIVE_INTEGER: 
+                typeVal = std::make_shared<PositiveIntegerType>(); 
+                std::cout << "→ type C++ : positive int\n"; 
+                break;
+            case XSDType::NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NegativeIntegerType>(); 
+                std::cout << "→ type C++ : negative int\n"; 
+                break;
+            case XSDType::INT: 
+                typeVal = std::make_shared<IntType>(); 
+                std::cout << "→ type C++ : int32_t\n"; 
+                break;
+            case XSDType::UNSIGNED_INT: 
+                typeVal = std::make_shared<UnsignedIntType>(); 
+                std::cout << "→ type C++ : uint32_t\n"; 
+                break;
+            case XSDType::SHORT: 
+                typeVal = std::make_shared<ShortType>(); 
+                std::cout << "→ type C++ : short\n"; 
+                break;
+            case XSDType::UNSIGNED_SHORT: 
+                typeVal = std::make_shared<UnsignedShortType>(); 
+                std::cout << "→ type C++ : unsigned short\n"; 
+                break;
+            case XSDType::BYTE: 
+                typeVal = std::make_shared<ByteType>(); 
+                std::cout << "→ type C++ : int8_t\n"; 
+                break;
+            case XSDType::UNSIGNED_BYTE: 
+                typeVal = std::make_shared<UnsignedByteType>(); 
+                std::cout << "→ type C++ : uint8_t\n"; 
+                break;
+            case XSDType::LONG: 
+                typeVal = std::make_shared<LongType>(); 
+                std::cout << "→ type C++ : long\n"; 
+                break;
+            case XSDType::UNSIGNED_LONG: 
+                typeVal = std::make_shared<UnsignedLongType>(); 
+                std::cout << "→ type C++ : unsigned long\n"; 
+                break;
+            
+            // Types numériques décimaux
+            case XSDType::FLOAT:  
+                typeVal = std::make_shared<FloatType>(); 
+                std::cout << "→ type C++ : float\n"; 
+                break;
+            case XSDType::DOUBLE: 
+                typeVal = std::make_shared<DoubleType>(); 
+                std::cout << "→ type C++ : double\n"; 
+                break;
+            case XSDType::DECIMAL: 
+                typeVal = std::make_shared<DecimalType>(); 
+                std::cout << "→ type C++ : decimal\n"; 
+                break;
+            
+            // Type booléen
+            case XSDType::BOOLEAN: 
+                typeVal = std::make_shared<BooleanType>(); 
+                std::cout << "→ type C++ : bool\n"; 
+                break;
+            
+            // Types chaînes de caractères
+            case XSDType::STRING: 
+                typeVal = std::make_shared<StringType>(); 
+                std::cout << "→ type C++ : std::string\n"; 
+                break;
+            case XSDType::NORMALIZED_STRING: 
+                typeVal = std::make_shared<NormalizedStringType>(); 
+                std::cout << "→ type C++ : normalized string\n"; 
+                break;
+            case XSDType::TOKEN: 
+                typeVal = std::make_shared<TokenType>(); 
+                std::cout << "→ type C++ : token\n"; 
+                break;
+            case XSDType::LANGUAGE: 
+                typeVal = std::make_shared<LanguageType>(); 
+                std::cout << "→ type C++ : language tag\n"; 
+                break;
+            case XSDType::NAME: 
+                typeVal = std::make_shared<NameType>(); 
+                std::cout << "→ type C++ : XML Name\n"; 
+                break;
+            case XSDType::NCNAME: 
+                typeVal = std::make_shared<NCNameType>(); 
+                std::cout << "→ type C++ : XML NCName\n"; 
+                break;
+            case XSDType::ID: 
+                typeVal = std::make_shared<IDType>(); 
+                std::cout << "→ type C++ : XML ID\n"; 
+                break;
+            case XSDType::IDREF: 
+                typeVal = std::make_shared<IDREFType>(); 
+                std::cout << "→ type C++ : XML IDREF\n"; 
+                break;
+            case XSDType::IDREFS: 
+                typeVal = std::make_shared<IDREFSType>(); 
+                std::cout << "→ type C++ : XML IDREFS\n"; 
+                break;
+            case XSDType::NMTOKEN: 
+                typeVal = std::make_shared<NMTOKENType>(); 
+                std::cout << "→ type C++ : XML NMTOKEN\n"; 
+                break;
+            case XSDType::NMTOKENS: 
+                typeVal = std::make_shared<NMTOKENSType>(); 
+                std::cout << "→ type C++ : XML NMTOKENS\n"; 
+                break;
+            
+            // Types dates et heures
+            case XSDType::DATE: 
+                typeVal = std::make_shared<DateType>(); 
+                std::cout << "→ type C++ : date (YYYY-MM-DD)\n"; 
+                break;
+            case XSDType::TIME: 
+                typeVal = std::make_shared<TimeType>(); 
+                std::cout << "→ type C++ : time (HH:MM:SS)\n"; 
+                break;
+            case XSDType::DATE_TIME: 
+                typeVal = std::make_shared<DateTimeType>(); 
+                std::cout << "→ type C++ : datetime\n"; 
+                break;
+            case XSDType::DURATION: 
+                typeVal = std::make_shared<DurationType>(); 
+                std::cout << "→ type C++ : duration\n"; 
+                break;
+            case XSDType::G_YEAR: 
+                typeVal = std::make_shared<GYearType>(); 
+                std::cout << "→ type C++ : year (YYYY)\n"; 
+                break;
+            case XSDType::G_YEAR_MONTH: 
+                typeVal = std::make_shared<GYearMonthType>(); 
+                std::cout << "→ type C++ : year-month (YYYY-MM)\n"; 
+                break;
+            case XSDType::G_MONTH: 
+                typeVal = std::make_shared<GMonthType>(); 
+                std::cout << "→ type C++ : month (--MM)\n"; 
+                break;
+            case XSDType::G_MONTH_DAY: 
+                typeVal = std::make_shared<GMonthDayType>(); 
+                std::cout << "→ type C++ : month-day (--MM-DD)\n"; 
+                break;
+            case XSDType::G_DAY: 
+                typeVal = std::make_shared<GDayType>(); 
+                std::cout << "→ type C++ : day (---DD)\n"; 
+                break;
+            
+            // Types binaires
+            case XSDType::BASE64_BINARY: 
+                typeVal = std::make_shared<Base64BinaryType>(); 
+                std::cout << "→ type C++ : base64 binary\n"; 
+                break;
+            case XSDType::HEX_BINARY: 
+                typeVal = std::make_shared<HexBinaryType>(); 
+                std::cout << "→ type C++ : hex binary\n"; 
+                break;
+            
+            // Type URI
+            case XSDType::ANY_URI: 
+                typeVal = std::make_shared<AnyURIType>(); 
+                std::cout << "→ type C++ : URI\n"; 
+                break;
+            
+            // Types divers
+            case XSDType::QNAME: 
+                typeVal = std::make_shared<QNameType>(); 
+                std::cout << "→ type C++ : QName\n"; 
+                break;
+            case XSDType::NOTATION: 
+                typeVal = std::make_shared<NotationType>(); 
+                std::cout << "→ type C++ : NOTATION\n"; 
+                break;
+            
+            // Type inconnu
+            case XSDType::UNKNOWN:
+            default: 
+                std::cout << "→ type inconnu ou non supporté: " << rangeUri << "\n"; 
+                typeVal = std::make_shared<StringType>(); // Type par défaut pour types inconnus
+                break;
+        }
+        
+        parser->space->owlDataPropertyRange(propVar, std::move(typeVal));
+    }
+    else {
+        cowl_write_static((UOStream *)stream, "DataRange complexe pas encore géré (restriction, union, intersection...)");
     }
     cowl_write_static((UOStream *)stream, "\n");
 }
@@ -623,13 +1250,12 @@ void ParserCowl<T>:: iterateSubDataProp(ParserCowl<T>* parser, CowlAny *axiom){
     CowlDataProp * sup=(CowlDataProp*)cowl_sub_data_prop_axiom_get_super((CowlSubDataPropAxiom *)axiom);
 
     // Créer des variables logiques pour les propriétés
-    chr::Logical_var<std::string> subVar, supVar;
     std::string subUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_data_prop_get_iri(sub))));
     std::string supUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_data_prop_get_iri(sup))));
 
-    // Associer les URI aux variables logiques
-    parser->space->logicalName(subUri, subVar);
-    parser->space->logicalName(supUri, supVar);
+    // Obtenir les références aux variables logiques depuis le cache
+    chr::Logical_var<std::string>& subVar = parser->getOrCreateLogicalVar(subUri);
+    chr::Logical_var<std::string>& supVar = parser->getOrCreateLogicalVar(supUri);
 
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri(sub)));
     cowl_write_static((UOStream *)stream, " subDataproperty de  ");
@@ -656,9 +1282,8 @@ void ParserCowl<T>:: iterateEquivDataProp(ParserCowl<T>* parser, CowlAny *axiom)
         CowlString *propName = cowl_iri_get_rem(cowl_data_prop_get_iri(prop));
 
         // Créer variable logique et associer l'URI
-        chr::Logical_var<std::string> propVar;
         std::string propUri = ustring_to_string(cowl_string_get_raw(propName));
-        parser->space->logicalName(propUri, propVar);
+        chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
         
         propVars.push_back(propVar);
         cowl_write_string((UOStream *)stream, propName);
@@ -688,9 +1313,8 @@ void ParserCowl<T>:: iterateDisjDataProp(ParserCowl<T>* parser, CowlAny *axiom){
         CowlString *propName = cowl_iri_get_rem(cowl_obj_prop_get_iri(prop));
 
         // Créer variable logique et associer l'URI
-        chr::Logical_var<std::string> propVar;
         std::string propUri = ustring_to_string(cowl_string_get_raw(propName));
-        parser->space->logicalName(propUri, propVar);
+        chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
 
         propNames.insert(propVar);
         cowl_write_string((UOStream *)stream, propName);
@@ -704,10 +1328,9 @@ void ParserCowl<T>:: iterateDisjDataProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateFuncDataProp(ParserCowl<T>* parser, CowlAny *axiom){ 
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlDataPropExp *prop = cowl_func_data_prop_axiom_get_prop((CowlFuncDataPropAxiom *) axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp*)prop))));
-        parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " est fonctionnelle");
 
@@ -720,13 +1343,12 @@ void ParserCowl<T>:: iterateFuncDataProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateInvObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> firstPropVar, secondPropVar;
     CowlObjProp *first_prop=(CowlObjProp*)cowl_inv_obj_prop_axiom_get_first_prop((CowlInvObjPropAxiom *)axiom);
     std::string firstPropUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(first_prop))));
-        parser->space->logicalName(firstPropUri, firstPropVar);
+    chr::Logical_var<std::string>& firstPropVar = parser->getOrCreateLogicalVar(firstPropUri);
     CowlObjProp *second_prop=(CowlObjProp*)cowl_inv_obj_prop_axiom_get_second_prop((CowlInvObjPropAxiom *)axiom);
     std::string secondPropUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(second_prop))));
-        parser->space->logicalName(secondPropUri, secondPropVar);
+    chr::Logical_var<std::string>& secondPropVar = parser->getOrCreateLogicalVar(secondPropUri);
 
     cowl_write_cstring((UOStream *)stream, firstPropUri.c_str());
     cowl_write_static((UOStream *)stream, " est inverse de  ");
@@ -738,10 +1360,9 @@ void ParserCowl<T>:: iterateInvObjProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateSymObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlObjProp *prop=(CowlObjProp*)cowl_obj_prop_char_axiom_get_prop((CowlObjPropCharAxiom *) axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-        parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " est symétrique");
 
@@ -752,10 +1373,9 @@ void ParserCowl<T>:: iterateSymObjProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateFuncObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlObjProp *prop=(CowlObjProp*)cowl_obj_prop_char_axiom_get_prop((CowlObjPropCharAxiom *) axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-        parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " est fonctionnelle");
 
@@ -766,10 +1386,9 @@ void ParserCowl<T>:: iterateFuncObjProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateInvFuncObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlObjProp *prop=(CowlObjProp*)cowl_obj_prop_char_axiom_get_prop((CowlObjPropCharAxiom *) axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-        parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " est inverse fonctionnelle");
 
@@ -780,10 +1399,9 @@ void ParserCowl<T>:: iterateInvFuncObjProp(ParserCowl<T>* parser, CowlAny *axiom
 template <typename T>
 void ParserCowl<T>:: iterateAsymmObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlObjProp *prop=(CowlObjProp*)cowl_obj_prop_char_axiom_get_prop( (CowlObjPropCharAxiom *)axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-    parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " est asymétrique");
 
@@ -795,10 +1413,9 @@ void ParserCowl<T>:: iterateAsymmObjProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateTransObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlObjProp *prop=(CowlObjProp*)cowl_obj_prop_char_axiom_get_prop((CowlObjPropCharAxiom *) axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-    parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_cstring((UOStream *)stream, propUri.c_str());
     cowl_write_static((UOStream *)stream, " est transitive");
 
@@ -811,13 +1428,11 @@ void ParserCowl<T>:: iterateTransObjProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateReflObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlObjProp *prop=(CowlObjProp*)cowl_obj_prop_char_axiom_get_prop( (CowlObjPropCharAxiom *)axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-    parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(prop)));
     cowl_write_static((UOStream *)stream, " est réflexive");
-
     parser->space->owlReflexiveObjectProperty(propVar);
     cowl_write_static((UOStream *)stream, "\n");
 }
@@ -826,10 +1441,9 @@ void ParserCowl<T>:: iterateReflObjProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 void ParserCowl<T>:: iterateIrrefObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    chr::Logical_var<std::string> propVar;
     CowlObjProp *prop=(CowlObjProp*)cowl_obj_prop_char_axiom_get_prop((CowlObjPropCharAxiom *) axiom);
     std::string propUri = ustring_to_string(cowl_string_get_raw(cowl_iri_get_rem(cowl_obj_prop_get_iri(prop))));
-    parser->space->logicalName(propUri, propVar);
+    chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(prop)));
     cowl_write_static((UOStream *)stream, " est irréflexive");
 
@@ -851,9 +1465,8 @@ void ParserCowl<T>:: iterateDisjObjProp(ParserCowl<T>* parser, CowlAny *axiom){
         CowlString *propName = cowl_iri_get_rem(cowl_obj_prop_get_iri(prop));
 
         // Créer variable logique et associer l'URI
-        chr::Logical_var<std::string> propVar;
         std::string propUri = ustring_to_string(cowl_string_get_raw(propName));
-        parser->space->logicalName(propUri, propVar);
+        chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
 
         propNames.insert(propVar);
         cowl_write_string((UOStream *)stream, propName);
