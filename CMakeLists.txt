@@ -43,7 +43,6 @@ add_executable(ParserProject
     parsercowl.h
     Parser.h
     AnySimpleType.h
-    stringType.h
     ${GENERATED_CPP} # Ajoute le fichier généré à la compilation
 )
 

@@ -25,7 +25,6 @@ Declaration(ObjectProperty(ex:enrolledIn))
 Declaration(ObjectProperty(ex:teaches))
 
 # --- Nouveau test EquivalentObjectProperties ---
-# ex:instructs et ex:educates sont équivalentes à ex:teaches
 Declaration(ObjectProperty(ex:instructs))
 Declaration(ObjectProperty(ex:educates))
 
@@ -34,7 +33,6 @@ AnnotationAssertion(rdfs:label ex:educates "educates")
 
 EquivalentObjectProperties(ex:teaches ex:instructs ex:educates)
 
-# Domaine et portée des propriétés équivalentes
 ObjectPropertyDomain(ex:instructs ex:Professor)
 ObjectPropertyRange(ex:instructs ex:Course)
 ObjectPropertyDomain(ex:educates ex:Professor)
@@ -44,13 +42,11 @@ ObjectPropertyRange(ex:educates ex:Course)
 #   Data properties
 ############################
 
-# Une propriété de données pour indiquer l’âge d’un étudiant
 Declaration(DataProperty(ex:hasAge))
 AnnotationAssertion(rdfs:label ex:hasAge "hasAge")
 DataPropertyDomain(ex:hasAge ex:Student)
 DataPropertyRange(ex:hasAge xsd:integer)
 
-# Une autre propriété de données pour le nom complet (facultatif)
 Declaration(DataProperty(ex:fullName))
 AnnotationAssertion(rdfs:label ex:fullName "fullName")
 DataPropertyDomain(ex:fullName ex:Professor)
@@ -80,15 +76,16 @@ AnnotationAssertion(rdfs:label ex:Learner "Learner")
 ClassAssertion(ex:Student ex:Alice)
 ObjectPropertyAssertion(ex:enrolledIn ex:Alice ex:Math101)
 
-# Exemple d’utilisation des data properties
+# Data properties
 DataPropertyAssertion(ex:hasAge ex:Alice "22"^^xsd:integer)
 DataPropertyAssertion(ex:fullName ex:Bob "Robert Brown"^^xsd:string)
+
+# --- ❗ Ajout d’une NegativeDataPropertyAssertion ---
+NegativeDataPropertyAssertion(ex:hasAge ex:Alice "30"^^xsd:integer)
 
 ClassAssertion(ex:Professor ex:Bob)
 ObjectPropertyAssertion(ex:teaches ex:Bob ex:Math101)
 
-# Grâce à EquivalentObjectProperties,
-# les assertions suivantes sont logiquement équivalentes :
 ObjectPropertyAssertion(ex:instructs ex:Bob ex:Math101)
 ObjectPropertyAssertion(ex:educates ex:Bob ex:Math101)
 
@@ -110,7 +107,6 @@ DisjointClasses(ex:Course ex:Professor ex:Student)
 #   SameIndividual / DifferentIndividuals tests
 ############################
 
-# --- Tests de paires ---
 Declaration(NamedIndividual(ex:AliceAlias))
 SameIndividual(ex:Alice ex:AliceAlias)
 
@@ -119,7 +115,6 @@ SameIndividual(ex:Bob ex:Robert)
 
 DifferentIndividuals(ex:Alice ex:Bob)
 
-# --- Tests de liste ---
 Declaration(NamedIndividual(ex:AliceClone1))
 Declaration(NamedIndividual(ex:AliceClone2))
 SameIndividual(ex:Alice ex:AliceClone1 ex:AliceClone2)
