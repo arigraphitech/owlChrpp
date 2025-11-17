@@ -12,6 +12,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wpedantic)
 endif()
 
+# Active les traces CHR++ (définit la macro TRACE_ON)
+add_compile_definitions(TRACE_ON)
+
 # === Partie CHRPP ===
 # Définis où se trouve CHRPP (adapte le chemin si nécessaire)
 set(CHRPP_ROOT /home/etud/Téléchargements/stage/chrpp)
@@ -29,7 +32,7 @@ set(GENERATED_CPP ${CMAKE_CURRENT_BINARY_DIR}/owl.cpp)
 # Génère owl.cpp depuis owl.chrpp
 add_custom_command(
     OUTPUT ${GENERATED_CPP}
-    COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -sout > ${GENERATED_CPP}
+    COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -t -sout > ${GENERATED_CPP}
     DEPENDS ${CHR_FILE}
     COMMENT "⏳ Génération de ${GENERATED_CPP} depuis ${CHR_FILE} via chrppc"
 )
