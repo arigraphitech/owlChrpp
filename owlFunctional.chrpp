@@ -1,3 +1,4 @@
+//#define ENABLE_TRACE
 #include <iostream>
 #include <string>
 #include <vector>
@@ -169,7 +170,6 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr,const Value & v){
 *
 *\ingroup Examples
 
-
 <CHR name="OWL2">
     // === Contraintes ===
     <chr_constraint>
@@ -179,7 +179,6 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr,const Value & v){
 			owlDataProperty(?std::string),
             owlNamedIndividual(?std::string),
 			owlSubclassOf(?std::string,?std::string),
-			//owlEquivalentClass(+LogicalVarSet),
 			owlEquivalentClass(?std::string,?std::string),
 			owlSubDataPropertyOf(?std::string,?std::string),
 			owlSubObjectPropertyOf(?std::string,?std::string),
@@ -189,7 +188,7 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr,const Value & v){
 			owlDataPropertyDomain(?std::string,?std::string),
 			owlObjectPropertyRange(?std::string,?std::string),
 			owlClassAssertion(?std::string,?std::string,+bool),
-			owlDisjointClass(+LogicalVarSet),
+			owlDisjointClass(?std::string,?std::string),
             owlNegativeObjectAssertion(?std::string,?std::string,?std::string),
             owlObjectPropertyAssertion(?std::string,?std::string,?std::string),
             owlSameIndividual(?std::string,?std::string),
@@ -197,8 +196,8 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr,const Value & v){
             owlInverseObjectProperty(?std::string,?std::string),
             owlSymmetricObjectProperty(?std::string),
             owlAsymmetricObjectProperty(?std::string),
-            owlDisjointObjectProperty(+LogicalVarSet),
-            owlDisjointDataProperty(+LogicalVarSet),
+            owlDisjointObjectProperty(?std::string,?std::string),
+            owlDisjointDataProperty(?std::string,?std::string),
             owlReflexiveObjectProperty(?std::string),
             owlIrreflexiveObjectProperty(?std::string),
             owlFunctionalObjectProperty(?std::string),
@@ -248,9 +247,9 @@ owlObjectProperty(P) #passive \ owlObjectProperty(P) <=> true ;;
 owlDataProperty(P) #passive \ owlDataProperty(P) <=> true ;;
 owlObjectPropertyDomain(P,C) #passive \ owlObjectPropertyDomain(P,C) <=> true ;;
 owlObjectPropertyRange(P,C) #passive \ owlObjectPropertyRange(P,C) <=> true ;;
-owlDisjointClass(L) #passive \ owlDisjointClass(L) <=> true ;;
+owlDisjointClass(A,B) #passive \ owlDisjointClass(A,B) <=> true ;;
 owlNegativeObjectAssertion(X,P,Y) #passive \ owlNegativeObjectAssertion(X,P,Y) <=> true ;;
-owlDisjointObjectProperty(L) #passive \ owlDisjointObjectProperty(L) <=> true ;;
+owlDisjointObjectProperty(A,B) #passive \ owlDisjointObjectProperty(A,B) <=> true ;;
 owlSameIndividual(X,Y) #passive \ owlSameIndividual(X,Y) <=> true ;;
 owlDifferentIndividual(X,Y) #passive \ owlDifferentIndividual(X,Y) <=> true ;;
 owlInverseObjectProperty(P1,P2) #passive \ owlInverseObjectProperty(P1,P2) <=> true ;;
@@ -272,14 +271,14 @@ owlEquivalentObjectProperty(A,B) #passive \ owlEquivalentObjectProperty(A,B) <=>
 
 
 //onto validity
-//owlDisjointClass(L) is true if the vector of classes are disjoin
-DisjointClass @ owlDisjointClass(L), owlClassAssertion(X,A,true), owlClassAssertion(X,B,true) <=>  contains(A,L) && contains(B,L) | failure();;
+//owlDisjointClass(A,B) is true if the A and B classes are disjoint
+DisjointClass @ owlDisjointClass(A,B), owlClassAssertion(X,A,true), owlClassAssertion(X,B,true) <=> failure();;
 //owlNegativeObjectAssertion(X,P,Y) is true if the two individuals X,Y are not connected by the property P
 NegativeObjectAssertion @ owlNegativeObjectAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Y) <=> failure() ;;
-//owlDisjointObjectProperty(L) is true if the list of properties L are disjoin
-DisjointObjProperty @ owlDisjointObjectProperty(L),owlObjectPropertyAssertion(X,P1,Y),owlObjectPropertyAssertion(X,P2,Y) <=> contains(P1,L) && contains(P2,L) | failure() ;;
-//owlDisjointDataProperty(L) is true if the list of data properties L are disjoin
-DisjointDataProperty @ owlDisjointDataProperty(L),owlDataPropertyAssertion(X,P1,Y),owlDataPropertyAssertion(X,P2,Y) <=> contains(P1,L) && contains(P2,L) | failure() ;;
+//owlDisjointObjectProperty(A,B) is true if the list of properties L are disjoint
+DisjointObjProperty @ owlDisjointObjectProperty(A,B),owlObjectPropertyAssertion(X,A,Y),owlObjectPropertyAssertion(X,B,Y) <=> failure() ;;
+//owlDisjointDataProperty(A,B) is true if the list of data properties L are disjoint
+DisjointDataProperty @ owlDisjointDataProperty(A,B),owlDataPropertyAssertion(X,A,Y),owlDataPropertyAssertion(X,B,Y) <=> failure() ;;
 //owlNegativeDataAssertion(X,P,Y) is true if the individual X and the value Y are not connected by the property P
 NegativeDataAssertion @ owlNegativeDataAssertion(X,P,Y),owlDataPropertyAssertion(X,P,Y) <=> failure() ;;
 
@@ -306,8 +305,7 @@ owlClass(C) ==>  owlSubclassOf(owlNothing,C);;
 
 //property
 owlObjectProperty(P) ==> owlSubObjectPropertyOf(P,P), owlEquivalentObjectProperty(P,P);;
-owlDataProperty(P) ==>  owlEquivalentDataProperty(P,P);;
-//owlDataProperty(P) ==> owlSubDataPropertyOf(P,P) ;; //fonctionne pas jsp prk
+owlDataProperty(P) ==>  owlEquivalentDataProperty(P,P), owlSubDataPropertyOf(P,P) ;; 
 
 owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,C) ==> different(A,B,C) | owlSubObjectPropertyOf(A,C);;
 owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,C) ==> different(A,B,C) | owlSubDataPropertyOf(A,C);;
@@ -323,8 +321,8 @@ owlObjectPropertyDomain(P2,C), owlSubObjectPropertyOf(P1,P2) ==> !(P1==P2) | owl
 owlObjectPropertyRange(P,C1), owlSubclassOf(C1,C2) ==> !(C1==C2) | owlObjectPropertyRange(P,C2);;
 owlObjectPropertyRange(P2,C), owlSubObjectPropertyOf(P1,P2) ==>  !(P1==P2) | owlObjectPropertyRange(P1,C);;
 
-owlDataPropertyDomain(P2,C), owlSubDataPropertyOf(P1,P2) ==> different(P1,P2) | owlDataPropertyDomain(P1,C);;
-owlDataPropertyRange(P2,C), owlSubDataPropertyOf(P1,P2) ==>  different(P1,P2) | owlDataPropertyRange(P1,C);;
+owlDataPropertyDomain(P2,C), owlSubDataPropertyOf(P1,P2) ==> !(P1==P2) | owlDataPropertyDomain(P1,C);;
+owlDataPropertyRange(P2,C), owlSubDataPropertyOf(P1,P2) ==>  !(P1==P2) | owlDataPropertyRange(P1,C);;
 
 
 //owlDataPropertyDomain(P,DP) is true if the property P has the domain DP (an object)
@@ -569,16 +567,6 @@ int main(int argc, char* argv[])
 
  CHR_RUN(   
     ParserCowl<OWL2> parser(filename, *space);
-
-    // Utilisation du parser COWL avec le fichier spécifié
-   space->logicalName(std::string("http://example.org#i"), x);
-   space->logicalName(std::string("http://example.org#Property"), d);
-   space->logicalName(std::string("http://example.org#Property2"), d2);
-   space->logicalName(std::string("http://example.org#TestDomain"), m);
-
-   space->owlDataProperty(d);
-    space->owlDataProperty(d2);
-    space->owlSubDataPropertyOf(d2,d);
     parser.load();
     //space->querySuperClassOfUri(std::string("PhDStudent"));
     // Contraintes déclarées en dur pour test (commentées)

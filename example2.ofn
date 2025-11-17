@@ -1,7 +1,7 @@
 Prefix(ex:=<http://example.org#>)
 Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
 Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
-Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xml:=<http://www.w3.org/XML/1991998/namespace>)
 Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
 Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
 
@@ -31,7 +31,6 @@ Declaration(ObjectProperty(ex:educates))
 AnnotationAssertion(rdfs:label ex:instructs "instructs")
 AnnotationAssertion(rdfs:label ex:educates "educates")
 
-EquivalentObjectProperties(ex:teaches ex:instructs ex:educates)
 
 ObjectPropertyDomain(ex:instructs ex:Professor)
 ObjectPropertyRange(ex:instructs ex:Course)
@@ -51,6 +50,10 @@ Declaration(DataProperty(ex:fullName))
 AnnotationAssertion(rdfs:label ex:fullName "fullName")
 DataPropertyDomain(ex:fullName ex:Professor)
 DataPropertyRange(ex:fullName xsd:string)
+
+# Deux nouvelles data properties pour disjointness
+Declaration(DataProperty(ex:hasEmail))
+Declaration(DataProperty(ex:hasPhone))
 
 ############################
 #   Individuals
@@ -86,8 +89,9 @@ NegativeDataPropertyAssertion(ex:hasAge ex:Alice "30"^^xsd:integer)
 ClassAssertion(ex:Professor ex:Bob)
 ObjectPropertyAssertion(ex:teaches ex:Bob ex:Math101)
 
-ObjectPropertyAssertion(ex:instructs ex:Bob ex:Math101)
-ObjectPropertyAssertion(ex:educates ex:Bob ex:Math101)
+# Note: On ne peut pas avoir ces assertions car teaches, enrolledIn et instructs sont disjointes
+# ObjectPropertyAssertion(ex:instructs ex:Bob ex:Math101)
+# ObjectPropertyAssertion(ex:educates ex:Bob ex:Math101)
 
 AnnotationAssertion(rdfs:label ex:Math101 "Mathematics 101")
 ClassAssertion(ex:Course ex:Math101)
@@ -102,6 +106,12 @@ AnnotationAssertion(rdfs:label ex:PhDStudent "PhD Student")
 
 DisjointClasses(ex:Professor ex:Student)
 DisjointClasses(ex:Course ex:Professor ex:Student)
+
+# --- ✔️ Ajout DisjointDataProperties (2 data properties) ---
+DisjointDataProperties(ex:hasEmail ex:hasPhone)
+
+# --- ✔️ Ajout DisjointObjectProperties (liste) ---
+DisjointObjectProperties(ex:teaches ex:enrolledIn ex:instructs)
 
 ############################
 #   SameIndividual / DifferentIndividuals tests
