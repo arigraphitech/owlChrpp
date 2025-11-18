@@ -5,10 +5,19 @@
 
 class AnySimpleType {
 public:
-    AnySimpleType(){};
-    virtual bool verify(AnySimpleType * type) = 0;
+    AnySimpleType(AnySimpleType* parent = nullptr) : parent(parent) {}
+
+    virtual bool verify(AnySimpleType* type) {
+        
+        if (this->getId() == type->getId()) return true;
+        if (this->parent == nullptr) return false;
+        return this->parent->verify(type);  // Remonte la hiérarchie de this
+    }
+
+    AnySimpleType* parent;
+
     virtual unsigned int getId() = 0;
-    virtual std::string toString() = 0 ;
+    virtual std::string toString() = 0;
     virtual ~AnySimpleType() = default;
 };
 
@@ -26,495 +35,362 @@ inline bool operator==(const Value& a, const Value& b)
 }
 
 // ============================================================================
-// TYPES NUMÉRIQUES ENTIERS
+// TYPES NUMÉRIQUES - HIÉRARCHIE XSD COMPLÈTE
 // ============================================================================
 
-class IntegerType: public AnySimpleType
-{
+// decimal est un type primitif et la racine de tous les types numériques entiers
+class DecimalType : public AnySimpleType {
 public:
-    IntegerType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<IntegerType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 1; }
-    std::string toString() override { return "IntegerType"; }
-};
-
-class NonNegativeIntegerType: public AnySimpleType
-{
-public:
-    NonNegativeIntegerType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NonNegativeIntegerType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 3; }
-    std::string toString() override { return "NonNegativeIntegerType"; }
-};
-
-class NonPositiveIntegerType: public AnySimpleType
-{
-public:
-    NonPositiveIntegerType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NonPositiveIntegerType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 4; }
-    std::string toString() override { return "NonPositiveIntegerType"; }
-};
-
-class PositiveIntegerType: public AnySimpleType
-{
-public:
-    PositiveIntegerType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<PositiveIntegerType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 5; }
-    std::string toString() override { return "PositiveIntegerType"; }
-};
-
-class NegativeIntegerType: public AnySimpleType
-{
-public:
-    NegativeIntegerType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NegativeIntegerType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 6; }
-    std::string toString() override { return "NegativeIntegerType"; }
-};
-
-class IntType: public AnySimpleType
-{
-public:
-    IntType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<IntType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 7; }
-    std::string toString() override { return "IntType"; }
-};
-
-class UnsignedIntType: public AnySimpleType
-{
-public:
-    UnsignedIntType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<UnsignedIntType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 8; }
-    std::string toString() override { return "UnsignedIntType"; }
-};
-
-class ShortType: public AnySimpleType
-{
-public:
-    ShortType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<ShortType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 9; }
-    std::string toString() override { return "ShortType"; }
-};
-
-class UnsignedShortType: public AnySimpleType
-{
-public:
-    UnsignedShortType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<UnsignedShortType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 10; }
-    std::string toString() override { return "UnsignedShortType"; }
-};
-
-class ByteType: public AnySimpleType
-{
-public:
-    ByteType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<ByteType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 11; }
-    std::string toString() override { return "ByteType"; }
-};
-
-class UnsignedByteType: public AnySimpleType
-{
-public:
-    UnsignedByteType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<UnsignedByteType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 12; }
-    std::string toString() override { return "UnsignedByteType"; }
-};
-
-class LongType: public AnySimpleType
-{
-public:
-    LongType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<LongType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 13; }
-    std::string toString() override { return "LongType"; }
-};
-
-class UnsignedLongType: public AnySimpleType
-{
-public:
-    UnsignedLongType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<UnsignedLongType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 14; }
-    std::string toString() override { return "UnsignedLongType"; }
-};
-
-// ============================================================================
-// TYPES NUMÉRIQUES DÉCIMAUX
-// ============================================================================
-
-class FloatType: public AnySimpleType
-{
-public:
-    FloatType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<FloatType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 15; }
-    std::string toString() override { return "FloatType"; }
-};
-
-class DoubleType: public AnySimpleType
-{
-public:
-    DoubleType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<DoubleType*>(type) != nullptr;
-    };
-    unsigned int getId() override { return 16; }
-    std::string toString() override { return "DoubleType"; }
-};
-
-class DecimalType: public AnySimpleType
-{
-public:
-    DecimalType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<DecimalType*>(type) != nullptr;
-    };
+    DecimalType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 17; }
     std::string toString() override { return "DecimalType"; }
 };
 
+// integer dérive de decimal
+class IntegerType : public AnySimpleType {
+public:
+    IntegerType() : AnySimpleType(new DecimalType()) {}
+    unsigned int getId() override { return 1; }
+    std::string toString() override { return "IntegerType"; }
+};
+
+// nonPositiveInteger dérive de integer
+class NonPositiveIntegerType : public AnySimpleType {
+public:
+    NonPositiveIntegerType() : AnySimpleType(new IntegerType()) {}
+    unsigned int getId() override { return 4; }
+    std::string toString() override { return "NonPositiveIntegerType"; }
+};
+
+// negativeInteger dérive de nonPositiveInteger
+class NegativeIntegerType : public AnySimpleType {
+public:
+    NegativeIntegerType() : AnySimpleType(new NonPositiveIntegerType()) {}
+    unsigned int getId() override { return 6; }
+    std::string toString() override { return "NegativeIntegerType"; }
+};
+
+// long dérive de integer
+class LongType : public AnySimpleType {
+public:
+    LongType() : AnySimpleType(new IntegerType()) {}
+    unsigned int getId() override { return 13; }
+    std::string toString() override { return "LongType"; }
+};
+
+// int dérive de long
+class IntType : public AnySimpleType {
+public:
+    IntType() : AnySimpleType(new LongType()) {}
+    unsigned int getId() override { return 7; }
+    std::string toString() override { return "IntType"; }
+};
+
+// short dérive de int
+class ShortType : public AnySimpleType {
+public:
+    ShortType() : AnySimpleType(new IntType()) {}
+    unsigned int getId() override { return 9; }
+    std::string toString() override { return "ShortType"; }
+};
+
+// byte dérive de short
+class ByteType : public AnySimpleType {
+public:
+    ByteType() : AnySimpleType(new ShortType()) {}
+    unsigned int getId() override { return 11; }
+    std::string toString() override { return "ByteType"; }
+};
+
+// nonNegativeInteger dérive de integer
+class NonNegativeIntegerType : public AnySimpleType {
+public:
+    NonNegativeIntegerType() : AnySimpleType(new IntegerType()) {}
+    unsigned int getId() override { return 3; }
+    std::string toString() override { return "NonNegativeIntegerType"; }
+};
+
+// unsignedLong dérive de nonNegativeInteger
+class UnsignedLongType : public AnySimpleType {
+public:
+    UnsignedLongType() : AnySimpleType(new NonNegativeIntegerType()) {}
+    unsigned int getId() override { return 14; }
+    std::string toString() override { return "UnsignedLongType"; }
+};
+
+// unsignedInt dérive de unsignedLong
+class UnsignedIntType : public AnySimpleType {
+public:
+    UnsignedIntType() : AnySimpleType(new UnsignedLongType()) {}
+    unsigned int getId() override { return 8; }
+    std::string toString() override { return "UnsignedIntType"; }
+};
+
+// unsignedShort dérive de unsignedInt
+class UnsignedShortType : public AnySimpleType {
+public:
+    UnsignedShortType() : AnySimpleType(new UnsignedIntType()) {}
+    unsigned int getId() override { return 10; }
+    std::string toString() override { return "UnsignedShortType"; }
+};
+
+// unsignedByte dérive de unsignedShort
+class UnsignedByteType : public AnySimpleType {
+public:
+    UnsignedByteType() : AnySimpleType(new UnsignedShortType()) {}
+    unsigned int getId() override { return 12; }
+    std::string toString() override { return "UnsignedByteType"; }
+};
+
+// positiveInteger dérive de nonNegativeInteger
+class PositiveIntegerType : public AnySimpleType {
+public:
+    PositiveIntegerType() : AnySimpleType(new NonNegativeIntegerType()) {}
+    unsigned int getId() override { return 5; }
+    std::string toString() override { return "PositiveIntegerType"; }
+};
+
 // ============================================================================
-// TYPE BOOLÉEN
+// TYPES NUMÉRIQUES À VIRGULE FLOTTANTE (primitifs)
 // ============================================================================
 
-class BooleanType: public AnySimpleType
-{
+class FloatType : public AnySimpleType {
 public:
-    BooleanType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<BooleanType*>(type) != nullptr;
-    };
+    FloatType() : AnySimpleType(nullptr) {}
+    unsigned int getId() override { return 15; }
+    std::string toString() override { return "FloatType"; }
+};
+
+class DoubleType : public AnySimpleType {
+public:
+    DoubleType() : AnySimpleType(nullptr) {}
+    unsigned int getId() override { return 16; }
+    std::string toString() override { return "DoubleType"; }
+};
+
+// ============================================================================
+// TYPE BOOLÉEN (primitif)
+// ============================================================================
+
+class BooleanType : public AnySimpleType {
+public:
+    BooleanType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 18; }
     std::string toString() override { return "BooleanType"; }
 };
 
 // ============================================================================
-// TYPES CHAÎNES DE CARACTÈRES
+// TYPES CHAÎNES DE CARACTÈRES (primitif)
 // ============================================================================
 
-class StringType: public AnySimpleType
-{
+class StringType : public AnySimpleType {
 public:
-    StringType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<StringType*>(type) != nullptr;
-    };
+    StringType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 2; }
     std::string toString() override { return "StringType"; }
 };
 
-class NormalizedStringType: public AnySimpleType
-{
+class NormalizedStringType : public AnySimpleType {
 public:
-    NormalizedStringType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NormalizedStringType*>(type) != nullptr;
-    };
+    NormalizedStringType() : AnySimpleType(new StringType()) {}
     unsigned int getId() override { return 19; }
     std::string toString() override { return "NormalizedStringType"; }
 };
 
-class TokenType: public AnySimpleType
-{
+class TokenType : public AnySimpleType {
 public:
-    TokenType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<TokenType*>(type) != nullptr;
-    };
+    TokenType() : AnySimpleType(new NormalizedStringType()) {}
     unsigned int getId() override { return 20; }
     std::string toString() override { return "TokenType"; }
 };
 
-class LanguageType: public AnySimpleType
-{
+class LanguageType : public AnySimpleType {
 public:
-    LanguageType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<LanguageType*>(type) != nullptr;
-    };
+    LanguageType() : AnySimpleType(new TokenType()) {}
     unsigned int getId() override { return 21; }
     std::string toString() override { return "LanguageType"; }
 };
 
-class NameType: public AnySimpleType
-{
+class NameType : public AnySimpleType {
 public:
-    NameType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NameType*>(type) != nullptr;
-    };
+    NameType() : AnySimpleType(new TokenType()) {}
     unsigned int getId() override { return 22; }
     std::string toString() override { return "NameType"; }
 };
 
-class NCNameType: public AnySimpleType
-{
+class NCNameType : public AnySimpleType {
 public:
-    NCNameType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NCNameType*>(type) != nullptr;
-    };
+    NCNameType() : AnySimpleType(new NameType()) {}
     unsigned int getId() override { return 23; }
     std::string toString() override { return "NCNameType"; }
 };
 
-class IDType: public AnySimpleType
-{
+class IDType : public AnySimpleType {
 public:
-    IDType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<IDType*>(type) != nullptr;
-    };
+    IDType() : AnySimpleType(new NCNameType()) {}
     unsigned int getId() override { return 24; }
     std::string toString() override { return "IDType"; }
 };
 
-class IDREFType: public AnySimpleType
-{
+class IDREFType : public AnySimpleType {
 public:
-    IDREFType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<IDREFType*>(type) != nullptr;
-    };
+    IDREFType() : AnySimpleType(new NCNameType()) {}
     unsigned int getId() override { return 25; }
     std::string toString() override { return "IDREFType"; }
 };
 
-class IDREFSType: public AnySimpleType
-{
+class IDREFSType : public AnySimpleType {
 public:
-    IDREFSType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<IDREFSType*>(type) != nullptr;
-    };
+    IDREFSType() : AnySimpleType(new IDREFType()) {}
     unsigned int getId() override { return 26; }
     std::string toString() override { return "IDREFSType"; }
 };
 
-class NMTOKENType: public AnySimpleType
-{
+class ENTITYType : public AnySimpleType {
 public:
-    NMTOKENType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NMTOKENType*>(type) != nullptr;
-    };
+    ENTITYType() : AnySimpleType(new NCNameType()) {}
+    unsigned int getId() override { return 43; }
+    std::string toString() override { return "ENTITYType"; }
+};
+
+class ENTITIESType : public AnySimpleType {
+public:
+    ENTITIESType() : AnySimpleType(new ENTITYType()) {}
+    unsigned int getId() override { return 44; }
+    std::string toString() override { return "ENTITIESType"; }
+};
+
+class NMTOKENType : public AnySimpleType {
+public:
+    NMTOKENType() : AnySimpleType(new TokenType()) {}
     unsigned int getId() override { return 27; }
     std::string toString() override { return "NMTOKENType"; }
 };
 
-class NMTOKENSType: public AnySimpleType
-{
+class NMTOKENSType : public AnySimpleType {
 public:
-    NMTOKENSType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NMTOKENSType*>(type) != nullptr;
-    };
+    NMTOKENSType() : AnySimpleType(new NMTOKENType()) {}
     unsigned int getId() override { return 28; }
     std::string toString() override { return "NMTOKENSType"; }
 };
 
 // ============================================================================
-// TYPES DATES ET HEURES
+// TYPES DATES ET HEURES (primitifs)
 // ============================================================================
 
-class DateType: public AnySimpleType
-{
+class DateType : public AnySimpleType {
 public:
-    DateType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<DateType*>(type) != nullptr;
-    };
+    DateType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 29; }
     std::string toString() override { return "DateType"; }
 };
 
-class TimeType: public AnySimpleType
-{
+class TimeType : public AnySimpleType {
 public:
-    TimeType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<TimeType*>(type) != nullptr;
-    };
+    TimeType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 30; }
     std::string toString() override { return "TimeType"; }
 };
 
-class DateTimeType: public AnySimpleType
-{
+class DateTimeType : public AnySimpleType {
 public:
-    DateTimeType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<DateTimeType*>(type) != nullptr;
-    };
+    DateTimeType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 31; }
     std::string toString() override { return "DateTimeType"; }
 };
 
-class DurationType: public AnySimpleType
-{
+class DurationType : public AnySimpleType {
 public:
-    DurationType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<DurationType*>(type) != nullptr;
-    };
+    DurationType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 32; }
     std::string toString() override { return "DurationType"; }
 };
 
-class GYearType: public AnySimpleType
-{
+class GYearType : public AnySimpleType {
 public:
-    GYearType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<GYearType*>(type) != nullptr;
-    };
+    GYearType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 33; }
     std::string toString() override { return "GYearType"; }
 };
 
-class GYearMonthType: public AnySimpleType
-{
+class GYearMonthType : public AnySimpleType {
 public:
-    GYearMonthType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<GYearMonthType*>(type) != nullptr;
-    };
+    GYearMonthType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 34; }
     std::string toString() override { return "GYearMonthType"; }
 };
 
-class GMonthType: public AnySimpleType
-{
+class GMonthType : public AnySimpleType {
 public:
-    GMonthType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<GMonthType*>(type) != nullptr;
-    };
+    GMonthType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 35; }
     std::string toString() override { return "GMonthType"; }
 };
 
-class GMonthDayType: public AnySimpleType
-{
+class GMonthDayType : public AnySimpleType {
 public:
-    GMonthDayType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<GMonthDayType*>(type) != nullptr;
-    };
+    GMonthDayType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 36; }
     std::string toString() override { return "GMonthDayType"; }
 };
 
-class GDayType: public AnySimpleType
-{
+class GDayType : public AnySimpleType {
 public:
-    GDayType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<GDayType*>(type) != nullptr;
-    };
+    GDayType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 37; }
     std::string toString() override { return "GDayType"; }
 };
 
+class DateTimeStampType : public AnySimpleType {
+public:
+    DateTimeStampType() : AnySimpleType(new DateTimeType()) {}
+    unsigned int getId() override { return 45; }
+    std::string toString() override { return "DateTimeStampType"; }
+};
+
 // ============================================================================
-// TYPES BINAIRES
+// TYPES BINAIRES (primitifs)
 // ============================================================================
 
-class Base64BinaryType: public AnySimpleType
-{
+class Base64BinaryType : public AnySimpleType {
 public:
-    Base64BinaryType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<Base64BinaryType*>(type) != nullptr;
-    };
+    Base64BinaryType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 38; }
     std::string toString() override { return "Base64BinaryType"; }
 };
 
-class HexBinaryType: public AnySimpleType
-{
+class HexBinaryType : public AnySimpleType {
 public:
-    HexBinaryType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<HexBinaryType*>(type) != nullptr;
-    };
+    HexBinaryType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 39; }
     std::string toString() override { return "HexBinaryType"; }
 };
 
 // ============================================================================
-// TYPE URI
+// TYPE URI (primitif)
 // ============================================================================
 
-class AnyURIType: public AnySimpleType
-{
+class AnyURIType : public AnySimpleType {
 public:
-    AnyURIType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<AnyURIType*>(type) != nullptr;
-    };
+    AnyURIType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 40; }
     std::string toString() override { return "AnyURIType"; }
 };
 
 // ============================================================================
-// TYPES DIVERS
+// TYPES DIVERS (primitifs)
 // ============================================================================
 
-class QNameType: public AnySimpleType
-{
+class QNameType : public AnySimpleType {
 public:
-    QNameType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<QNameType*>(type) != nullptr;
-    };
+    QNameType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 41; }
     std::string toString() override { return "QNameType"; }
 };
 
-class NotationType: public AnySimpleType
-{
+class NotationType : public AnySimpleType {
 public:
-    NotationType(){};
-    bool verify(AnySimpleType* type) override {
-           return dynamic_cast<NotationType*>(type) != nullptr;
-    };
+    NotationType() : AnySimpleType(nullptr) {}
     unsigned int getId() override { return 42; }
     std::string toString() override { return "NotationType"; }
 };
