@@ -161,9 +161,30 @@ std::string constructFullUri(const std::string& prefix,
 }
 
 
-bool invalidType(const std::shared_ptr<AnySimpleType> dr,const Value & v){
-    std::cout<<"dr id: "<<dr->getId()<<" v type id: "<<v.typeVal->getId()<<std::endl;
-    return (dr->getId() != v.typeVal->getId());
+bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
+    // Vérification de la hiérarchie de types XSD
+    // dr est le type attendu (range), v.typeVal est le type de la valeur
+    if (!dr || !v.typeVal) {
+       // std::cout << "Type invalide : pointeur null\n";
+        return true;  // Type invalide si l'un des types est null
+    }
+   /* 
+    std::cout << "Vérification de type :" << std::endl;
+    std::cout << "   → Type attendu (range): " << dr->toString() << " (ID: " << dr->getId() << ")" << std::endl;
+    std::cout << "   → Type de la valeur   : " << v.typeVal->toString() << " (ID: " << v.typeVal->getId() << ")" << std::endl;
+    */
+    // Utilise la méthode verify() qui remonte la hiérarchie des types
+    // v.typeVal->verify(dr) retourne true si v.typeVal est compatible avec dr
+    // (c'est-à-dire si v.typeVal est dr ou dérive de dr)
+    bool isValid = v.typeVal->verify(dr.get());
+   /*
+    if (isValid) {
+        std::cout << "   Type valide : " << v.typeVal->toString() << " est compatible avec " << dr->toString() << std::endl;
+    } else {
+        std::cout << "  Type invalide : " << v.typeVal->toString() << " n'est PAS compatible avec " << dr->toString() << std::endl;
+    }*/ 
+    
+    return !isValid;  // Retourne true si le type est invalide
 }
 
 /**
@@ -559,24 +580,27 @@ int main(int argc, char* argv[])
     auto space = OWL2::create();
     std::shared_ptr<AnySimpleType> typeVal = std::make_shared<StringType>();
     std::shared_ptr<AnySimpleType> typeVal2 = std::make_shared<IntegerType>();
+    std::shared_ptr<AnySimpleType> typeVal3 = std::make_shared<NegativeIntegerType>();
     Value v={"arina",typeVal};
-        chr::Logical_var<std::string> d ;
+        chr::Logical_var<std::string> p1;
         chr::Logical_var<std::string> d2 ;
         chr::Logical_var<std::string> m ;
         chr::Logical_var<std::string> x;
 
  CHR_RUN(   
     ParserCowl<OWL2> parser(filename, *space);
-    parser.load();
     //space->querySuperClassOfUri(std::string("PhDStudent"));
     // Contraintes déclarées en dur pour test (commentées)
-    /*
-    space->logicalName(std::string("http://ex.org#c1"), c1);
-    space->logicalName(std::string("www.jsp.com#x"), y);
-    space->logicalName(std::string("www.jsp.com#y"), y);
-    space->logicalName(std::string("http://ex.org#c3"), c3);
+    
+    space->logicalName(std::string("http://ex.org#prop1"), p1);
+    space->logicalName(std::string("http://ex.org#ctoto"), m);
+    space->owlDataPropertyRange(p1, typeVal2);
+    space->owlDataPropertyAssertion(m,p1, v);
+    /*space->logicalName(std::string("www.jsp.com#y"), y);
+    
     space->owlClass(y);
-    */
+    */    parser.load();
+
    //space->owlNamedIndividual(x);
    // space->owlNamedIndividual(y);
    // space->owlSameIndividual(x,y);

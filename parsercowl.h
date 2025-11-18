@@ -31,10 +31,10 @@ enum class XSDType  {
 
     // Chaînes
     STRING, NORMALIZED_STRING, TOKEN, LANGUAGE, NAME, NCNAME,
-    ID, IDREF, IDREFS, NMTOKEN, NMTOKENS,
+    ID, IDREF, IDREFS, ENTITY, ENTITIES, NMTOKEN, NMTOKENS,
 
     // Dates / Heures
-    DATE, TIME, DATE_TIME, DURATION, G_YEAR, G_YEAR_MONTH,
+    DATE, TIME, DATE_TIME, DATE_TIME_STAMP, DURATION, G_YEAR, G_YEAR_MONTH,
     G_MONTH, G_MONTH_DAY, G_DAY,
 
     // Binary
@@ -84,6 +84,8 @@ XSDType mapXsdType(const std::string& t){
     if (s == "id") return XSDType::ID;
     if (s == "idref") return XSDType::IDREF;
     if (s == "idrefs") return XSDType::IDREFS;
+    if (s == "entity") return XSDType::ENTITY;
+    if (s == "entities") return XSDType::ENTITIES;
     if (s == "nmtoken") return XSDType::NMTOKEN;
     if (s == "nmtokens") return XSDType::NMTOKENS;
 
@@ -91,6 +93,7 @@ XSDType mapXsdType(const std::string& t){
     if (s == "date") return XSDType::DATE;
     if (s == "time") return XSDType::TIME;
     if (s == "dateTime" || s == "datetime") return XSDType::DATE_TIME;
+    if (s == "dateTimeStamp" || s == "datetimestamp") return XSDType::DATE_TIME_STAMP;
     if (s == "duration") return XSDType::DURATION;
     if (s == "gYear" || s == "gyear") return XSDType::G_YEAR;
     if (s == "gYearMonth" || s == "gyearmonth") return XSDType::G_YEAR_MONTH;
@@ -801,6 +804,12 @@ void ParserCowl<T>:: iterateDataPropAssert(ParserCowl<T>* parser, CowlAny *axiom
             case XSDType::IDREFS: 
                 typeVal = std::make_shared<IDREFSType>(); 
                 break;
+            case XSDType::ENTITY: 
+                typeVal = std::make_shared<ENTITYType>(); 
+                break;
+            case XSDType::ENTITIES: 
+                typeVal = std::make_shared<ENTITIESType>(); 
+                break;
             case XSDType::NMTOKEN: 
                 typeVal = std::make_shared<NMTOKENType>(); 
                 break;
@@ -817,6 +826,9 @@ void ParserCowl<T>:: iterateDataPropAssert(ParserCowl<T>* parser, CowlAny *axiom
                 break;
             case XSDType::DATE_TIME: 
                 typeVal = std::make_shared<DateTimeType>(); 
+                break;
+            case XSDType::DATE_TIME_STAMP: 
+                typeVal = std::make_shared<DateTimeStampType>(); 
                 break;
             case XSDType::DURATION: 
                 typeVal = std::make_shared<DurationType>(); 
@@ -980,6 +992,12 @@ void ParserCowl<T>:: iterateNegDataPropAssert(ParserCowl<T>* parser, CowlAny *ax
             case XSDType::IDREFS: 
                 typeVal = std::make_shared<IDREFSType>(); 
                 break;
+            case XSDType::ENTITY: 
+                typeVal = std::make_shared<ENTITYType>(); 
+                break;
+            case XSDType::ENTITIES: 
+                typeVal = std::make_shared<ENTITIESType>(); 
+                break;
             case XSDType::NMTOKEN: 
                 typeVal = std::make_shared<NMTOKENType>(); 
                 break;
@@ -996,6 +1014,9 @@ void ParserCowl<T>:: iterateNegDataPropAssert(ParserCowl<T>* parser, CowlAny *ax
                 break;
             case XSDType::DATE_TIME: 
                 typeVal = std::make_shared<DateTimeType>(); 
+                break;
+            case XSDType::DATE_TIME_STAMP: 
+                typeVal = std::make_shared<DateTimeStampType>(); 
                 break;
             case XSDType::DURATION: 
                 typeVal = std::make_shared<DurationType>(); 
@@ -1205,6 +1226,14 @@ void ParserCowl<T>:: iterateDataPropRange(ParserCowl<T>* parser, CowlAny *axiom)
                 typeVal = std::make_shared<NMTOKENSType>(); 
                 std::cout << "→ type C++ : XML NMTOKENS\n"; 
                 break;
+            case XSDType::ENTITY: 
+                typeVal = std::make_shared<ENTITYType>(); 
+                std::cout << "→ type C++ : XML ENTITY\n"; 
+                break;
+            case XSDType::ENTITIES: 
+                typeVal = std::make_shared<ENTITIESType>(); 
+                std::cout << "→ type C++ : XML ENTITIES\n"; 
+                break;
             
             // Types dates et heures
             case XSDType::DATE: 
@@ -1218,6 +1247,10 @@ void ParserCowl<T>:: iterateDataPropRange(ParserCowl<T>* parser, CowlAny *axiom)
             case XSDType::DATE_TIME: 
                 typeVal = std::make_shared<DateTimeType>(); 
                 std::cout << "→ type C++ : datetime\n"; 
+                break;
+            case XSDType::DATE_TIME_STAMP: 
+                typeVal = std::make_shared<DateTimeStampType>(); 
+                std::cout << "→ type C++ : dateTimeStamp (with timezone)\n"; 
                 break;
             case XSDType::DURATION: 
                 typeVal = std::make_shared<DurationType>(); 
