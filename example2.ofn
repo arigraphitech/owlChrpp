@@ -31,7 +31,6 @@ Declaration(ObjectProperty(ex:educates))
 AnnotationAssertion(rdfs:label ex:instructs "instructs")
 AnnotationAssertion(rdfs:label ex:educates "educates")
 
-
 ObjectPropertyDomain(ex:instructs ex:Professor)
 ObjectPropertyRange(ex:instructs ex:Course)
 ObjectPropertyDomain(ex:educates ex:Professor)
@@ -97,8 +96,16 @@ AnnotationAssertion(rdfs:label ex:Math101 "Mathematics 101")
 ClassAssertion(ex:Course ex:Math101)
 
 Declaration(Class(ex:PhDStudent))
-SubClassOf(ex:PhDStudent ex:Student)
 AnnotationAssertion(rdfs:label ex:PhDStudent "PhD Student")
+
+# --- Nouveau SubClassOf avec classe complexe ---
+SubClassOf(
+    ex:PhDStudent
+    ObjectIntersectionOf(
+        ex:Student
+        ObjectSomeValuesFrom(ex:enrolledIn ex:Course)
+    )
+)
 
 ############################
 #   Disjointness axioms

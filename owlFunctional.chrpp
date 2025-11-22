@@ -231,12 +231,15 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
             owlUnionClass(?std::string,?std::string),
             owlUnionOf(?std::string,+LogicalVarSet),
             owlUnionOfLoop(?std::string,+iteratorSet,+iteratorSet),
+            owlIntersectionOf(?std::string,+LogicalVarSet),
             //owlIntersectionClass(?std::string,?std::string,+int,+int),
             //owlIntersectionOf(?std::string,+iterator,+iterator,+int),
             //owlCandidatsIntersection(?std::string,?std::string,+int),
             owlTempClassAssertion(?std::string,?std::string),
-            owlAllValuesFrom(?std::string,?std::string,?std::string),
-            owlSomeValuesFrom(?std::string,?std::string,?std::string),
+            owlObjectAllValuesFrom(?std::string,?std::string,?std::string),
+            owlDataAllValuesFrom(?std::string,?std::string,+std::shared_ptr<[AnySimpleType]>),
+            owlObjectSomeValuesFrom(?std::string,?std::string,?std::string),
+            owlDataSomeValuesFrom(?std::string,?std::string,+std::shared_ptr<[AnySimpleType]>),
 
             owlObjectPropertyChain(?std::string,?std::string,+int,+int),
             constructPropertyChain(?std::string,+int,?std::string,?std::string,+int) ,
@@ -250,10 +253,9 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
             queryFullUri(?std::string),
             logicalName(+std::string,?std::string),
             owlMaxCardinality(?std::string,?std::string,+int),
-            owlMaxQualifiedCardinality(?std::string,?std::string,?std::string,+int),
             owlHasValueObject(?std::string,?std::string,?std::string),
-            owlHasValueData(?std::string,?std::string,?Value)
-            //owlOneOf(?std::string,+set),
+            owlHasValueData(?std::string,?std::string,?Value),
+            owlOneOf(?std::string,+LogicalVarSet)
             //owlOneOfLoop(?std::string,+iteratorSet,+iteratorSet),
             //owlHasKey(?std::string,?set,?std::string),
             //owlHasKeyLoop(+iteratorSet,+iteratorSet,?std::string,?std::string)
@@ -458,17 +460,19 @@ owlComplementOf(A,NOTA),owlClassAssertion(X,A,true) \ owlTempClassAssertion(X,NO
 
 //property restriction
 //existentielle
-owlSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(V,Y,true) ==> owlClassAssertion(U,C,true) ;;
-owlSomeValuesFrom(C,P,Y), owlClassAssertion(U,C,true) ==>    owlObjectPropertyAssertion(U,P,V),logicalName(emptyString,V),owlClassAssertion(V,Y,true);;
+//obj
+owlObjectSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(V,Y,true) ==> owlClassAssertion(U,C,true) ;;
+owlObjectSomeValuesFrom(C,P,Y), owlClassAssertion(U,C,true) ==>    owlObjectPropertyAssertion(U,P,V),logicalName(emptyString,V),owlClassAssertion(V,Y,true);;
 owlObjectPropertyAssertion(U,P,W),logicalName(URI,W),owlClassAssertion(W,Y,true) \ owlObjectPropertyAssertion(U,P,V),logicalName(emptyString,V),owlClassAssertion(V,Y,true) <=> !(URI==emptyString)| success() ;;
+//data
 
 //universel
+//obj
+owlObjectAllValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(U,C,true) ==> owlClassAssertion(V,Y,true) ;;
+owlObjectAllValuesFrom(C,P,Y) , owlNamedIndividual(X) ==> owlClassAssertion(X,C,false) ;;
 
-owlAllValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(U,C,true) ==> owlClassAssertion(V,Y,true) ;;
-owlAllValuesFrom(C,P,Y) , owlNamedIndividual(X) ==> owlClassAssertion(X,C,false) ;;
-
-owlAllValuesFrom(C,P,Y) ,  owlObjectPropertyAssertion(U,P,V) ,logicalName(URIV,V) ,logicalName(URIY,Y) \ owlClassAssertion(U,C,false) <=> ! checkClassification(*this,URIV,URIY) | success();;
-
+owlObjectAllValuesFrom(C,P,Y) ,  owlObjectPropertyAssertion(U,P,V) ,logicalName(URIV,V) ,logicalName(URIY,Y) \ owlClassAssertion(U,C,false) <=> ! checkClassification(*this,URIV,URIY) | success();;
+//data
 
 // chain property 
 ObjectPropertyChain @ owlObjectPropertyChain(PC,P,0,N) , owlObjectPropertyAssertion(X,P,Y) ==> constructPropertyChain(PC,0,X,Y,N) ;;
@@ -480,8 +484,6 @@ finalChain @ constructPropertyChain(PC,N,X,Y,N) <=> owlObjectPropertyAssertion(X
 owlMaxCardinality(C,P,0) , owlClassAssertion(U,C,true) , owlObjectPropertyAssertion(U,P,_) <=> failure() ;;
 owlMaxCardinality(C,P,1) , owlClassAssertion(U,C,true) , owlObjectPropertyAssertion(U,P,Y1) , owlObjectPropertyAssertion(U,P,Y2) <=> !(Y1==Y2) | owlSameIndividual(Y1,Y2) ;;
 
-owlMaxQualifiedCardinality(X,P,C,0) , owlClassAssertion(U,X,true) , owlObjectPropertyAssertion(U,P,Y) , owlClassAssertion(Y,C,true) <=> failure() ;;
-owlMaxQualifiedCardinality(X,P,C,1) , owlClassAssertion(U,X,true) , owlObjectPropertyAssertion(U,P,Y1) , owlClassAssertion(Y1,C,true) , owlObjectPropertyAssertion(U,P,Y2) , owlClassAssertion(Y2,C,true) <=>  !(Y1==Y2) | owlSameIndividual(Y1,Y2) ;;
 
 owlHasValueObject(C,P,Y),owlObjectProperty(P),owlClassAssertion(U,C,true) ==> owlObjectPropertyAssertion(U,P,Y) ;;
 //owlHasValueData(C,P,Y),owlDataProperty(P), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,Y) ;;
@@ -590,12 +592,13 @@ int main(int argc, char* argv[])
  CHR_RUN(   
     ParserCowl<OWL2> parser(filename, *space);
     //space->querySuperClassOfUri(std::string("PhDStudent"));
-    // Contraintes déclarées en dur pour test (commentées)
-    
+    // Contraintes déclarées en dur pour test (temporairement commentées pour debug)
+    /*
     space->logicalName(std::string("http://ex.org#prop1"), p1);
     space->logicalName(std::string("http://ex.org#ctoto"), m);
     space->owlDataPropertyRange(p1, typeVal2);
     space->owlDataPropertyAssertion(m,p1, v);
+    */
     /*space->logicalName(std::string("www.jsp.com#y"), y);
     
     space->owlClass(y);
@@ -612,7 +615,7 @@ int main(int argc, char* argv[])
    // space->owlClassAssertion(y, c2);
 
  )
-    print(*space);
+   print(*space);
     chr::Statistics::print(std::cout);
 
     return 0;
