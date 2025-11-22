@@ -10,7 +10,6 @@ using namespace std;
 using namespace std::string_literals;
 using std::string;
 
-
 extern "C" {
 #include "cowl.h"
 #include "ulib.h"
@@ -148,6 +147,20 @@ public:
     static void iterateDecl(ParserCowl<T>* parser,CowlAny *axiom);
     static void iterateSubclass (ParserCowl<T>* parser,CowlAny *axiom);
     static void iterateEquivClass (ParserCowl<T>* parser,CowlAny *axiom);
+    
+    // Fonctions pour gérer les classes complexes (retournent la variable logique)
+    static chr::Logical_var<std::string> processComplexClass(ParserCowl<T>* parser, CowlClsExp* clsExp);
+    static chr::Logical_var<std::string> iterateUnion(ParserCowl<T>* parser, CowlClsExp* unionExp);
+    static chr::Logical_var<std::string> iterateIntersection(ParserCowl<T>* parser, CowlClsExp* intersectExp);
+    static chr::Logical_var<std::string> iterateObjectSomeValuesFrom(ParserCowl<T>* parser, CowlClsExp* someExp);
+    static chr::Logical_var<std::string> iterateObjectAllValuesFrom(ParserCowl<T>* parser, CowlClsExp* allExp);
+    static chr::Logical_var<std::string> iterateObjectHasValue(ParserCowl<T>* parser, CowlClsExp* hasValueExp);
+    static chr::Logical_var<std::string> iterateObjectHasSelf(ParserCowl<T>* parser, CowlClsExp* hasSelfExp);
+    static chr::Logical_var<std::string> iterateObjectOneOf(ParserCowl<T>* parser, CowlClsExp* oneOfExp);
+    static chr::Logical_var<std::string> iterateDataSomeValuesFrom(ParserCowl<T>* parser, CowlClsExp* dataSomeExp);
+    static chr::Logical_var<std::string> iterateDataAllValuesFrom(ParserCowl<T>* parser, CowlClsExp* dataAllExp);
+    static chr::Logical_var<std::string> iterateMaxCardinality(ParserCowl<T>* parser, CowlClsExp* maxCardinalityExp);
+    static chr::Logical_var<std::string> iterateObjectComplementOf(ParserCowl<T>* parser, CowlClsExp* complementExp);
     static void  iterateDisjClass(ParserCowl<T>* parser,CowlAny *axiom);
     static void  iterateClassAssert(ParserCowl<T>* parser,CowlAny *axiom);
     static void  iterateObjPropAssert(ParserCowl<T>* parser,CowlAny *axiom);
@@ -185,7 +198,14 @@ public:
 private:
     // Cache pour stocker les variables logiques et éviter les doublons
     std::unordered_map<std::string, chr::Logical_var<std::string>> logicalVarCache;
+    
+    // Compteur pour générer des IDs uniques pour les unions/intersections anonymes
+    static int anonymousClassExpressionCounter;
 };
+
+// Initialisation du compteur statique
+template <typename T>
+int ParserCowl<T>::anonymousClassExpressionCounter = 0;
 
 template <typename T>
 ParserCowl<T>::ParserCowl(std::string const &  onto,T & space)
@@ -290,7 +310,7 @@ void ParserCowl<T>::iterateDecl(ParserCowl<T>* parser,CowlAny *axiom){
     std::string uri_str = getFullIRI((CowlIRI *)iri);
     
     // Obtenir ou créer la variable logique pour cette entité (avec cache)
-    chr::Logical_var<std::string>& entityVar = parser->getOrCreateLogicalVar(uri_str);
+    chr::Logical_var<std::string> entityVar = parser->getOrCreateLogicalVar(uri_str);
     
         switch (type) {
             case COWL_ET_CLASS:
@@ -331,24 +351,832 @@ void ParserCowl<T>:: iterateSubclass(ParserCowl<T>* parser, CowlAny *axiom){
     CowlAnyClsExp  *sub = cowl_sub_cls_axiom_get_sub((CowlSubClsAxiom *) axiom);
     CowlAnyClsExp *sup = cowl_sub_cls_axiom_get_super((CowlSubClsAxiom *)axiom);
 
+    cowl_write_static((UOStream *)stream, "\n Traitement SubClassOf axiome...\n");
+    // Traiter récursivement la sous-classe et la superclasse avec processComplexClass si non atomique
+    chr::Logical_var<std::string> supVar, subVar;
+    
+    if (cowl_cls_exp_get_type(sub) == COWL_CET_CLASS) {
+        CowlIRI* iriSub = cowl_class_get_iri((CowlClass*)sub);
+        std::string classUri = getFullIRI(iriSub);
+        subVar = parser->getOrCreateLogicalVar(classUri);
+    }
+    else{
+        subVar = processComplexClass(parser, (CowlClsExp*)sub);
+    }
+    
+    if(cowl_cls_exp_get_type(sup) == COWL_CET_CLASS) {
+        CowlIRI* iriSup = cowl_class_get_iri((CowlClass*)sup);
+        std::string classUri = getFullIRI(iriSup);
+        supVar = parser->getOrCreateLogicalVar(classUri);
+    }
+    else{
+        supVar = processComplexClass(parser, (CowlClsExp*)sup);
+    }
 
-    // Obtenir leurs IRI s’ils sont nommés (pas anonymes)
-    if (cowl_cls_exp_get_type(sup) == COWL_CET_CLASS) { //si atomique
-    CowlIRI *iri_sub = cowl_class_get_iri((CowlClass*)sub);
-    CowlIRI *iri_sup = cowl_class_get_iri((CowlClass*)sup);
+    cowl_write_static((UOStream *)stream, "   Création de la contrainte SubClassOf\n");
+    // Créer la contrainte SubClassOf
+    parser->space->owlSubclassOf(subVar, supVar);
+    cowl_write_static((UOStream *)stream, "    SubClassOf créé avec succès\n");
+}
 
-    // Afficher
-    cowl_write_static((UOStream *)stream, "SubClassOf: ");
-    cowl_write_string((UOStream *)stream, cowl_iri_get_rem((CowlIRI *)iri_sub));
-    cowl_write_static((UOStream *)stream, " ⊑ ");
-    cowl_write_string((UOStream *)stream, cowl_iri_get_rem((CowlIRI *)iri_sup));
-    // Utiliser l'IRI complète pour les variables logiques
-    parser->space->owlSubclassOf(chr::Logical_var_ground<std::string>(getFullIRI((CowlIRI *)iri_sub)), chr::Logical_var_ground<std::string>(getFullIRI((CowlIRI *)iri_sup)));
 
-    }else{ //exception car pas encore gere
-            cowl_write_static((UOStream *)stream, "subclass de classes complexes pas prise en charge ");
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateUnion(ParserCowl<T>* parser, CowlClsExp* unionExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement ObjectUnionOf...\n");
+    
+    // Obtenir la liste des classes de l'union
+    CowlNAryBool* union_exp = (CowlNAryBool*) unionExp;
+    CowlVector* operands = cowl_nary_bool_get_operands(union_exp);
+    ulib_uint count = cowl_vector_count(operands);
+    
+    cowl_write_static((UOStream*)stream, "   Union de ");
+    char countStr[20];
+    snprintf(countStr, sizeof(countStr), "%u", count);
+    cowl_write_cstring((UOStream*)stream, countStr);
+    cowl_write_static((UOStream*)stream, " classes:\n");
+    
+    // Générer un ID unique pour cette union
+    std::string unionId = "http://anonymous.org#Union_" + std::to_string(++anonymousClassExpressionCounter);
+    chr::Logical_var<std::string> unionVar = parser->getOrCreateLogicalVar(unionId);
+    parser->space->owlClass(unionVar);
+    
+    cowl_write_static((UOStream*)stream, "   ID: ");
+    cowl_write_cstring((UOStream*)stream, unionId.c_str());
+    cowl_write_static((UOStream*)stream, "\n");
+    std::set<chr::Logical_var<std::string>> unionClasses;
+
+    for (ulib_uint i = 0; i < count; ++i) {
+        CowlClsExp* operand = (CowlClsExp*) cowl_vector_get_item(operands, i);
+        
+        // Vérifier si c'est une classe atomique
+        if (cowl_cls_exp_get_type(operand) == COWL_CET_CLASS) {
+            CowlClass* cls = (CowlClass*) operand;
+            CowlIRI* iri = cowl_class_get_iri(cls);
+            std::string classUri = getFullIRI(iri);
+            // Récupérer ou créer la variable logique pour cette classe
+            chr::Logical_var<std::string> classVar = parser->getOrCreateLogicalVar(classUri);
+            unionClasses.insert(classVar);
+        } else {
+            // Expression complexe dans l'union pas supporté en owl2 RL
+            cowl_write_static((UOStream*)stream, "      - [Expression complexe dans union]\n");
+        }
+    }
+    parser->space->owlUnionOf(unionVar, unionClasses);
+    cowl_write_static((UOStream*)stream, "    Union terminée\n");
+    return unionVar;
+}
+
+// Fonction principale de traitement récursif des classes complexes
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::processComplexClass(ParserCowl<T>* parser, CowlClsExp* clsExp) {
+    CowlClsExpType type = cowl_cls_exp_get_type(clsExp);
+    
+    switch(type) {
+        case COWL_CET_CLASS: {
+            // Classe nommée simple - n'entre jamais ici normalement
+            CowlIRI *iri = cowl_class_get_iri((CowlClass*)clsExp);
+            std::string uri = getFullIRI(iri);
+            return parser->getOrCreateLogicalVar(uri);
+        }
+        case COWL_CET_OBJ_UNION:
+            return iterateUnion(parser, clsExp);
+            
+        case COWL_CET_OBJ_INTERSECT:
+            return iterateIntersection(parser, clsExp);
+            
+        case COWL_CET_OBJ_SOME:
+            return iterateObjectSomeValuesFrom(parser, clsExp);
+            
+        case COWL_CET_OBJ_ALL:
+            return iterateObjectAllValuesFrom(parser, clsExp);
+
+        case COWL_CET_OBJ_HAS_VALUE:
+            return iterateObjectHasValue(parser, clsExp);
+            
+        case COWL_CET_OBJ_HAS_SELF:
+            return iterateObjectHasSelf(parser, clsExp);
+
+        case COWL_CET_OBJ_ONE_OF:
+            return iterateObjectOneOf(parser, clsExp);
+            
+        case COWL_CET_DATA_SOME:
+            return iterateDataSomeValuesFrom(parser, clsExp);
+            
+        case COWL_CET_DATA_ALL:
+            return iterateDataAllValuesFrom(parser, clsExp);
+            
+        case COWL_CET_OBJ_MAX_CARD:
+        case COWL_CET_DATA_MAX_CARD:
+            return iterateMaxCardinality(parser, clsExp);
+
+        case COWL_CET_OBJ_COMPL:
+            return iterateObjectComplementOf(parser, clsExp);
+
+        default: {
+            UOStream* stream = uostream_std();
+            cowl_write_static((UOStream*)stream, "Type de classe complexe non supporté: ");
+            char buffer[50];
+            sprintf(buffer, "%d\n", type);
+            cowl_write_static((UOStream*)stream, buffer);
+            // Retourner un ID générique pour les types non supportés
+            std::string unknownId = "http://anonymous.org#Unknown_" + std::to_string(++anonymousClassExpressionCounter);
+            chr::Logical_var<std::string> unknownVar(unknownId);
+            parser->space->owlClass(unknownVar);
+            return unknownVar;
+        }
     }
 }
+
+// Gestion de ObjectIntersectionOf (⊓)
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateIntersection(ParserCowl<T>* parser, CowlClsExp* intersectExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, "Traitement ObjectIntersectionOf...\n");
+    // Générer un ID unique pour l'intersection
+    std::string intersectionId = "http://anonymous.org#Intersection_" + std::to_string(++anonymousClassExpressionCounter);
+    chr::Logical_var<std::string> intersectionVar= parser->getOrCreateLogicalVar(intersectionId);
+    parser->space->owlClass(intersectionVar);
+    cowl_write_static((UOStream*)stream, "   ID: ");
+    cowl_write_static((UOStream*)stream, intersectionId.c_str());
+    cowl_write_static((UOStream*)stream, "\n");
+    
+    // Récupérer les opérandes de l'intersection
+    CowlNAryBool* nary_bool = (CowlNAryBool*)intersectExp;
+    CowlVector* operands = cowl_nary_bool_get_operands(nary_bool);
+    size_t count = cowl_vector_count(operands);
+    
+    char buffer[100];
+    sprintf(buffer, "   Nombre d'opérandes: %zu\n", count);
+    cowl_write_static((UOStream*)stream, buffer);
+    
+    // Créer un set pour stocker les opérandes
+    std::set<chr::Logical_var<std::string>> intersectionClasses;
+    
+    // Pour chaque opérande Ci de l'intersection, l'ajouter au set
+    for(size_t i = 0; i < count; i++) {
+        CowlClsExp* operand = (CowlClsExp*)cowl_vector_get_item(operands, i);
+        
+        sprintf(buffer, "   Opérande %zu: ", i+1);
+        cowl_write_static((UOStream*)stream, buffer);
+        chr::Logical_var<std::string> operandVar;
+        // Traiter récursivement l'opérande
+        if(cowl_cls_exp_get_type(operand) == COWL_CET_CLASS){
+            CowlClass* cls = (CowlClass*) operand;
+            CowlIRI* iri = cowl_class_get_iri(cls);
+            std::string classUri = getFullIRI(iri);
+            // Récupérer ou créer la variable logique pour cette classe
+            operandVar = parser->getOrCreateLogicalVar(classUri);
+        }
+        else {
+            operandVar = processComplexClass(parser, operand);
+        }
+        // Ajouter au set
+        intersectionClasses.insert(operandVar);
+        
+        cowl_write_static((UOStream*)stream, "       Opérande ajouté\n");
+    }
+    // Créer la contrainte owlIntersectionOf
+    parser->space->owlIntersectionOf(intersectionVar, intersectionClasses);
+    cowl_write_static((UOStream*)stream, "    Intersection terminée\n");
+    
+    return intersectionVar;
+}
+
+// Gestion de ObjectSomeValuesFrom (∃P.C)
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateObjectSomeValuesFrom(ParserCowl<T>* parser, CowlClsExp* someExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement ObjectSomeValuesFrom...\n");
+    
+    // Générer un ID unique
+    std::string someId = "http://anonymous.org#SomeValuesFrom_" + std::to_string(++anonymousClassExpressionCounter);
+    
+    cowl_write_static((UOStream*)stream, "   ID: ");
+    cowl_write_static((UOStream*)stream, someId.c_str());
+    cowl_write_static((UOStream*)stream, "\n");
+
+    chr::Logical_var<std::string> someVar=parser->getOrCreateLogicalVar(someId);
+    parser->space->owlClass(someVar);
+    
+    // Récupérer la propriété et le filler
+    CowlObjQuant* quant = (CowlObjQuant*)someExp;
+    CowlObjPropExp* property = cowl_obj_quant_get_prop(quant);
+    CowlClsExp* filler = cowl_obj_quant_get_filler(quant);
+    
+    // Obtenir l'IRI de la propriété
+    std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
+    chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+    chr::Logical_var<std::string> fillerVar;
+    if(cowl_cls_exp_get_type(filler) == COWL_CET_CLASS) {
+        CowlClass* cls = (CowlClass*) filler;
+        CowlIRI* iri = cowl_class_get_iri(cls);
+        std::string classUri = getFullIRI(iri);
+        // Récupérer ou créer la variable logique pour ce filler
+        fillerVar = parser->getOrCreateLogicalVar(classUri);
+    }
+    else {
+      // Traiter récursivement le filler
+     fillerVar = processComplexClass(parser, filler);
+    }    
+    cowl_write_static((UOStream*)stream, "    Propriété et filler traités\n");
+    cowl_write_static((UOStream*)stream, "    SomeValuesFrom terminé\n");
+    
+    parser->space->owlObjectSomeValuesFrom(someVar, propertyVar, fillerVar);
+    return someVar;
+}
+
+// Gestion de ObjectAllValuesFrom (∀P.C)
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateObjectAllValuesFrom(ParserCowl<T>* parser, CowlClsExp* allExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement ObjectAllValuesFrom...\n");
+    
+    // Générer un ID unique
+    std::string allId = "http://anonymous.org#AllValuesFrom_" + std::to_string(++anonymousClassExpressionCounter);
+    
+    cowl_write_static((UOStream*)stream, "   ID: ");
+    cowl_write_static((UOStream*)stream, allId.c_str());
+    cowl_write_static((UOStream*)stream, "\n");
+
+    chr::Logical_var<std::string> allVar=parser->getOrCreateLogicalVar(allId);
+    parser->space->owlClass(allVar);
+    
+    // Récupérer la propriété et le filler
+    CowlObjQuant* quant = (CowlObjQuant*)allExp;
+    CowlObjPropExp* property = cowl_obj_quant_get_prop(quant);
+    CowlClsExp* filler = cowl_obj_quant_get_filler(quant);
+    
+    // Obtenir l'IRI de la propriété
+    std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
+    chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+    chr::Logical_var<std::string> fillerVar;
+    if(cowl_cls_exp_get_type(filler) == COWL_CET_CLASS) {
+        CowlClass* cls = (CowlClass*) filler;
+        CowlIRI* iri = cowl_class_get_iri(cls);
+        std::string classUri = getFullIRI(iri);
+        // Récupérer ou créer la variable logique pour ce filler
+        fillerVar = parser->getOrCreateLogicalVar(classUri);
+    }else{
+       // Traiter récursivement le filler
+       fillerVar = processComplexClass(parser, filler);
+   }
+    cowl_write_static((UOStream*)stream, "    Propriété et filler traités\n");
+    cowl_write_static((UOStream*)stream, "    AllValuesFrom terminé\n");
+    parser->space->owlObjectAllValuesFrom(allVar, propertyVar, fillerVar);
+    return allVar;
+}
+
+// Gestion de ObjectHasValue
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateObjectHasValue(ParserCowl<T>* parser, CowlClsExp* hasValueExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement ObjectHasValue...\n");
+    
+    std::string hasValueId = "http://anonymous.org#HasValue_" + std::to_string(++anonymousClassExpressionCounter);
+
+    chr::Logical_var<std::string> hasValueVar=parser->getOrCreateLogicalVar(hasValueId);
+    parser->space->owlClass(hasValueVar);
+    
+    // Récupérer la propriété et l'individu
+    CowlObjHasValue* hasValue = (CowlObjHasValue*)hasValueExp;
+    CowlObjPropExp* property = cowl_obj_has_value_get_prop(hasValue);
+    CowlIndividual* individual = cowl_obj_has_value_get_ind(hasValue);
+    
+    // Obtenir les URIs
+    std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
+    chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+    
+    CowlIRI* indIri = cowl_named_ind_get_iri((CowlNamedInd*)individual);
+    std::string individualUri = getFullIRI(indIri);
+    chr::Logical_var<std::string> individualVar = parser->getOrCreateLogicalVar(individualUri);
+    
+    // Créer la contrainte owlHasValueObject
+    parser->space->owlHasValueObject(hasValueVar, propertyVar, individualVar);
+    cowl_write_static((UOStream*)stream, "    HasValue terminé\n");
+    
+    return hasValueVar;
+}
+
+// Gestion de ObjectHasSelf
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateObjectHasSelf(ParserCowl<T>* parser, CowlClsExp* hasSelfExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement ObjectHasSelf...\n");
+    
+    std::string hasSelfId = "http://anonymous.org#HasSelf_" + std::to_string(++anonymousClassExpressionCounter);
+    
+    chr::Logical_var<std::string> hasSelfVar=parser->getOrCreateLogicalVar(hasSelfId);
+    parser->space->owlClass(hasSelfVar);
+
+    // Récupérer la propriété
+    CowlObjHasSelf* hasSelf = (CowlObjHasSelf*)hasSelfExp;
+    CowlObjPropExp* property = cowl_obj_has_self_get_prop(hasSelf);
+    // Obtenir l'IRI de la propriété
+    std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
+    chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+    //to do parser->space->owlHasSelf(hasSelfVar, propertyVar);
+    cowl_write_static((UOStream*)stream, "    HasSelf terminé\n");
+    return hasSelfVar;
+}
+
+// Gestion de ObjectOneOf
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateObjectOneOf(ParserCowl<T>* parser, CowlClsExp* oneOfExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement ObjectOneOf...\n");
+    
+    std::string oneOfId = "http://anonymous.org#OneOf_" + std::to_string(++anonymousClassExpressionCounter);
+
+    chr::Logical_var<std::string> oneOfVar=parser->getOrCreateLogicalVar(oneOfId);
+    parser->space->owlClass(oneOfVar);
+    
+    // Récupérer les individus
+    CowlObjOneOf* oneOf = (CowlObjOneOf*)oneOfExp;
+    CowlVector* individuals = cowl_obj_one_of_get_inds(oneOf);
+    size_t count = cowl_vector_count(individuals);
+    std::set<chr::Logical_var<std::string>> oneOfIndividuals;
+    
+    // Créer un set d'URIs pour les individus et créer des assertions de classe
+    for(size_t i = 0; i < count; i++) {
+        CowlIndividual* ind = (CowlIndividual*)cowl_vector_get_item(individuals, i);
+        CowlIRI* indIri = cowl_named_ind_get_iri((CowlNamedInd*)ind);
+        std::string individualUri = getFullIRI(indIri);
+        chr::Logical_var<std::string> indVar = parser->getOrCreateLogicalVar(individualUri);
+        oneOfIndividuals.insert(indVar);
+    }
+    //to do parser->space->owlOneOf(oneOfVar, oneOfIndividuals);
+    cowl_write_static((UOStream*)stream, "    OneOf terminé\n");
+    
+    return oneOfVar;
+}
+
+// Gestion de DataSomeValuesFrom
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateDataSomeValuesFrom(ParserCowl<T>* parser, CowlClsExp* dataSomeExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement DataSomeValuesFrom...\n");
+    
+    std::string dataSomeId = "http://anonymous.org#DataSomeValuesFrom_" + std::to_string(++anonymousClassExpressionCounter);
+    chr::Logical_var<std::string> dataSomeVar=parser->getOrCreateLogicalVar(dataSomeId);
+    // Récupérer la propriété et le range
+    CowlDataQuant* quant = (CowlDataQuant*)dataSomeExp;
+    CowlDataPropExp* property = cowl_data_quant_get_prop(quant);
+    CowlDataRange* range = cowl_data_quant_get_range(quant);
+    // Obtenir l'IRI de la propriété
+    std::string propertyUri = getFullIRI(cowl_data_prop_get_iri((CowlDataProp*)property));
+    chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+    std::shared_ptr<AnySimpleType> typeVal;
+    std::string dataTypeUri = getFullIRI(cowl_datatype_get_iri((CowlDatatype*)range));
+    XSDType type = mapXsdType(dataTypeUri);
+    
+        switch (type) {
+            // Types numériques entiers
+            case XSDType::INTEGER:  
+                typeVal = std::make_shared<IntegerType>(); 
+                break;
+            case XSDType::NON_NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NonNegativeIntegerType>(); 
+                break;
+            case XSDType::NON_POSITIVE_INTEGER: 
+                typeVal = std::make_shared<NonPositiveIntegerType>(); 
+                break;
+            case XSDType::POSITIVE_INTEGER: 
+                typeVal = std::make_shared<PositiveIntegerType>(); 
+                break;
+            case XSDType::NEGATIVE_INTEGER: 
+                typeVal = std::make_shared<NegativeIntegerType>(); 
+                break;
+            case XSDType::INT: 
+                typeVal = std::make_shared<IntType>(); 
+                break;
+            case XSDType::UNSIGNED_INT: 
+                typeVal = std::make_shared<UnsignedIntType>(); 
+                break;
+            case XSDType::SHORT: 
+                typeVal = std::make_shared<ShortType>(); 
+                break;
+            case XSDType::UNSIGNED_SHORT: 
+                typeVal = std::make_shared<UnsignedShortType>(); 
+                break;
+            case XSDType::BYTE: 
+                typeVal = std::make_shared<ByteType>(); 
+                break;
+            case XSDType::UNSIGNED_BYTE: 
+                typeVal = std::make_shared<UnsignedByteType>(); 
+                break;
+            case XSDType::LONG: 
+                typeVal = std::make_shared<LongType>(); 
+                break;
+            case XSDType::UNSIGNED_LONG: 
+                typeVal = std::make_shared<UnsignedLongType>(); 
+                break;
+            
+            // Types numériques décimaux
+            case XSDType::FLOAT:  
+                typeVal = std::make_shared<FloatType>(); 
+                break;
+            case XSDType::DOUBLE: 
+                typeVal = std::make_shared<DoubleType>(); 
+                break;
+            case XSDType::DECIMAL: 
+                typeVal = std::make_shared<DecimalType>(); 
+                break;
+            
+            // Type booléen
+            case XSDType::BOOLEAN: 
+                typeVal = std::make_shared<BooleanType>(); 
+                break;
+            
+            // Types chaînes de caractères
+            case XSDType::STRING: 
+                typeVal = std::make_shared<StringType>(); 
+                break;
+            case XSDType::NORMALIZED_STRING: 
+                typeVal = std::make_shared<NormalizedStringType>(); 
+                break;
+            case XSDType::TOKEN: 
+                typeVal = std::make_shared<TokenType>(); 
+                break;
+            case XSDType::LANGUAGE: 
+                typeVal = std::make_shared<LanguageType>(); 
+                break;
+            case XSDType::NAME: 
+                typeVal = std::make_shared<NameType>(); 
+                break;
+            case XSDType::NCNAME: 
+                typeVal = std::make_shared<NCNameType>(); 
+                break;
+            case XSDType::ID: 
+                typeVal = std::make_shared<IDType>(); 
+                break;
+            case XSDType::IDREF: 
+                typeVal = std::make_shared<IDREFType>(); 
+                break;
+            case XSDType::IDREFS: 
+                typeVal = std::make_shared<IDREFSType>(); 
+                break;
+            case XSDType::ENTITY: 
+                typeVal = std::make_shared<ENTITYType>(); 
+                break;
+            case XSDType::ENTITIES: 
+                typeVal = std::make_shared<ENTITIESType>(); 
+                break;
+            case XSDType::NMTOKEN: 
+                typeVal = std::make_shared<NMTOKENType>(); 
+                break;
+            case XSDType::NMTOKENS: 
+                typeVal = std::make_shared<NMTOKENSType>(); 
+                break;
+            
+            // Types dates et heures
+            case XSDType::DATE: 
+                typeVal = std::make_shared<DateType>(); 
+                break;
+            case XSDType::TIME: 
+                typeVal = std::make_shared<TimeType>(); 
+                break;
+            case XSDType::DATE_TIME: 
+                typeVal = std::make_shared<DateTimeType>(); 
+                break;
+            case XSDType::DATE_TIME_STAMP: 
+                typeVal = std::make_shared<DateTimeStampType>(); 
+                break;
+            case XSDType::DURATION: 
+                typeVal = std::make_shared<DurationType>(); 
+                break;
+            case XSDType::G_YEAR: 
+                typeVal = std::make_shared<GYearType>(); 
+                break;
+            case XSDType::G_YEAR_MONTH: 
+                typeVal = std::make_shared<GYearMonthType>(); 
+                break;
+            case XSDType::G_MONTH: 
+                typeVal = std::make_shared<GMonthType>(); 
+                break;
+            case XSDType::G_MONTH_DAY: 
+                typeVal = std::make_shared<GMonthDayType>(); 
+                break;
+            case XSDType::G_DAY: 
+                typeVal = std::make_shared<GDayType>(); 
+                break;
+            
+            // Types binaires
+            case XSDType::BASE64_BINARY: 
+                typeVal = std::make_shared<Base64BinaryType>(); 
+                break;
+            case XSDType::HEX_BINARY: 
+                typeVal = std::make_shared<HexBinaryType>(); 
+                break;
+
+            // Type URI
+            case XSDType::ANY_URI: 
+                typeVal = std::make_shared<AnyURIType>(); 
+                break;
+            
+            // Types divers
+            case XSDType::QNAME: 
+                typeVal = std::make_shared<QNameType>(); 
+                break;
+            case XSDType::NOTATION: 
+                typeVal = std::make_shared<NotationType>(); 
+                break;
+            
+            // Type inconnu
+            case XSDType::UNKNOWN:
+            default: 
+                typeVal = std::make_shared<StringType>(); // Type par défaut pour types inconnus
+                break;
+        }
+
+    //to do parser->space->owlDataSomeValuesFrom(dataSomeVar, propertyVar,std::move(typeVal));
+    cowl_write_static((UOStream*)stream, "    DataSomeValuesFrom terminé\n");
+    
+    return dataSomeVar;
+}
+
+// Gestion de DataAllValuesFrom
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateDataAllValuesFrom(ParserCowl<T>* parser, CowlClsExp* dataAllExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement DataAllValuesFrom...\n");
+    
+    std::string dataAllId = "http://anonymous.org#DataAllValuesFrom_" + std::to_string(++anonymousClassExpressionCounter);
+    chr::Logical_var<std::string> dataAllVar = parser->getOrCreateLogicalVar(dataAllId);
+    parser->space->owlClass(dataAllVar);
+
+    // Extraire la propriété et le range
+    CowlDataQuant* quant = (CowlDataQuant*)dataAllExp;
+    CowlDataPropExp* property = cowl_data_quant_get_prop(quant);
+    CowlDataRange* range = cowl_data_quant_get_range(quant);
+
+    // Récupérer l'URI de la propriété
+    std::string propertyUri = getFullIRI(cowl_data_prop_get_iri((CowlDataProp*)property));
+    chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+
+    // Récupérer le type de données et le mapper
+    std::string dataTypeUri = getFullIRI(cowl_datatype_get_iri((CowlDatatype*)range));
+    XSDType type = mapXsdType(dataTypeUri);
+    
+    // Créer le DataType correspondant
+    std::shared_ptr<AnySimpleType> typeVal;    
+    switch (type) {
+        // Types entiers
+        case XSDType::INTEGER: 
+            typeVal = std::make_shared<IntegerType>(); 
+            break;
+        case XSDType::NON_NEGATIVE_INTEGER: 
+            typeVal = std::make_shared<NonNegativeIntegerType>(); 
+            break;
+        case XSDType::NON_POSITIVE_INTEGER: 
+            typeVal = std::make_shared<NonPositiveIntegerType>(); 
+            break;
+        case XSDType::POSITIVE_INTEGER: 
+            typeVal = std::make_shared<PositiveIntegerType>(); 
+            break;
+        case XSDType::NEGATIVE_INTEGER: 
+            typeVal = std::make_shared<NegativeIntegerType>(); 
+            break;
+        case XSDType::INT: 
+            typeVal = std::make_shared<IntType>(); 
+            break;
+        case XSDType::UNSIGNED_INT: 
+            typeVal = std::make_shared<UnsignedIntType>(); 
+            break;
+        case XSDType::SHORT: 
+            typeVal = std::make_shared<ShortType>(); 
+            break;
+        case XSDType::UNSIGNED_SHORT: 
+            typeVal = std::make_shared<UnsignedShortType>(); 
+            break;
+        case XSDType::BYTE: 
+            typeVal = std::make_shared<ByteType>(); 
+            break;
+        case XSDType::UNSIGNED_BYTE: 
+            typeVal = std::make_shared<UnsignedByteType>(); 
+            break;
+        case XSDType::LONG: 
+            typeVal = std::make_shared<LongType>(); 
+            break;
+        case XSDType::UNSIGNED_LONG: 
+            typeVal = std::make_shared<UnsignedLongType>(); 
+            break;
+        
+        // Types numériques décimaux
+        case XSDType::FLOAT:  
+            typeVal = std::make_shared<FloatType>(); 
+            break;
+        case XSDType::DOUBLE: 
+            typeVal = std::make_shared<DoubleType>(); 
+            break;
+        case XSDType::DECIMAL: 
+            typeVal = std::make_shared<DecimalType>(); 
+            break;
+        
+        // Type booléen
+        case XSDType::BOOLEAN: 
+            typeVal = std::make_shared<BooleanType>(); 
+            break;
+        
+        // Types chaînes de caractères
+        case XSDType::STRING: 
+            typeVal = std::make_shared<StringType>(); 
+            break;
+        case XSDType::NORMALIZED_STRING: 
+            typeVal = std::make_shared<NormalizedStringType>(); 
+            break;
+        case XSDType::TOKEN: 
+            typeVal = std::make_shared<TokenType>(); 
+            break;
+        case XSDType::LANGUAGE: 
+            typeVal = std::make_shared<LanguageType>(); 
+            break;
+        case XSDType::NAME: 
+            typeVal = std::make_shared<NameType>(); 
+            break;
+        case XSDType::NCNAME: 
+            typeVal = std::make_shared<NCNameType>(); 
+            break;
+        case XSDType::ID: 
+            typeVal = std::make_shared<IDType>(); 
+            break;
+        case XSDType::IDREF: 
+            typeVal = std::make_shared<IDREFType>(); 
+            break;
+        case XSDType::IDREFS: 
+            typeVal = std::make_shared<IDREFSType>(); 
+            break;
+        case XSDType::ENTITY: 
+            typeVal = std::make_shared<ENTITYType>(); 
+            break;
+        case XSDType::ENTITIES: 
+            typeVal = std::make_shared<ENTITIESType>(); 
+            break;
+        case XSDType::NMTOKEN: 
+            typeVal = std::make_shared<NMTOKENType>(); 
+            break;
+        case XSDType::NMTOKENS: 
+            typeVal = std::make_shared<NMTOKENSType>(); 
+            break;
+        
+        // Types dates et heures
+        case XSDType::DATE: 
+            typeVal = std::make_shared<DateType>(); 
+            break;
+        case XSDType::TIME: 
+            typeVal = std::make_shared<TimeType>(); 
+            break;
+        case XSDType::DATE_TIME: 
+            typeVal = std::make_shared<DateTimeType>(); 
+            break;
+        case XSDType::DATE_TIME_STAMP: 
+            typeVal = std::make_shared<DateTimeStampType>(); 
+            break;
+        case XSDType::DURATION: 
+            typeVal = std::make_shared<DurationType>(); 
+            break;
+        case XSDType::G_YEAR: 
+            typeVal = std::make_shared<GYearType>(); 
+            break;
+        case XSDType::G_YEAR_MONTH: 
+            typeVal = std::make_shared<GYearMonthType>(); 
+            break;
+        case XSDType::G_MONTH: 
+            typeVal = std::make_shared<GMonthType>(); 
+            break;
+        case XSDType::G_MONTH_DAY: 
+            typeVal = std::make_shared<GMonthDayType>(); 
+            break;
+        case XSDType::G_DAY: 
+            typeVal = std::make_shared<GDayType>(); 
+            break;
+        
+        // Types binaires
+        case XSDType::BASE64_BINARY: 
+            typeVal = std::make_shared<Base64BinaryType>(); 
+            break;
+        case XSDType::HEX_BINARY: 
+            typeVal = std::make_shared<HexBinaryType>(); 
+            break;
+
+        // Type URI
+        case XSDType::ANY_URI: 
+            typeVal = std::make_shared<AnyURIType>(); 
+            break;
+        
+        // Types divers
+        case XSDType::QNAME: 
+            typeVal = std::make_shared<QNameType>(); 
+            break;
+        case XSDType::NOTATION: 
+            typeVal = std::make_shared<NotationType>(); 
+            break;
+        
+        // Type inconnu
+        case XSDType::UNKNOWN:
+        default: 
+            typeVal = std::make_shared<StringType>(); // Type par défaut pour types inconnus
+            break;
+    }
+
+    //to do parser->space->owlDataAllValuesFrom(dataAllVar, propertyVar, std::move(typeVal) );
+    cowl_write_static((UOStream*)stream, "    DataAllValuesFrom terminé\n");
+    
+    return dataAllVar;
+}
+
+
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateMaxCardinality(ParserCowl<T>* parser, CowlClsExp* maxCardExp){
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, " Traitement MaxCardinality...\n");
+    
+    std::string maxCardId = "http://anonymous.org#MaxCardinality_" + std::to_string(++anonymousClassExpressionCounter);
+    chr::Logical_var<std::string> maxCardVar = parser->getOrCreateLogicalVar(maxCardId);
+    parser->space->owlClass(maxCardVar);
+
+    // Déterminer si c'est une object property ou data property cardinality
+    CowlClsExpType expType = cowl_cls_exp_get_type(maxCardExp);
+    
+    if (expType == COWL_CET_OBJ_MAX_CARD) {
+        // Object Property MaxCardinality
+        CowlObjCard* objCard = (CowlObjCard*)maxCardExp;
+        CowlClsExp* filler = cowl_obj_card_get_filler(objCard);
+        
+        if (filler == NULL) {
+            // Non qualifié (autorisé en OWL2 RL)
+            ulib_uint cardinality = cowl_obj_card_get_cardinality(objCard);
+            CowlObjPropExp* property = cowl_obj_card_get_prop(objCard);
+            
+            // Obtenir l'IRI de la propriété
+            std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
+            chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+            
+            cowl_write_static((UOStream*)stream, "    ObjectMaxCardinality non qualifié terminé\n");
+            // TODO: Ajouter l'appel à la contrainte CHR++ appropriée
+            // parser->space->owlObjectMaxCardinality(maxCardVar, propertyVar, cardinality);
+        } else {
+            cowl_write_static((UOStream*)stream, "    ObjectMaxCardinality qualifié - non pris en charge en OWL2 RL\n");
+        }
+        
+    } else if (expType == COWL_CET_DATA_MAX_CARD) {
+        // Data Property MaxCardinality
+        CowlDataCard* dataCard = (CowlDataCard*)maxCardExp;
+        CowlDataRange* range = cowl_data_card_get_range(dataCard);
+        
+        if (range == NULL) {
+            // Non qualifié (autorisé en OWL2 RL)
+            ulib_uint cardinality = cowl_data_card_get_cardinality(dataCard);
+            CowlDataPropExp* property = cowl_data_card_get_prop(dataCard);
+            
+            // Obtenir l'IRI de la propriété
+            std::string propertyUri = getFullIRI(cowl_data_prop_get_iri((CowlDataProp*)property));
+            chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+            
+            cowl_write_static((UOStream*)stream, "    DataMaxCardinality non qualifié terminé\n");
+            // TODO: Ajouter l'appel à la contrainte CHR++ appropriée
+            // parser->space->owlDataMaxCardinality(maxCardVar, propertyVar, cardinality);
+        } else {
+            cowl_write_static((UOStream*)stream, "    DataMaxCardinality qualifié - non pris en charge en OWL2 RL\n");
+        }
+        
+    } else {
+        cowl_write_static((UOStream*)stream, "    Type de MaxCardinality non reconnu\n");
+    }
+    
+    return maxCardVar;
+}
+
+template <typename T>
+chr::Logical_var<std::string> ParserCowl<T>::iterateObjectComplementOf(ParserCowl<T>* parser, CowlClsExp* complementExp) {
+    UOStream* stream = uostream_std();
+    cowl_write_static((UOStream*)stream, "itération sur le complément d'objet : ");
+
+    std::string complementID = "http://anonymous.org#ComplementOf_" + std::to_string(++anonymousClassExpressionCounter);
+    chr::Logical_var<std::string> complementVar = parser->getOrCreateLogicalVar(complementID);
+    parser->space->owlClass(complementVar);
+    
+    // Obtenir l'opérande du complément
+    CowlObjCompl* complement = (CowlObjCompl*)complementExp;
+    CowlClsExp* operand = cowl_obj_compl_get_operand(complement);
+    
+    // Traiter l'opérande (peut être une classe atomique ou complexe)
+    chr::Logical_var<std::string> operandVar;
+    if (cowl_cls_exp_get_type(operand) == COWL_CET_CLASS) {
+        // Classe atomique
+        CowlIRI* iri = cowl_class_get_iri((CowlClass*)operand);
+        std::string classUri = getFullIRI(iri);
+        operandVar = parser->getOrCreateLogicalVar(classUri);
+    } else {
+        // Classe complexe - traiter récursivement
+        cowl_write_static((UOStream*)stream, "   Opérande complexe détectée à l'interrieur dun complement - interdit en owl2 RL\n");
+    }
+
+    parser->space->owlComplementOf(complementVar, operandVar);
+    cowl_write_static((UOStream*)stream, "ComplementOf terminé\n");
+    return complementVar;
+}
+
 template <typename T>
 void ParserCowl<T>::iterateEquivClass(ParserCowl<T>* parser, CowlAny* axiom) {
     UOStream* stream = uostream_std();
@@ -360,34 +1188,33 @@ void ParserCowl<T>::iterateEquivClass(ParserCowl<T>* parser, CowlAny* axiom) {
 
     // Stocker les variables logiques et les URI correspondantes
     std::vector<chr::Logical_var<std::string>> classVars;
-    std::vector<std::string> classUris;
 
-    for (ulib_uint i = 0; i < count; ++i) {
-        CowlClass* cls = (CowlClass*) cowl_vector_get_item(class_list, i);
-        if (cowl_cls_exp_get_type(cls) == COWL_CET_CLASS) {
-            CowlIRI* iri = cowl_class_get_iri(cls);
-            CowlString* name = cowl_iri_get_rem(iri);  // Pour l'affichage seulement
+    
+    // Variables pour gérer les unions
+    chr::Logical_var<std::string> atomicClassVar;
+    std::string atomicClassUri;
 
-            // Obtenir l'IRI complète pour la variable logique
+    for (ulib_uint i = 0; i < count; ++i) { 
+           chr::Logical_var<std::string> classVar;
+
+        CowlClsExp* cls = (CowlClsExp*) cowl_vector_get_item(class_list, i);
+        CowlClsExpType clsType = cowl_cls_exp_get_type(cls);
+        
+        if (clsType == COWL_CET_CLASS) {
+            // Classe atomique
+            CowlIRI* iri = cowl_class_get_iri((CowlClass*)cls);
             std::string classUri = getFullIRI(iri);
-
-            // Récupère ou crée la variable logique pour cette classe (avec cache)
-            chr::Logical_var<std::string>& classVar = parser->getOrCreateLogicalVar(classUri);
-
-            classVars.push_back(classVar);
-            classUris.push_back(classUri);
-
-            cowl_write_string((UOStream*)stream, name);
-            if (i < count - 1) cowl_write_static((UOStream*)stream, " , ");
+            classVar = parser->getOrCreateLogicalVar(classUri);
         }
         else {
-            cowl_write_static((UOStream*)stream, " [autre expression non supportée] ");
+             classVar = processComplexClass(parser, cls);
         }
+        classVars.push_back(classVar);
     }
 
     cowl_write_static((UOStream*)stream, "\n");
 
-    // Créer les paires d’équivalence : (A,B), (A,C), (B,C), ...
+    // Créer les paires d’équivalence 
     for (size_t i = 0; i < classVars.size(); ++i) {
         for (size_t j = i + 1; j < classVars.size(); ++j) {
             parser->space->owlEquivalentClass(classVars[i], classVars[j]);
@@ -1703,9 +2530,9 @@ bool ParserCowl<T>::load()
 
     std::ifstream f("example2.ofn");
             if (!f) {
-                std::cout << " Fichier example2.ofn introuvable au moment de l'exécution." << std::endl;
+                std::cout << " Fichier  introuvable au moment de l'exécution." << std::endl;
             }else{
-                std::cout << " Fichier example2.ofn trouvé." << std::endl;
+                std::cout << " Fichier  trouvé." << std::endl;
             }
     cowl_init();
         //Lecture de l'ontologie
