@@ -155,7 +155,6 @@ public:
     static chr::Logical_var<std::string> iterateObjectSomeValuesFrom(ParserCowl<T>* parser, CowlClsExp* someExp);
     static chr::Logical_var<std::string> iterateObjectAllValuesFrom(ParserCowl<T>* parser, CowlClsExp* allExp);
     static chr::Logical_var<std::string> iterateObjectHasValue(ParserCowl<T>* parser, CowlClsExp* hasValueExp);
-    static chr::Logical_var<std::string> iterateObjectHasSelf(ParserCowl<T>* parser, CowlClsExp* hasSelfExp);
     static chr::Logical_var<std::string> iterateObjectOneOf(ParserCowl<T>* parser, CowlClsExp* oneOfExp);
     static chr::Logical_var<std::string> iterateDataSomeValuesFrom(ParserCowl<T>* parser, CowlClsExp* dataSomeExp);
     static chr::Logical_var<std::string> iterateDataAllValuesFrom(ParserCowl<T>* parser, CowlClsExp* dataAllExp);
@@ -454,9 +453,6 @@ chr::Logical_var<std::string> ParserCowl<T>::processComplexClass(ParserCowl<T>* 
         case COWL_CET_OBJ_HAS_VALUE:
             return iterateObjectHasValue(parser, clsExp);
             
-        case COWL_CET_OBJ_HAS_SELF:
-            return iterateObjectHasSelf(parser, clsExp);
-
         case COWL_CET_OBJ_ONE_OF:
             return iterateObjectOneOf(parser, clsExp);
             
@@ -537,6 +533,7 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateIntersection(ParserCowl<T>* 
         cowl_write_static((UOStream*)stream, "       Opérande ajouté\n");
     }
     // Créer la contrainte owlIntersectionOf
+    cowl_write_static((UOStream*)stream, "   Création de la contrainte IntersectionOf\n");
     parser->space->owlIntersectionOf(intersectionVar, intersectionClasses);
     cowl_write_static((UOStream*)stream, "    Intersection terminée\n");
     
@@ -580,9 +577,10 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateObjectSomeValuesFrom(ParserC
      fillerVar = processComplexClass(parser, filler);
     }    
     cowl_write_static((UOStream*)stream, "    Propriété et filler traités\n");
-    cowl_write_static((UOStream*)stream, "    SomeValuesFrom terminé\n");
     
-    parser->space->owlObjectSomeValuesFrom(someVar, propertyVar, fillerVar);
+    parser->space->owlObjectSomeValuesFrom(someVar, propertyVar, fillerVar);  
+     cowl_write_static((UOStream*)stream, "    SomeValuesFrom terminé\n");
+
     return someVar;
 }
 
@@ -658,28 +656,6 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateObjectHasValue(ParserCowl<T>
     return hasValueVar;
 }
 
-// Gestion de ObjectHasSelf
-template <typename T>
-chr::Logical_var<std::string> ParserCowl<T>::iterateObjectHasSelf(ParserCowl<T>* parser, CowlClsExp* hasSelfExp) {
-    UOStream* stream = uostream_std();
-    cowl_write_static((UOStream*)stream, " Traitement ObjectHasSelf...\n");
-    
-    std::string hasSelfId = "http://anonymous.org#HasSelf_" + std::to_string(++anonymousClassExpressionCounter);
-    
-    chr::Logical_var<std::string> hasSelfVar=parser->getOrCreateLogicalVar(hasSelfId);
-    parser->space->owlClass(hasSelfVar);
-
-    // Récupérer la propriété
-    CowlObjHasSelf* hasSelf = (CowlObjHasSelf*)hasSelfExp;
-    CowlObjPropExp* property = cowl_obj_has_self_get_prop(hasSelf);
-    // Obtenir l'IRI de la propriété
-    std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
-    chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
-    //to do parser->space->owlHasSelf(hasSelfVar, propertyVar);
-    cowl_write_static((UOStream*)stream, "    HasSelf terminé\n");
-    return hasSelfVar;
-}
-
 // Gestion de ObjectOneOf
 template <typename T>
 chr::Logical_var<std::string> ParserCowl<T>::iterateObjectOneOf(ParserCowl<T>* parser, CowlClsExp* oneOfExp) {
@@ -705,7 +681,7 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateObjectOneOf(ParserCowl<T>* p
         chr::Logical_var<std::string> indVar = parser->getOrCreateLogicalVar(individualUri);
         oneOfIndividuals.insert(indVar);
     }
-    //to do parser->space->owlOneOf(oneOfVar, oneOfIndividuals);
+    parser->space->owlOneOf(oneOfVar, oneOfIndividuals);
     cowl_write_static((UOStream*)stream, "    OneOf terminé\n");
     
     return oneOfVar;
@@ -889,7 +865,7 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateDataSomeValuesFrom(ParserCow
                 break;
         }
 
-    //to do parser->space->owlDataSomeValuesFrom(dataSomeVar, propertyVar,std::move(typeVal));
+    parser->space->owlDataSomeValuesFrom(dataSomeVar, propertyVar,std::move(typeVal));
     cowl_write_static((UOStream*)stream, "    DataSomeValuesFrom terminé\n");
     
     return dataSomeVar;
@@ -1079,7 +1055,7 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateDataAllValuesFrom(ParserCowl
             break;
     }
 
-    //to do parser->space->owlDataAllValuesFrom(dataAllVar, propertyVar, std::move(typeVal) );
+    parser->space->owlDataAllValuesFrom(dataAllVar, propertyVar, std::move(typeVal) );
     cowl_write_static((UOStream*)stream, "    DataAllValuesFrom terminé\n");
     
     return dataAllVar;

@@ -87,6 +87,7 @@ using iterator = std::vector<std::string>::iterator;
 using iteratorSet = std::set<std::string>::iterator;
 using set = std::set<std::string>;
 using LogicalVarSet = std::set<chr::Logical_var<std::string>>;
+using LogicalVarSetIterator = std::set<chr::Logical_var<std::string>>::iterator;
 
 namespace chr {
 template<>
@@ -97,6 +98,21 @@ template<>
       static void update_hash(const std::set<std::string>::iterator&) {}
       static bool is_equal(const std::set<std::string>::iterator& a,
                            const std::set<std::string>::iterator& b) {
+          return a == b;
+      }
+  };
+
+template<>
+  struct Type_instruction_wrapper<LogicalVarSetIterator, false> {
+      static std::string to_string(const LogicalVarSetIterator& it) {
+          if ((*it).ground()) {
+              return *(*it);
+          }
+          return "unground_var";
+      }
+      static void update_hash(const LogicalVarSetIterator&) {}
+      static bool is_equal(const LogicalVarSetIterator& a,
+                           const LogicalVarSetIterator& b) {
           return a == b;
       }
   };
@@ -160,7 +176,12 @@ std::string constructFullUri(const std::string& prefix,
     return prefix + ":" + name;
 }
 
-
+bool sameDataType(const std::shared_ptr<AnySimpleType> dr1, const std::shared_ptr<AnySimpleType> dr2){
+    if (!dr1 || !dr2) {
+        return false;  // Considère que les types null ne sont pas égaux
+    }
+    return dr1->getId() == dr2->getId();
+}
 bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
     // Vérification de la hiérarchie de types XSD
     // dr est le type attendu (range), v.typeVal est le type de la valeur
@@ -185,6 +206,13 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
     }*/ 
     
     return !isValid;  // Retourne true si le type est invalide
+}
+
+Value createValue(const std::string& val, const std::shared_ptr<AnySimpleType> typeVal) {
+    Value v;
+    v.val = val;
+    v.typeVal = typeVal;
+    return v;
 }
 
 /**
@@ -230,19 +258,16 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
             owlDataPropertyRange(?std::string,+std::shared_ptr<[AnySimpleType]>),
             owlUnionClass(?std::string,?std::string),
             owlUnionOf(?std::string,+LogicalVarSet),
-            owlUnionOfLoop(?std::string,+iteratorSet,+iteratorSet),
+            owlUnionOfLoop(?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator),
             owlIntersectionOf(?std::string,+LogicalVarSet),
-            //owlIntersectionClass(?std::string,?std::string,+int,+int),
-            //owlIntersectionOf(?std::string,+iterator,+iterator,+int),
-            //owlCandidatsIntersection(?std::string,?std::string,+int),
-            owlTempClassAssertion(?std::string,?std::string),
+            owlIntersectionClass(?std::string,?std::string,+int),
+            owlIntersectionOfLoop(?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator,+int),
+            owlCandidatsIntersection(?std::string,?std::string,+int),
             owlObjectAllValuesFrom(?std::string,?std::string,?std::string),
             owlDataAllValuesFrom(?std::string,?std::string,+std::shared_ptr<[AnySimpleType]>),
             owlObjectSomeValuesFrom(?std::string,?std::string,?std::string),
             owlDataSomeValuesFrom(?std::string,?std::string,+std::shared_ptr<[AnySimpleType]>),
-
-            owlObjectPropertyChain(?std::string,?std::string,+int,+int),
-            constructPropertyChain(?std::string,+int,?std::string,?std::string,+int) ,
+            owlDataValue(+Value,+std::string,+std::shared_ptr<[AnySimpleType]>),
             owlComplementOf(?std::string,?std::string),
             querySuperClassOfUri(+std::string),
             querySuperClassOf(?std::string),
@@ -252,13 +277,13 @@ bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
             res(+std::string),
             queryFullUri(?std::string),
             logicalName(+std::string,?std::string),
-            owlMaxCardinality(?std::string,?std::string,+int),
+            owlObjectMaxCardinality(?std::string,?std::string,+int),
+            owlDataMaxCardinality(?std::string,?std::string,+int),
             owlHasValueObject(?std::string,?std::string,?std::string),
             owlHasValueData(?std::string,?std::string,?Value),
-            owlOneOf(?std::string,+LogicalVarSet)
-            //owlOneOfLoop(?std::string,+iteratorSet,+iteratorSet),
-            //owlHasKey(?std::string,?set,?std::string),
-            //owlHasKeyLoop(+iteratorSet,+iteratorSet,?std::string,?std::string)
+            owlOneOf(?std::string,+LogicalVarSet),
+            owlOneOfLoop(?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator)
+
             
 
 
@@ -288,7 +313,6 @@ owlSubDataPropertyOf(A,B) #passive \ owlSubDataPropertyOf(A,B) <=> true ;;
 owlSubObjectPropertyOf(A,B) #passive \ owlSubObjectPropertyOf(A,B) <=> true ;;
 owlClassAssertion(X,A,B) #passive \ owlClassAssertion(X,A,B) <=> true ;;
 owlObjectPropertyAssertion(X,P,Y) #passive \ owlObjectPropertyAssertion(X,P,Y) <=> true ;;
-//owlEquivalentClass(A) #passive \ owlEquivalentClass(A) <=> true ;;
 owlEquivalentDataProperty(A,B) #passive \ owlEquivalentDataProperty(A,B) <=> true ;;
 owlEquivalentObjectProperty(A,B) #passive \ owlEquivalentObjectProperty(A,B) <=> true ;;
 
@@ -404,59 +428,49 @@ inverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAsser
 //owlTransitiveObjectProperty(P) is true if P is a transitive object property
 transitiveProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> different(X,Y,Z) | owlObjectPropertyAssertion(X,P,Z);;
 
+//besoin pour data some values from
+owlDataPropertyAssertion(X,P,Y) ==> owlDataValue(Y,(*Y).val,(*Y).typeVal) ;;
 
 //unionOf avec set
-//owlUnionOf(C, S) ==> owlUnionOfLoop(C, (*S).begin(), (*S).end()) ;;
-//owlUnionOfLoop(C,ITEND,ITEND) <=> success();;
-//owlUnionOfLoop(C,IT,ITEND) <=> owlUnionClass(C,**IT),owlUnionOfLoop(C,std::next(*IT),ITEND);;
-//owlClassAssertion(X,V,true) \ owlUnionClass(C,V) <=> owlClassAssertion(X,C,true);;
+owlUnionOf(C, S) ==> owlUnionOfLoop(C, (*S).begin(), (*S).end()) ;;
+owlUnionOfLoop(C,ITEND,ITEND) <=> success();;
+owlUnionOfLoop(C,IT,ITEND) <=> owlUnionClass(C,**IT),owlUnionOfLoop(C,std::next(*IT),ITEND);;
+owlClassAssertion(X,V,true) \ owlUnionClass(C,V) <=> owlClassAssertion(X,C,true);;
 //regle pour eviter de recalculer les meme union
-//owlUnionOf(C1, S),owlUnionOf(C2, S) ==> owlEquivalentClass(C1,C2) ;; 
+owlUnionOf(C1, S),owlUnionOf(C2, S) ==> owlEquivalentClass(C1,C2) ;; 
 
 
 
-//intersectionOf avec liste
+//intersectionOf avec set
 
-
+r0 @ owlIntersectionOf(C,S) ==> owlIntersectionOfLoop(C,(*S).begin(),(*S).end(),0) ;;
 //on parcour les classes 
 
-//r1 @ owlIntersectionOf(C,IT,ITEND,I) <=> IT!=ITEND | owlIntersectionClass(C,**IT,I),owlIntersectionOf(C,*IT+1,ITEND,I+1);;
+r1 @ owlIntersectionOfLoop(C,IT,ITEND,I) <=> IT!=ITEND | owlIntersectionClass(C,**IT,I),owlIntersectionOfLoop(C,std::next(*IT),ITEND,I+1);;
 
 //au premier tour (premiere classe trouvé) on ajoute tout les individus de la premiere classe :comme candidats
 
-//r2 @ owlClassAssertion(X,V,true) , owlIntersectionClass(C,V,0) ==> owlCandidatsIntersection(X,C,0) ;;
+r2 @ owlClassAssertion(X,V,true) , owlIntersectionClass(C,V,0) ==> owlCandidatsIntersection(X,C,0) ;;
 
 //si l'individus appartient à la nouvelle classe et qu'il etait candidate ,il reste candidat au prochain tour
 
-//r3 @ owlIntersectionClass(C,V,I) , owlCandidatsIntersection(X,C,I) ,owlClassAssertion(X,V,true)  ==> owlCandidatsIntersection(X,C,I+1) ;;
+r3 @ owlIntersectionClass(C,V,I) , owlCandidatsIntersection(X,C,I) ,owlClassAssertion(X,V,true)  ==> owlCandidatsIntersection(X,C,I+1) ;;
 
 //on ajoute les candidats finaux a la classe construite
 
-//r5 @ owlIntersectionOf(C,ITEND,ITEND,I) \ owlCandidatsIntersection(X,C,I)  <=> owlClassAssertion(X,C,true)  ;;
+r5 @ owlIntersectionOfLoop(C,ITEND,ITEND,I) \ owlCandidatsIntersection(X,C,I)  <=> owlClassAssertion(X,C,true)  ;;
 //si on est arrive ici on peut supprimer les calcul des tours prealable
 
-//r4 @ owlIntersectionOf(C,ITEND,ITEND,I) , owlCandidatsIntersection(X,C,J)  <=>  success()  ;;
-
-
-//intersection sans liste
-
-//owlIntersectionClass(C,C1,0,N) ,owlClassAssertion(X,C1,true)  ==> owlCandidatsIntersection(X,C,0) ;;
-//owlIntersectionClass(C,C1,N,N) , owlCandidatsIntersection(X,C,N) ,  owlClassAssertion(X,C1,true)    ==> owlClassAssertion(X,C,true)  ;;
-//owlIntersectionClass(C,C1,I,N) ,owlClassAssertion(X,C1,true) ,owlCandidatsIntersection(X,C,I)  ==> I!= N | owlCandidatsIntersection(X,C,I+1) ;;
-//owlIntersectionClass(C,_,N,N) \ owlCandidatsIntersection(_,C,_)  <=>  success()  ;;
-
-//owlIntersectionClass(C,C1,_,_),owlClassAssertion(X,C,true) ==> owlClassAssertion(X,C1,true) ;;
-
-
+r4 @ owlIntersectionOfLoop(C,ITEND,ITEND,I)  <=>  success()  ;;
 
 //inference sense inverse
-//owlIntersectionClass(C,C1,_),owlClassAssertion(X,C,true) ==> owlClassAssertion(X,C1,true) ;;
+owlIntersectionClass(C,C1,_),owlClassAssertion(X,C,true) ==> owlClassAssertion(X,C1,true) ;;
 
 
 //complement
-owlComplementOf(A,NOTA),owlNamedIndividual(X) ==> owlTempClassAssertion(X,NOTA) ;;
-owlClassAssertion(X,NOTA,true) \ owlTempClassAssertion(X,NOTA) <=> true ;;
-owlComplementOf(A,NOTA),owlClassAssertion(X,A,true) \ owlTempClassAssertion(X,NOTA) <=> true ;;
+owlComplementOf(A,NOTA),owlNamedIndividual(X) ==> owlClassAssertion(X,NOTA,false) ;;
+owlClassAssertion(X,NOTA,true) \ owlClassAssertion(X,NOTA,false) <=> true ;;
+owlComplementOf(A,NOTA),owlClassAssertion(X,A,true) \ owlClassAssertion(X,NOTA,false) <=> true ;;
 
 //property restriction
 //existentielle
@@ -465,41 +479,42 @@ owlObjectSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAss
 owlObjectSomeValuesFrom(C,P,Y), owlClassAssertion(U,C,true) ==>    owlObjectPropertyAssertion(U,P,V),logicalName(emptyString,V),owlClassAssertion(V,Y,true);;
 owlObjectPropertyAssertion(U,P,W),logicalName(URI,W),owlClassAssertion(W,Y,true) \ owlObjectPropertyAssertion(U,P,V),logicalName(emptyString,V),owlClassAssertion(V,Y,true) <=> !(URI==emptyString)| success() ;;
 //data
+owlDataSomeValuesFrom(C,P,DR) , owlDataPropertyAssertion(U,P,V) ==> ! invalidType(DR,V) | owlClassAssertion(U,C,true) ;;
+owlDataSomeValuesFrom(C,P,DR), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,createValue(V,DR)),logicalName(emptyString,V);;
+owlDataPropertyAssertion(U,P,W),owlDataValue(W,ValW,TypeW)\owlDataValue(V,emptyString,TypeV), owlDataPropertyAssertion(U,P,V)<=> sameDataType(TypeV,TypeW) && !(ValW==emptyString)| success() ;;
 
 //universel
 //obj
+//si l'utilisateur a ajouté qu'une classe fait partie de owlObjectAllValuesFrom on l'ajoute aux individus connectés par p
 owlObjectAllValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(U,C,true) ==> owlClassAssertion(V,Y,true) ;;
+//on ajoute tout pour construire la classe object all values from C
 owlObjectAllValuesFrom(C,P,Y) , owlNamedIndividual(X) ==> owlClassAssertion(X,C,false) ;;
-
+//on enleve ensuite si connecté avec p avec une autre classe
 owlObjectAllValuesFrom(C,P,Y) ,  owlObjectPropertyAssertion(U,P,V) ,logicalName(URIV,V) ,logicalName(URIY,Y) \ owlClassAssertion(U,C,false) <=> ! checkClassification(*this,URIV,URIY) | success();;
-//data
 
-// chain property 
-ObjectPropertyChain @ owlObjectPropertyChain(PC,P,0,N) , owlObjectPropertyAssertion(X,P,Y) ==> constructPropertyChain(PC,0,X,Y,N) ;;
-//J=i+1
-chainStep @ owlObjectPropertyAssertion(Y,P,Z), owlObjectPropertyChain(PC,P,J,N) \  constructPropertyChain(PC,I,X,Y,N)  <=> I<N && equalIncrement(J,I) | constructPropertyChain(PC,I+1,X,Z,N) ;;
-finalChain @ constructPropertyChain(PC,N,X,Y,N) <=> owlObjectPropertyAssertion(X,PC,Y) ;;
+//data
+owlDataAllValuesFrom(C,P,DR) , owlDataPropertyAssertion(U,P,V) , owlClassAssertion(U,C,true) ==> invalidType(DR,V) | failure() ;;
+//on ajoute tout pour construire la classe data all values from C
+owlDataAllValuesFrom(C,P,DR) , owlNamedIndividual(X) ==> owlClassAssertion(X,C,false) ;;
+//on enleve ensuite si connecté avec p avec une autre DataType
+owlDataAllValuesFrom(C,P,DR) ,  owlDataPropertyAssertion(U,P,V) \ owlClassAssertion(U,C,false) <=>  invalidType(DR,V) | success();;
 
 //cardinality
-owlMaxCardinality(C,P,0) , owlClassAssertion(U,C,true) , owlObjectPropertyAssertion(U,P,_) <=> failure() ;;
-owlMaxCardinality(C,P,1) , owlClassAssertion(U,C,true) , owlObjectPropertyAssertion(U,P,Y1) , owlObjectPropertyAssertion(U,P,Y2) <=> !(Y1==Y2) | owlSameIndividual(Y1,Y2) ;;
-
+//obj
+owlObjectMaxCardinality(C,P,0) , owlClassAssertion(U,C,true) , owlObjectPropertyAssertion(U,P,_) <=> failure() ;;
+owlObjectMaxCardinality(C,P,1) , owlClassAssertion(U,C,true) , owlObjectPropertyAssertion(U,P,Y1) , owlObjectPropertyAssertion(U,P,Y2) <=> !(Y1==Y2) | owlSameIndividual(Y1,Y2) ;;
+//data
+owlDataMaxCardinality(C,P,0) , owlClassAssertion(U,C,true) , owlDataPropertyAssertion(U,P,_) <=> failure() ;;
+owlDataMaxCardinality(C,P,1) , owlClassAssertion(U,C,true) , owlDataPropertyAssertion(U,P,Y1) , owlDataPropertyAssertion(U,P,Y2) <=> !(Y1==Y2) | failure() ;;
 
 owlHasValueObject(C,P,Y),owlObjectProperty(P),owlClassAssertion(U,C,true) ==> owlObjectPropertyAssertion(U,P,Y) ;;
 //owlHasValueData(C,P,Y),owlDataProperty(P), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,Y) ;;
 owlHasValueObject(C,P,Y),owlObjectPropertyAssertion(U,P,Y) ==> owlClassAssertion(U,C,true) ;;
 //owlHasValueData(C,P,Y),owlDataPropertyAssertion(U,P,Y) ==> owlClassAssertion(U,C,true) ;;
 
-//owlOneOf(C, S) ==> owlOneOfLoop(C, (*S).begin(), (*S).end()) ;;
-//owlOneOfLoop(C,ITEND,ITEND) <=> success();;
-//owlOneOfLoop(C,IT,ITEND) <=> owlClassAssertion(**IT,C,true),owlOneOfLoop(C,std::next(*IT),ITEND);;
-
-
-//owlHasKey
-// owlHasKey(E,P,C),owlClassAssertion(X,C,true),owlClassAssertion(Y,C,true) ==> !(X==Y) | owlHasKeyLoop( (*P).begin(), (*P).end(),X,Y) ;;
-// owlHasKeyLoop(ITEND,ITEND,X,Y) <=> owlSameIndividual(X,Y) ;;
-// owlObjectPropertyAssertion(X,P,V1), owlObjectPropertyAssertion(Y,P,V1) \ owlHasKeyLoop(IT,ITEND,X,Y) <=> (P == **IT) | owlHasKeyLoop(std::next(*IT),ITEND,X,Y) ;;
-// owlDataPropertyAssertion(X,P,V1), owlDataPropertyAssertion(Y,P,V1) \ owlHasKeyLoop(IT,ITEND,X,Y)  <=> (P == **IT) | owlHasKeyLoop(std::next(*IT),ITEND,X,Y) ;;
+owlOneOf(C, S) ==> owlOneOfLoop(C, (*S).begin(), (*S).end()) ;;
+owlOneOfLoop(C,ITEND,ITEND) <=> success();;
+owlOneOfLoop(C,IT,ITEND) <=> owlClassAssertion(**IT,C,true),owlOneOfLoop(C,std::next(*IT),ITEND);;
 
 
 
