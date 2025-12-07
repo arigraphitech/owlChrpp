@@ -200,37 +200,3 @@ myNewQuery(URI), logicalName(URI,X) ==>
     res(someResult) ;;
 ```
 
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Veuillez :
-1. Fork le projet
-2. Créer une branche (`git checkout -b feature/AmazingFeature`)
-3. Commiter vos changements (`git commit -m 'Add AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
-
-## 👥 Auteurs
-
-- **arigraphitech** - Développement initial
-
-## 🙏 Remerciements
-
-- **CHR++** - Système de règles de contraintes
-- **COWL** - Bibliothèque de parsing OWL 2
-- **uLib** - Bibliothèque de structures de données
-
-## 📞 Contact
-
-Pour toute question ou suggestion :
-- GitHub Issues : [https://github.com/arigraphitech/owlChrpp/issues](https://github.com/arigraphitech/owlChrpp/issues)
-
-## 🔗 Liens Utiles
-
-- [CHR++ Documentation](http://chr.pl/)
-- [COWL Repository](https://github.com/sisinflab-swot/cowl)
-- [OWL 2 Specification](https://www.w3.org/TR/owl2-overview/)
-- [OWL 2 Functional Syntax](https://www.w3.org/TR/owl2-syntax/)
-
----
-
-⭐ Si ce projet vous est utile, n'hésitez pas à lui donner une étoile sur GitHub !
