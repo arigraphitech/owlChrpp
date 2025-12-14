@@ -199,6 +199,9 @@ Value createValue(const std::string& val, const std::shared_ptr<AnySimpleType> t
     v.typeVal = typeVal;
     return v;
 }
+bool equalIncrement(int j,int i){
+    return j==i+1;
+}
 
 /**
 *
@@ -259,6 +262,10 @@ Value createValue(const std::string& val, const std::shared_ptr<AnySimpleType> t
             owlHasValueObject(?std::string,?std::string,?std::string),
             owlOneOf(?std::string,+LogicalVarSet),
             owlOneOfLoop(?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator),
+            owlObjectPropertyChain(?std::string,?std::string,+int,+int),
+            constructPropertyChain(?std::string,+int,?std::string,?std::string,+int) ,
+            owlHasKey(?std::string,+LogicalVarSet),
+            owlHasKeyLoop(?std::string,?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator),
             querySuperClassOfUri(+std::string),
             querySubClassOfUri(+std::string),
             querySuperClassOf(?std::string),
@@ -595,6 +602,17 @@ owlOneOfLoop(C,ITEND,ITEND) <=> success();;
 //OneOf loop: recursive case - each individual in the set is an instance of the OneOf class
 owlOneOfLoop(C,IT,ITEND) <=> owlClassAssertion(**IT,C,true),owlOneOfLoop(C,std::next(*IT),ITEND);;
 
+// chain property
+ObjectPropertyChain @ owlObjectPropertyChain(PC,P,0,N) , owlObjectPropertyAssertion(X,P,Y) ==> constructPropertyChain(PC,0,X,Y,N) ;;
+//J=i+1
+chainStep @ owlObjectPropertyAssertion(Y,P,Z), owlObjectPropertyChain(PC,P,J,N) \  constructPropertyChain(PC,I,X,Y,N)  <=> I<N && equalIncrement(J,I) | constructPropertyChain(PC,I+1,X,Z,N) ;;
+finalChain @ constructPropertyChain(PC,N,X,Y,N) <=> owlObjectPropertyAssertion(X,PC,Y) ;;
+
+//owlHasKey
+ owlHasKey(C,P),owlClassAssertion(X,C,true),owlClassAssertion(Y,C,true) ==> !(X==Y) | owlHasKeyLoop(X,Y, (*P).begin(), (*P).end()) ;;
+ owlHasKeyLoop(X,Y,ITEND,ITEND) <=> owlSameIndividual(X,Y) ;;
+ owlObjectPropertyAssertion(X,P,V1), owlObjectPropertyAssertion(Y,P,V1) \ owlHasKeyLoop(X,Y,IT,ITEND) <=> (P == **IT) | owlHasKeyLoop(X,Y,std::next(*IT),ITEND) ;;
+ owlDataPropertyAssertion(X,P,V1), owlDataPropertyAssertion(Y,P,V1) \ owlHasKeyLoop(X,Y,IT,ITEND)  <=> (P == **IT) | owlHasKeyLoop(X,Y,std::next(*IT),ITEND) ;;
 
 
 
@@ -642,9 +660,9 @@ queryClassificationTemp(X) , owlClassAssertion(X,C,_) , logicalName(URIC,C) ==> 
 queryClassificationTemp(X) <=> success() ;;
 
 //queryInstance(X,C) return true if X is instance of class C
-logicalName(URIC,C) ,logicalName(URIX,X) \ queryInstanceURI(URIX,URIC) <=> queryInstance(X,C) ;;
-owlClassAssertion(X,C,true) \ queryInstance(X,C)<=> afficher("true");;
-queryInstance(X,C)<=> afficher("false");;
+rule1 @ logicalName(URIC,C) ,logicalName(URIX,X) \ queryInstanceURI(URIX,URIC) <=> queryInstance(X,C) ;;
+rule2 @ owlClassAssertion(X,C,true) \ queryInstance(X,C)<=> afficher("true");;
+rule3 @ queryInstance(X,C)<=> afficher("false");;
 
 //queryInstances(C) return all instances of class C
 logicalName(URIC,C) \ queryInstancesURI(URIC) <=> queryInstances(C) ;;
@@ -691,17 +709,20 @@ int main(int argc, char* argv[])
 {
     TRACE(chr::Log::register_flags(chr::Log::ALL);)
     // Déterminer le fichier à utiliser
-    std::string filename = "example2.ofn"; // Valeur par défaut
+    std::string filename = "results/OWL2RL-1.ofn"; // Valeur par défaut
+
     if (argc > 1) {
         filename = argv[1];
     }
     
     auto space = OWL2::create();
-    std::string uri = "http://example.org#";
+    std::string uri = "http://example.org#Robert";
+    std::string uri2 = "http://example.org#Course";
 
  CHR_RUN(   
     ParserCowl<OWL2> parser(filename, *space);
-    parser.load();
+        space->queryInstanceURI(uri,uri2);
+parser.load();
  )
    print(*space);
     chr::Statistics::print(std::cout);
