@@ -1,0 +1,1712 @@
+Prefix(:=<http://benchmark/OWL2Bench#>)
+Prefix(dc:=<http://purl.org/dc/elements/1.1/>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(obda:=<https://w3id.org/obda/vocabulary#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+Prefix(benchmark-dl:=<http://semantics.crl.ibm.com/univ-bench-dl.owl#>)
+
+
+Ontology(<http://benchmark/OWL2Bench>
+
+Declaration(Class(:AeronauticalEngineering))
+Declaration(Class(:Anthropology))
+Declaration(Class(:Architecture))
+Declaration(Class(:Article))
+Declaration(Class(:AsianArts))
+Declaration(Class(:AssistantProfessor))
+Declaration(Class(:AssociateProfessor))
+Declaration(Class(:Astronomy))
+Declaration(Class(:Badminton))
+Declaration(Class(:BasketBall))
+Declaration(Class(:BasketBallFan))
+Declaration(Class(:BasketBallLover))
+Declaration(Class(:Biology))
+Declaration(Class(:BiomedicalEngineering))
+Declaration(Class(:Book))
+Declaration(Class(:Chair))
+Declaration(Class(:ChemicalEngineering))
+Declaration(Class(:Chemistry))
+Declaration(Class(:CivilEngineering))
+Declaration(Class(:ClericalStaff))
+Declaration(Class(:CoEdCollege))
+Declaration(Class(:College))
+Declaration(Class(:CollegeDiscipline))
+Declaration(Class(:ComputerEngineering))
+Declaration(Class(:ComputerScience))
+Declaration(Class(:ConferencePaper))
+Declaration(Class(:Course))
+Declaration(Class(:Cricket))
+Declaration(Class(:Dean))
+Declaration(Class(:Department))
+Declaration(Class(:DesignManagement))
+Declaration(Class(:Director))
+Declaration(Class(:Drama))
+Declaration(Class(:Economics))
+Declaration(Class(:ElectiveCourse))
+Declaration(Class(:ElectricalEngineering))
+Declaration(Class(:Employee))
+Declaration(Class(:EmployeeEvaluationCommittee))
+Declaration(Class(:Engineering))
+Declaration(Class(:English))
+Declaration(Class(:EvaluationCommittee))
+Declaration(Class(:Faculty))
+Declaration(Class(:FinancialAndAccountingManagement))
+Declaration(Class(:FineArts))
+Declaration(Class(:FootBall))
+Declaration(Class(:FullProfessor))
+Declaration(Class(:Game))
+Declaration(Class(:Geosciences))
+Declaration(Class(:History))
+Declaration(Class(:HumanResourceManagement))
+Declaration(Class(:Humanities))
+Declaration(Class(:HumanitiesAndSocial))
+Declaration(Class(:IndustryEngineering))
+Declaration(Class(:Institute))
+Declaration(Class(:Interest))
+Declaration(Class(:JournalArticle))
+Declaration(Class(:LatinArts))
+Declaration(Class(:Lecturer))
+Declaration(Class(:LeisureStudent))
+Declaration(Class(:Linguistics))
+Declaration(Class(:Man))
+Declaration(Class(:Management))
+Declaration(Class(:Manual))
+Declaration(Class(:MarineScience))
+Declaration(Class(:MarketingManagement))
+Declaration(Class(:MaterialScienceEngineering))
+Declaration(Class(:MaterialsScience))
+Declaration(Class(:Mathematics))
+Declaration(Class(:MechanicalEngineering))
+Declaration(Class(:MediaArtsAndSciences))
+Declaration(Class(:MedievalArts))
+Declaration(Class(:ModernArts))
+Declaration(Class(:ModernLanguages))
+Declaration(Class(:Movie))
+Declaration(Class(:Music))
+Declaration(Class(:MusicsClass))
+Declaration(Class(:OperationsManagement))
+Declaration(Class(:Organization))
+Declaration(Class(:OtherStaff))
+Declaration(Class(:PGProgram))
+Declaration(Class(:PGStudent))
+Declaration(Class(:Painting))
+Declaration(Class(:PeopleWithHobby))
+Declaration(Class(:PerformingArts))
+Declaration(Class(:Person))
+Declaration(Class(:PetroleumlEngineering))
+Declaration(Class(:PhDProgram))
+Declaration(Class(:PhDStudent))
+Declaration(Class(:Philosophy))
+Declaration(Class(:Physics))
+Declaration(Class(:PostDoc))
+Declaration(Class(:Professor))
+Declaration(Class(:Program))
+Declaration(Class(:ProjectManagement))
+Declaration(Class(:Psychology))
+Declaration(Class(:PublicRelationsManagement))
+Declaration(Class(:Publication))
+Declaration(Class(:Reading))
+Declaration(Class(:Religions))
+Declaration(Class(:ResearchAssistant))
+Declaration(Class(:ResearchGroup))
+Declaration(Class(:ResearchProject))
+Declaration(Class(:RiskManagement))
+Declaration(Class(:SalesManagement))
+Declaration(Class(:School))
+Declaration(Class(:Science))
+Declaration(Class(:ScienceStudent))
+Declaration(Class(:Software))
+Declaration(Class(:Specification))
+Declaration(Class(:Sports))
+Declaration(Class(:SportsFan))
+Declaration(Class(:SportsLover))
+Declaration(Class(:Statistics))
+Declaration(Class(:Student))
+Declaration(Class(:StudentEvaluationCommittee))
+Declaration(Class(:SupplyChainManagement))
+Declaration(Class(:SupportingStaff))
+Declaration(Class(:Swimming))
+Declaration(Class(:SystemStaff))
+Declaration(Class(:TeachingAssistant))
+Declaration(Class(:TeachingCourse))
+Declaration(Class(:TechnicalReport))
+Declaration(Class(:Tennis))
+Declaration(Class(:TheatreAndDance))
+Declaration(Class(:ThesisEvaluationCommittee))
+Declaration(Class(:Travelling))
+Declaration(Class(:UGCourse))
+Declaration(Class(:UGProgram))
+Declaration(Class(:UGStudent))
+Declaration(Class(:University))
+Declaration(Class(:UnofficialPublication))
+Declaration(Class(:VisitingProfessor))
+Declaration(Class(:Woman))
+Declaration(Class(:WomanCollege))
+Declaration(Class(:Work))
+Declaration(Class(owl:Thing))
+Declaration(ObjectProperty(:dislikes))
+Declaration(ObjectProperty(:enrollFor))
+Declaration(ObjectProperty(:enrollIn))
+Declaration(ObjectProperty(:evaluatedBy))
+Declaration(ObjectProperty(:evaluates))
+Declaration(ObjectProperty(:hasAdvisor))
+Declaration(ObjectProperty(:hasAlumnus))
+Declaration(ObjectProperty(:hasAssistantProfessor))
+Declaration(ObjectProperty(:hasAssociateProfessor))
+Declaration(ObjectProperty(:hasAuthor))
+Declaration(ObjectProperty(:hasClericalStaff))
+Declaration(ObjectProperty(:hasCollaborationWith))
+Declaration(ObjectProperty(:hasCollege))
+Declaration(ObjectProperty(:hasCollegeDiscipline))
+Declaration(ObjectProperty(:hasCommitteeMembers))
+Declaration(ObjectProperty(:hasDean))
+Declaration(ObjectProperty(:hasDegreeFrom))
+Declaration(ObjectProperty(:hasDepartment))
+Declaration(ObjectProperty(:hasDoctoralDegreeFrom))
+Declaration(ObjectProperty(:hasEmployee))
+Declaration(ObjectProperty(:hasEmployeeEvaluationCommittee))
+Declaration(ObjectProperty(:hasEvaluationCommittee))
+Declaration(ObjectProperty(:hasFaculty))
+Declaration(ObjectProperty(:hasFullProfessor))
+Declaration(ObjectProperty(:hasHead))
+Declaration(ObjectProperty(:hasLecturer))
+Declaration(ObjectProperty(:hasMajor))
+Declaration(ObjectProperty(:hasMasterDegreeFrom))
+Declaration(ObjectProperty(:hasMember))
+Declaration(ObjectProperty(:hasOtherStaff))
+Declaration(ObjectProperty(:hasPGProgram))
+Declaration(ObjectProperty(:hasPart))
+Declaration(ObjectProperty(:hasPhDProgram))
+Declaration(ObjectProperty(:hasPostDoc))
+Declaration(ObjectProperty(:hasProfessor))
+Declaration(ObjectProperty(:hasProgram))
+Declaration(ObjectProperty(:hasResearchAssistant))
+Declaration(ObjectProperty(:hasResearchGroup))
+Declaration(ObjectProperty(:hasResearchProject))
+Declaration(ObjectProperty(:hasSameHomeTownWith))
+Declaration(ObjectProperty(:hasStudent))
+Declaration(ObjectProperty(:hasStudentEvaluationCommittee))
+Declaration(ObjectProperty(:hasSubOrganization))
+Declaration(ObjectProperty(:hasSupportingStaff))
+Declaration(ObjectProperty(:hasSystemStaff))
+Declaration(ObjectProperty(:hasThesisEvaluationCommittee))
+Declaration(ObjectProperty(:hasUGProgram))
+Declaration(ObjectProperty(:hasUndergraduateDegreeFrom))
+Declaration(ObjectProperty(:hasVisitingProfessor))
+Declaration(ObjectProperty(:hasWomenCollege))
+Declaration(ObjectProperty(:hasWork))
+Declaration(ObjectProperty(:isAdvisedBy))
+Declaration(ObjectProperty(:isAffiliateOf))
+Declaration(ObjectProperty(:isAffiliatedOrganizationOf))
+Declaration(ObjectProperty(:isAssistantProfessorOf))
+Declaration(ObjectProperty(:isAssociateProfessorOf))
+Declaration(ObjectProperty(:isClericalStaffOf))
+Declaration(ObjectProperty(:isCollegeOf))
+Declaration(ObjectProperty(:isCrazyAbout))
+Declaration(ObjectProperty(:isDeanOf))
+Declaration(ObjectProperty(:isDepartmentOf))
+Declaration(ObjectProperty(:isFacultyOf))
+Declaration(ObjectProperty(:isFullProfessorOf))
+Declaration(ObjectProperty(:isHeadOf))
+Declaration(ObjectProperty(:isLecturerOf))
+Declaration(ObjectProperty(:isMemberOf))
+Declaration(ObjectProperty(:isOtherStaffOf))
+Declaration(ObjectProperty(:isPartOf))
+Declaration(ObjectProperty(:isPostDocOf))
+Declaration(ObjectProperty(:isProfessorOf))
+Declaration(ObjectProperty(:isResearchAssistantOf))
+Declaration(ObjectProperty(:isResearchGroupOf))
+Declaration(ObjectProperty(:isStudentOf))
+Declaration(ObjectProperty(:isSubOrganizationOf))
+Declaration(ObjectProperty(:isSupportingStaffOf))
+Declaration(ObjectProperty(:isSystemStaffOf))
+Declaration(ObjectProperty(:isTaughtBy))
+Declaration(ObjectProperty(:isTeachingAssistantOf))
+Declaration(ObjectProperty(:isVisitingProfessorOf))
+Declaration(ObjectProperty(:isWomenCollegeOf))
+Declaration(ObjectProperty(:likes))
+Declaration(ObjectProperty(:loves))
+Declaration(ObjectProperty(:offerCourse))
+Declaration(ObjectProperty(:orgPublication))
+Declaration(ObjectProperty(:publicationResearch))
+Declaration(ObjectProperty(:takesCourse))
+Declaration(ObjectProperty(:teachesCourse))
+Declaration(ObjectProperty(:tenured))
+Declaration(ObjectProperty(:worksFor))
+Declaration(DataProperty(:hasAge))
+Declaration(DataProperty(:hasCode))
+Declaration(DataProperty(:hasEmailAddress))
+Declaration(DataProperty(:hasFirstName))
+Declaration(DataProperty(:hasID))
+Declaration(DataProperty(:hasLastName))
+Declaration(DataProperty(:hasName))
+Declaration(DataProperty(:hasOfficeNumber))
+Declaration(DataProperty(:hasPublicationDate))
+Declaration(DataProperty(:hasResearchInterest))
+Declaration(DataProperty(:hasTelephone))
+Declaration(DataProperty(:hasTitle))
+Declaration(NamedIndividual(:AbstractPainting))
+Declaration(NamedIndividual(:ActionMovie))
+Declaration(NamedIndividual(:AeronauticalEngineering))
+Declaration(NamedIndividual(:Anthropology))
+Declaration(NamedIndividual(:Architecture))
+Declaration(NamedIndividual(:ArticleReading))
+Declaration(NamedIndividual(:AsianArts))
+Declaration(NamedIndividual(:Astronomy))
+Declaration(NamedIndividual(:BackStroke))
+Declaration(NamedIndividual(:Badminton))
+Declaration(NamedIndividual(:Basketball))
+Declaration(NamedIndividual(:Biology))
+Declaration(NamedIndividual(:BiomedicalEngineering))
+Declaration(NamedIndividual(:BookReading))
+Declaration(NamedIndividual(:ChemicalEngineering))
+Declaration(NamedIndividual(:Chemistry))
+Declaration(NamedIndividual(:CivilEngineering))
+Declaration(NamedIndividual(:ClassicalMusic))
+Declaration(NamedIndividual(:ComedyMovie))
+Declaration(NamedIndividual(:ComputerEngineering))
+Declaration(NamedIndividual(:ComputerScience))
+Declaration(NamedIndividual(:DocumentaryMovie))
+Declaration(NamedIndividual(:Drama))
+Declaration(NamedIndividual(:Economics))
+Declaration(NamedIndividual(:ElectricalEngineering))
+Declaration(NamedIndividual(:English))
+Declaration(NamedIndividual(:FictionMovie))
+Declaration(NamedIndividual(:Football))
+Declaration(NamedIndividual(:FrontCrawl))
+Declaration(NamedIndividual(:Geosciences))
+Declaration(NamedIndividual(:History))
+Declaration(NamedIndividual(:HorrorMovie))
+Declaration(NamedIndividual(:Humanities))
+Declaration(NamedIndividual(:IndustryEngineering))
+Declaration(NamedIndividual(:LatinArts))
+Declaration(NamedIndividual(:LawnTennis))
+Declaration(NamedIndividual(:Linguistics))
+Declaration(NamedIndividual(:MarineScience))
+Declaration(NamedIndividual(:MaterialScienceEngineering))
+Declaration(NamedIndividual(:MaterialsScience))
+Declaration(NamedIndividual(:Mathematics))
+Declaration(NamedIndividual(:MechanicalEngineering))
+Declaration(NamedIndividual(:MediaArtsAndSiences))
+Declaration(NamedIndividual(:MedievalArts))
+Declaration(NamedIndividual(:ModernArts))
+Declaration(NamedIndividual(:ModernLanguages))
+Declaration(NamedIndividual(:MusicsClass))
+Declaration(NamedIndividual(:NewspaperReading))
+Declaration(NamedIndividual(:OilPainting))
+Declaration(NamedIndividual(:PCGame))
+Declaration(NamedIndividual(:PerformingArts))
+Declaration(NamedIndividual(:PetroleumEngineering))
+Declaration(NamedIndividual(:Philosophy))
+Declaration(NamedIndividual(:Physics))
+Declaration(NamedIndividual(:PopMusic))
+Declaration(NamedIndividual(:Psychology))
+Declaration(NamedIndividual(:Religions))
+Declaration(NamedIndividual(:RockandRollMusic))
+Declaration(NamedIndividual(:RomanticMovie))
+Declaration(NamedIndividual(:Shopping))
+Declaration(NamedIndividual(:SoloTravelling))
+Declaration(NamedIndividual(:StampCollecting))
+Declaration(NamedIndividual(:Statistics))
+Declaration(NamedIndividual(:T20Cricket))
+Declaration(NamedIndividual(:TableTennis))
+Declaration(NamedIndividual(:TheatreAndDance))
+Declaration(NamedIndividual(:ThrillerMovie))
+Declaration(NamedIndividual(:VideoGame))
+
+############################
+#   Object Properties
+############################
+
+# Object Property: :dislikes (:dislikes)
+
+ObjectPropertyDomain(:dislikes :Person)
+ObjectPropertyRange(:dislikes :Interest)
+DisjointObjectProperties(:dislikes :likes)
+
+# Object Property: :enrollFor (:enrollFor)
+
+FunctionalObjectProperty(:enrollFor)
+ObjectPropertyDomain(:enrollFor :Student)
+ObjectPropertyRange(:enrollFor :Program)
+
+# Object Property: :enrollIn (:enrollIn)
+
+SubObjectPropertyOf(:enrollIn :isStudentOf)
+FunctionalObjectProperty(:enrollIn)
+ObjectPropertyDomain(:enrollIn :Student)
+ObjectPropertyRange(:enrollIn :Department)
+
+# Object Property: :evaluatedBy (:evaluatedBy)
+
+InverseObjectProperties(:evaluatedBy :evaluates)
+ObjectPropertyDomain(:evaluatedBy :Person)
+ObjectPropertyRange(:evaluatedBy :EvaluationCommittee)
+
+# Object Property: :evaluates (:evaluates)
+
+ObjectPropertyDomain(:evaluates :EvaluationCommittee)
+ObjectPropertyRange(:evaluates :Person)
+
+# Object Property: :hasAdvisor (:hasAdvisor)
+
+EquivalentObjectProperties(:hasAdvisor :isAdvisedBy)
+
+# Object Property: :hasAlumnus (:hasAlumnus)
+
+InverseObjectProperties(:hasAlumnus :hasDegreeFrom)
+ObjectPropertyDomain(:hasAlumnus :University)
+ObjectPropertyRange(:hasAlumnus :Person)
+
+# Object Property: :hasAssistantProfessor (:hasAssistantProfessor)
+
+SubObjectPropertyOf(:hasAssistantProfessor :hasProfessor)
+InverseObjectProperties(:hasAssistantProfessor :isAssistantProfessorOf)
+ObjectPropertyDomain(:hasAssistantProfessor :Department)
+ObjectPropertyRange(:hasAssistantProfessor :AssistantProfessor)
+
+# Object Property: :hasAssociateProfessor (:hasAssociateProfessor)
+
+SubObjectPropertyOf(:hasAssociateProfessor :hasProfessor)
+InverseObjectProperties(:hasAssociateProfessor :isAssociateProfessorOf)
+ObjectPropertyDomain(:hasAssociateProfessor :Department)
+ObjectPropertyRange(:hasAssociateProfessor :AssociateProfessor)
+
+# Object Property: :hasAuthor (:hasAuthor)
+
+ObjectPropertyDomain(:hasAuthor :Publication)
+ObjectPropertyRange(:hasAuthor :Person)
+
+# Object Property: :hasClericalStaff (:hasClericalStaff)
+
+SubObjectPropertyOf(:hasClericalStaff :hasSupportingStaff)
+ObjectPropertyDomain(:hasClericalStaff :Department)
+ObjectPropertyRange(:hasClericalStaff :ClericalStaff)
+
+# Object Property: :hasCollaborationWith (:hasCollaborationWith)
+
+SymmetricObjectProperty(:hasCollaborationWith)
+IrreflexiveObjectProperty(:hasCollaborationWith)
+ObjectPropertyDomain(:hasCollaborationWith :Person)
+ObjectPropertyRange(:hasCollaborationWith :Person)
+
+# Object Property: :hasCollege (:hasCollege)
+
+SubObjectPropertyOf(:hasCollege :hasSubOrganization)
+InverseObjectProperties(:hasCollege :isCollegeOf)
+ObjectPropertyDomain(:hasCollege :University)
+ObjectPropertyRange(:hasCollege :College)
+
+# Object Property: :hasCollegeDiscipline (:hasCollegeDiscipline)
+
+ObjectPropertyDomain(:hasCollegeDiscipline :College)
+ObjectPropertyRange(:hasCollegeDiscipline :CollegeDiscipline)
+DisjointObjectProperties(:hasCollegeDiscipline :hasMajor)
+
+# Object Property: :hasCommitteeMembers (:hasCommitteeMembers)
+
+SubObjectPropertyOf(:hasCommitteeMembers :hasMember)
+ObjectPropertyDomain(:hasCommitteeMembers :EvaluationCommittee)
+ObjectPropertyRange(:hasCommitteeMembers :Person)
+
+# Object Property: :hasDean (:hasDean)
+
+InverseObjectProperties(:hasDean :isDeanOf)
+ObjectPropertyDomain(:hasDean :Organization)
+ObjectPropertyRange(:hasDean :Person)
+
+# Object Property: :hasDegreeFrom (:hasDegreeFrom)
+
+ObjectPropertyDomain(:hasDegreeFrom :Person)
+ObjectPropertyRange(:hasDegreeFrom :University)
+
+# Object Property: :hasDepartment (:hasDepartment)
+
+SubObjectPropertyOf(:hasDepartment :hasSubOrganization)
+InverseObjectProperties(:hasDepartment :isDepartmentOf)
+ObjectPropertyDomain(:hasDepartment :College)
+ObjectPropertyRange(:hasDepartment :Department)
+
+# Object Property: :hasDoctoralDegreeFrom (:hasDoctoralDegreeFrom)
+
+SubObjectPropertyOf(:hasDoctoralDegreeFrom :hasDegreeFrom)
+ObjectPropertyDomain(:hasDoctoralDegreeFrom :Person)
+ObjectPropertyRange(:hasDoctoralDegreeFrom :University)
+
+# Object Property: :hasEmployee (:hasEmployee)
+
+SubObjectPropertyOf(:hasEmployee :hasMember)
+InverseObjectProperties(:hasEmployee :worksFor)
+
+# Object Property: :hasEmployeeEvaluationCommittee (:hasEmployeeEvaluationCommittee)
+
+SubObjectPropertyOf(:hasEmployeeEvaluationCommittee :hasEvaluationCommittee)
+ObjectPropertyDomain(:hasEmployeeEvaluationCommittee :Organization)
+ObjectPropertyRange(:hasEmployeeEvaluationCommittee :EmployeeEvaluationCommittee)
+
+# Object Property: :hasEvaluationCommittee (:hasEvaluationCommittee)
+
+ObjectPropertyDomain(:hasEvaluationCommittee :Organization)
+ObjectPropertyRange(:hasEvaluationCommittee :EvaluationCommittee)
+
+# Object Property: :hasFaculty (:hasFaculty)
+
+SubObjectPropertyOf(:hasFaculty :hasEmployee)
+InverseObjectProperties(:hasFaculty :isFacultyOf)
+ObjectPropertyDomain(:hasFaculty :Department)
+ObjectPropertyRange(:hasFaculty :Faculty)
+
+# Object Property: :hasFullProfessor (:hasFullProfessor)
+
+SubObjectPropertyOf(:hasFullProfessor :hasProfessor)
+InverseObjectProperties(:hasFullProfessor :isFullProfessorOf)
+ObjectPropertyDomain(:hasFullProfessor :Department)
+ObjectPropertyRange(:hasFullProfessor :FullProfessor)
+
+# Object Property: :hasHead (:hasHead)
+
+SubObjectPropertyOf(:hasHead :hasFullProfessor)
+InverseObjectProperties(:hasHead :isHeadOf)
+FunctionalObjectProperty(:hasHead)
+
+# Object Property: :hasLecturer (:hasLecturer)
+
+SubObjectPropertyOf(:hasLecturer :hasFaculty)
+InverseObjectProperties(:hasLecturer :isLecturerOf)
+ObjectPropertyDomain(:hasLecturer :Department)
+ObjectPropertyRange(:hasLecturer :Lecturer)
+
+# Object Property: :hasMajor (:hasMajor)
+
+ObjectPropertyDomain(:hasMajor :Person)
+
+# Object Property: :hasMasterDegreeFrom (:hasMasterDegreeFrom)
+
+SubObjectPropertyOf(:hasMasterDegreeFrom :hasDegreeFrom)
+ObjectPropertyDomain(:hasMasterDegreeFrom :Person)
+ObjectPropertyRange(:hasMasterDegreeFrom :University)
+
+# Object Property: :hasMember (:hasMember)
+
+InverseObjectProperties(:hasMember :isMemberOf)
+ObjectPropertyDomain(:hasMember :Organization)
+ObjectPropertyRange(:hasMember :Person)
+
+# Object Property: :hasOtherStaff (:hasOtherStaff)
+
+SubObjectPropertyOf(:hasOtherStaff :hasSupportingStaff)
+ObjectPropertyDomain(:hasOtherStaff :Department)
+ObjectPropertyRange(:hasOtherStaff :OtherStaff)
+
+# Object Property: :hasPGProgram (:hasPGProgram)
+
+SubObjectPropertyOf(:hasPGProgram :hasProgram)
+ObjectPropertyDomain(:hasPGProgram :Department)
+ObjectPropertyRange(:hasPGProgram :PGProgram)
+
+# Object Property: :hasPart (:hasPart)
+
+EquivalentObjectProperties(:hasPart :hasSubOrganization)
+InverseObjectProperties(:hasPart :isPartOf)
+TransitiveObjectProperty(:hasPart)
+ObjectPropertyDomain(:hasPart :Organization)
+ObjectPropertyRange(:hasPart :Organization)
+
+# Object Property: :hasPhDProgram (:hasPhDProgram)
+
+SubObjectPropertyOf(:hasPhDProgram :hasProgram)
+ObjectPropertyDomain(:hasPhDProgram :Department)
+ObjectPropertyRange(:hasPhDProgram :PhDProgram)
+
+# Object Property: :hasPostDoc (:hasPostDoc)
+
+SubObjectPropertyOf(:hasPostDoc :hasFaculty)
+InverseObjectProperties(:hasPostDoc :isPostDocOf)
+ObjectPropertyDomain(:hasPostDoc :Department)
+ObjectPropertyRange(:hasPostDoc :PostDoc)
+
+# Object Property: :hasProfessor (:hasProfessor)
+
+SubObjectPropertyOf(:hasProfessor :hasFaculty)
+InverseObjectProperties(:hasProfessor :isProfessorOf)
+ObjectPropertyDomain(:hasProfessor :Department)
+ObjectPropertyRange(:hasProfessor :Professor)
+
+# Object Property: :hasProgram (:hasProgram)
+
+ObjectPropertyDomain(:hasProgram :Department)
+ObjectPropertyRange(:hasProgram :Program)
+
+# Object Property: :hasResearchAssistant (:hasResearchAssistant)
+
+SubObjectPropertyOf(:hasResearchAssistant :hasEmployee)
+InverseObjectProperties(:hasResearchAssistant :isResearchAssistantOf)
+ObjectPropertyDomain(:hasResearchAssistant :ResearchGroup)
+ObjectPropertyRange(:hasResearchAssistant :ResearchAssistant)
+
+# Object Property: :hasResearchGroup (:hasResearchGroup)
+
+SubObjectPropertyOf(:hasResearchGroup :hasSubOrganization)
+InverseObjectProperties(:hasResearchGroup :isResearchGroupOf)
+ObjectPropertyDomain(:hasResearchGroup :University)
+ObjectPropertyRange(:hasResearchGroup :ResearchGroup)
+
+# Object Property: :hasResearchProject (:hasResearchProject)
+
+SubObjectPropertyOf(:hasResearchProject :hasWork)
+ObjectPropertyDomain(:hasResearchProject :ResearchGroup)
+ObjectPropertyRange(:hasResearchProject :ResearchProject)
+
+# Object Property: :hasSameHomeTownWith (:hasSameHomeTownWith)
+
+SymmetricObjectProperty(:hasSameHomeTownWith)
+TransitiveObjectProperty(:hasSameHomeTownWith)
+
+# Object Property: :hasStudent (:hasStudent)
+
+SubObjectPropertyOf(:hasStudent :hasMember)
+InverseObjectProperties(:hasStudent :isStudentOf)
+ObjectPropertyDomain(:hasStudent :Organization)
+ObjectPropertyRange(:hasStudent :Student)
+
+# Object Property: :hasStudentEvaluationCommittee (:hasStudentEvaluationCommittee)
+
+SubObjectPropertyOf(:hasStudentEvaluationCommittee :hasEvaluationCommittee)
+ObjectPropertyDomain(:hasStudentEvaluationCommittee :Organization)
+ObjectPropertyRange(:hasStudentEvaluationCommittee :StudentEvaluationCommittee)
+
+# Object Property: :hasSubOrganization (:hasSubOrganization)
+
+InverseObjectProperties(:hasSubOrganization :isSubOrganizationOf)
+TransitiveObjectProperty(:hasSubOrganization)
+ObjectPropertyDomain(:hasSubOrganization :Organization)
+ObjectPropertyRange(:hasSubOrganization :Organization)
+
+# Object Property: :hasSupportingStaff (:hasSupportingStaff)
+
+SubObjectPropertyOf(:hasSupportingStaff :hasEmployee)
+ObjectPropertyDomain(:hasSupportingStaff :Department)
+ObjectPropertyRange(:hasSupportingStaff :SupportingStaff)
+
+# Object Property: :hasSystemStaff (:hasSystemStaff)
+
+SubObjectPropertyOf(:hasSystemStaff :hasSupportingStaff)
+ObjectPropertyDomain(:hasSystemStaff :Department)
+ObjectPropertyRange(:hasSystemStaff :SystemStaff)
+
+# Object Property: :hasThesisEvaluationCommittee (:hasThesisEvaluationCommittee)
+
+SubObjectPropertyOf(:hasThesisEvaluationCommittee :hasStudentEvaluationCommittee)
+ObjectPropertyDomain(:hasThesisEvaluationCommittee :Organization)
+ObjectPropertyRange(:hasThesisEvaluationCommittee :ThesisEvaluationCommittee)
+
+# Object Property: :hasUGProgram (:hasUGProgram)
+
+SubObjectPropertyOf(:hasUGProgram :hasProgram)
+ObjectPropertyDomain(:hasUGProgram :Department)
+ObjectPropertyRange(:hasUGProgram :UGProgram)
+
+# Object Property: :hasUndergraduateDegreeFrom (:hasUndergraduateDegreeFrom)
+
+SubObjectPropertyOf(:hasUndergraduateDegreeFrom :hasDegreeFrom)
+ObjectPropertyDomain(:hasUndergraduateDegreeFrom :Person)
+ObjectPropertyRange(:hasUndergraduateDegreeFrom :University)
+
+# Object Property: :hasVisitingProfessor (:hasVisitingProfessor)
+
+SubObjectPropertyOf(:hasVisitingProfessor :hasProfessor)
+InverseObjectProperties(:hasVisitingProfessor :isVisitingProfessorOf)
+ObjectPropertyDomain(:hasVisitingProfessor :Department)
+ObjectPropertyRange(:hasVisitingProfessor :VisitingProfessor)
+
+# Object Property: :hasWomenCollege (:hasWomenCollege)
+
+SubObjectPropertyOf(:hasWomenCollege :hasCollege)
+
+# Object Property: :hasWork (:hasWork)
+
+ObjectPropertyDomain(:hasWork :Employee)
+ObjectPropertyRange(:hasWork :Work)
+
+# Object Property: :isAdvisedBy (:isAdvisedBy)
+
+ObjectPropertyDomain(:isAdvisedBy :Person)
+ObjectPropertyRange(:isAdvisedBy :Professor)
+
+# Object Property: :isAffiliatedOrganizationOf (:isAffiliatedOrganizationOf)
+
+AsymmetricObjectProperty(:isAffiliatedOrganizationOf)
+IrreflexiveObjectProperty(:isAffiliatedOrganizationOf)
+ObjectPropertyDomain(:isAffiliatedOrganizationOf :Organization)
+ObjectPropertyRange(:isAffiliatedOrganizationOf :Organization)
+
+# Object Property: :isAssistantProfessorOf (:isAssistantProfessorOf)
+
+SubObjectPropertyOf(:isAssistantProfessorOf :isProfessorOf)
+
+# Object Property: :isAssociateProfessorOf (:isAssociateProfessorOf)
+
+SubObjectPropertyOf(:isAssociateProfessorOf :isProfessorOf)
+
+# Object Property: :isClericalStaffOf (:isClericalStaffOf)
+
+SubObjectPropertyOf(:isClericalStaffOf :isSupportingStaffOf)
+
+# Object Property: :isCollegeOf (:isCollegeOf)
+
+SubObjectPropertyOf(:isCollegeOf :isSubOrganizationOf)
+ObjectPropertyDomain(:isCollegeOf :College)
+ObjectPropertyRange(:isCollegeOf :University)
+
+# Object Property: :isCrazyAbout (:isCrazyAbout)
+
+SubObjectPropertyOf(:isCrazyAbout :loves)
+ObjectPropertyDomain(:isCrazyAbout :Person)
+ObjectPropertyRange(:isCrazyAbout :Interest)
+
+# Object Property: :isDeanOf (:isDeanOf)
+
+ObjectPropertyDomain(:isDeanOf :Person)
+ObjectPropertyRange(:isDeanOf :Organization)
+
+# Object Property: :isDepartmentOf (:isDepartmentOf)
+
+SubObjectPropertyOf(:isDepartmentOf :isSubOrganizationOf)
+ObjectPropertyDomain(:isDepartmentOf :Department)
+ObjectPropertyRange(:isDepartmentOf :College)
+
+# Object Property: :isFacultyOf (:isFacultyOf)
+
+SubObjectPropertyOf(:isFacultyOf :worksFor)
+ObjectPropertyDomain(:isFacultyOf :Faculty)
+ObjectPropertyRange(:isFacultyOf :Organization)
+
+# Object Property: :isFullProfessorOf (:isFullProfessorOf)
+
+SubObjectPropertyOf(:isFullProfessorOf :isProfessorOf)
+
+# Object Property: :isHeadOf (:isHeadOf)
+
+SubObjectPropertyOf(:isHeadOf :isFullProfessorOf)
+InverseFunctionalObjectProperty(:isHeadOf)
+
+# Object Property: :isLecturerOf (:isLecturerOf)
+
+SubObjectPropertyOf(:isLecturerOf :isFacultyOf)
+
+# Object Property: :isMemberOf (:isMemberOf)
+
+ObjectPropertyDomain(:isMemberOf :Person)
+ObjectPropertyRange(:isMemberOf :Organization)
+
+# Object Property: :isOtherStaffOf (:isOtherStaffOf)
+
+SubObjectPropertyOf(:isOtherStaffOf :isSupportingStaffOf)
+
+# Object Property: :isPartOf (:isPartOf)
+
+EquivalentObjectProperties(:isPartOf :isSubOrganizationOf)
+TransitiveObjectProperty(:isPartOf)
+ObjectPropertyDomain(:isPartOf :Organization)
+ObjectPropertyRange(:isPartOf :Organization)
+
+# Object Property: :isPostDocOf (:isPostDocOf)
+
+SubObjectPropertyOf(:isPostDocOf :isFacultyOf)
+
+# Object Property: :isProfessorOf (:isProfessorOf)
+
+SubObjectPropertyOf(:isProfessorOf :isFacultyOf)
+
+# Object Property: :isResearchAssistantOf (:isResearchAssistantOf)
+
+SubObjectPropertyOf(:isResearchAssistantOf :worksFor)
+
+# Object Property: :isResearchGroupOf (:isResearchGroupOf)
+
+SubObjectPropertyOf(:isResearchGroupOf :isSubOrganizationOf)
+ObjectPropertyDomain(:isResearchGroupOf :ResearchGroup)
+ObjectPropertyRange(:isResearchGroupOf :University)
+
+# Object Property: :isStudentOf (:isStudentOf)
+
+ObjectPropertyDomain(:isStudentOf :Student)
+ObjectPropertyRange(:isStudentOf :Organization)
+
+# Object Property: :isSubOrganizationOf (:isSubOrganizationOf)
+
+TransitiveObjectProperty(:isSubOrganizationOf)
+ObjectPropertyDomain(:isSubOrganizationOf :Organization)
+ObjectPropertyRange(:isSubOrganizationOf :Organization)
+
+# Object Property: :isSupportingStaffOf (:isSupportingStaffOf)
+
+SubObjectPropertyOf(:isSupportingStaffOf :worksFor)
+
+# Object Property: :isSystemStaffOf (:isSystemStaffOf)
+
+SubObjectPropertyOf(:isSystemStaffOf :isSupportingStaffOf)
+
+# Object Property: :isTaughtBy (:isTaughtBy)
+
+InverseObjectProperties(:isTaughtBy :teachesCourse)
+ObjectPropertyDomain(:isTaughtBy :Course)
+ObjectPropertyRange(:isTaughtBy :Faculty)
+
+# Object Property: :isTeachingAssistantOf (:isTeachingAssistantOf)
+
+ObjectPropertyDomain(:isTeachingAssistantOf :TeachingAssistant)
+ObjectPropertyRange(:isTeachingAssistantOf :Course)
+
+# Object Property: :isVisitingProfessorOf (:isVisitingProfessorOf)
+
+SubObjectPropertyOf(:isVisitingProfessorOf :isProfessorOf)
+
+# Object Property: :isWomenCollegeOf (:isWomenCollegeOf)
+
+SubObjectPropertyOf(:isWomenCollegeOf :isCollegeOf)
+
+# Object Property: :likes (:likes)
+
+IrreflexiveObjectProperty(:likes)
+ObjectPropertyDomain(:likes :Person)
+ObjectPropertyRange(:likes :Interest)
+
+# Object Property: :loves (:loves)
+
+SubObjectPropertyOf(:loves :likes)
+ObjectPropertyDomain(:loves :Person)
+ObjectPropertyRange(:loves :Interest)
+
+# Object Property: :offerCourse (:offerCourse)
+
+ObjectPropertyDomain(:offerCourse :Department)
+ObjectPropertyRange(:offerCourse :Course)
+
+# Object Property: :orgPublication (:orgPublication)
+
+ObjectPropertyDomain(:orgPublication :Organization)
+ObjectPropertyRange(:orgPublication :Publication)
+
+# Object Property: :publicationResearch (:publicationResearch)
+
+ObjectPropertyDomain(:publicationResearch :Publication)
+
+# Object Property: :takesCourse (:takesCourse)
+
+ObjectPropertyDomain(:takesCourse :Student)
+ObjectPropertyRange(:takesCourse :Course)
+
+# Object Property: :teachesCourse (:teachesCourse)
+
+SubObjectPropertyOf(:teachesCourse :hasWork)
+
+ObjectPropertyDomain(:teachesCourse :Faculty)
+ObjectPropertyRange(:teachesCourse :Course)
+
+# Object Property: :tenured (:tenured)
+
+ObjectPropertyDomain(:tenured :Professor)
+
+# Object Property: :worksFor (:worksFor)
+
+ObjectPropertyDomain(:worksFor :Employee)
+ObjectPropertyRange(:worksFor :Organization)
+
+
+############################
+#   Data Properties
+############################
+
+# Data Property: :hasAge (:hasAge)
+
+FunctionalDataProperty(:hasAge)
+DataPropertyDomain(:hasAge :Person)
+
+# Data Property: :hasCode (:hasCode)
+
+EquivalentDataProperties(:hasCode :hasID)
+FunctionalDataProperty(:hasCode)
+
+# Data Property: :hasEmailAddress (:hasEmailAddress)
+
+DataPropertyDomain(:hasEmailAddress :Person)
+
+# Data Property: :hasFirstName (:hasFirstName)
+
+DataPropertyDomain(:hasFirstName :Person)
+
+# Data Property: :hasID (:hasID)
+
+FunctionalDataProperty(:hasID)
+
+# Data Property: :hasLastName (:hasLastName)
+
+DataPropertyDomain(:hasLastName :Person)
+
+# Data Property: :hasPublicationDate (:hasPublicationDate)
+
+DataPropertyRange(:hasPublicationDate rdfs:Literal)
+
+# Data Property: :hasResearchInterest (:hasResearchInterest)
+
+DataPropertyRange(:hasResearchInterest rdfs:Literal)
+
+# Data Property: :hasTelephone (:hasTelephone)
+
+DataPropertyDomain(:hasTelephone :Person)
+
+# Data Property: :hasTitle (:hasTitle)
+
+DataPropertyDomain(:hasTitle :Person)
+
+
+
+############################
+#   Classes
+############################
+
+# Class: :AeronauticalEngineering (:AeronauticalEngineering)
+
+SubClassOf(:AeronauticalEngineering :Engineering)
+
+# Class: :Anthropology (:Anthropology)
+
+SubClassOf(:Anthropology :HumanitiesAndSocial)
+
+# Class: :Architecture (:Architecture)
+
+SubClassOf(:Architecture :FineArts)
+
+# Class: :Article (:Article)
+
+SubClassOf(:Article :Publication)
+
+# Class: :AsianArts (:AsianArts)
+
+SubClassOf(:AsianArts :FineArts)
+
+# Class: :AssistantProfessor (:AssistantProfessor)
+
+SubClassOf(:AssistantProfessor :Professor)
+
+# Class: :AssociateProfessor (:AssociateProfessor)
+
+SubClassOf(:AssociateProfessor :Professor)
+
+# Class: :Astronomy (:Astronomy)
+
+SubClassOf(:Astronomy :Science)
+
+# Class: :Badminton (:Badminton)
+
+SubClassOf(:Badminton :Sports)
+
+# Class: :BasketBall (:BasketBall)
+
+SubClassOf(:BasketBall :Sports)
+
+# Class: :BasketBallFan (:BasketBallFan)
+
+SubClassOf(:BasketBallFan :Person)
+
+# Class: :BasketBallLover (:BasketBallLover)
+
+SubClassOf(:BasketBallLover :Person)
+
+# Class: :Biology (:Biology)
+
+SubClassOf(:Biology :Science)
+
+# Class: :BiomedicalEngineering (:BiomedicalEngineering)
+
+SubClassOf(:BiomedicalEngineering :Engineering)
+
+# Class: :Book (:Book)
+
+SubClassOf(:Book :Publication)
+
+# Class: :Chair (:Chair)
+
+SubClassOf(:Chair :FullProfessor)
+
+# Class: :ChemicalEngineering (:ChemicalEngineering)
+
+SubClassOf(:ChemicalEngineering :Engineering)
+
+# Class: :Chemistry (:Chemistry)
+
+SubClassOf(:Chemistry :Science)
+
+# Class: :CivilEngineering (:CivilEngineering)
+
+SubClassOf(:CivilEngineering :Engineering)
+
+# Class: :ClericalStaff (:ClericalStaff)
+
+SubClassOf(:ClericalStaff :SupportingStaff)
+
+# Class: :CoEdCollege (:CoEdCollege)
+
+SubClassOf(:CoEdCollege :College)
+
+# Class: :College (:College)
+
+EquivalentClasses(:College :School)
+SubClassOf(:College :Organization)
+
+# Class: :CollegeDiscipline (:CollegeDiscipline)
+
+
+# Class: :ComputerEngineering (:ComputerEngineering)
+
+SubClassOf(:ComputerEngineering :Engineering)
+
+# Class: :ComputerScience (:ComputerScience)
+
+SubClassOf(:ComputerScience :Science)
+
+# Class: :ConferencePaper (:ConferencePaper)
+
+SubClassOf(:ConferencePaper :Article)
+
+# Class: :Course (:Course)
+
+EquivalentClasses(:Course :TeachingCourse)
+
+# Class: :Cricket (:Cricket)
+
+SubClassOf(:Cricket :Sports)
+
+# Class: :Dean (:Dean)
+
+SubClassOf(:Dean :FullProfessor)
+
+# Class: :Department (:Department)
+
+SubClassOf(:Department :Organization)
+
+# Class: :DesignManagement (:DesignManagement)
+
+SubClassOf(:DesignManagement :Management)
+
+# Class: :Director (:Director)
+
+SubClassOf(:Director :FullProfessor)
+
+# Class: :Drama (:Drama)
+
+SubClassOf(:Drama :FineArts)
+
+# Class: :Economics (:Economics)
+
+SubClassOf(:Economics :HumanitiesAndSocial)
+
+# Class: :ElectiveCourse (:ElectiveCourse)
+
+SubClassOf(:ElectiveCourse :Course)
+DisjointClasses(:ElectiveCourse :UGCourse)
+
+# Class: :ElectricalEngineering (:ElectricalEngineering)
+
+SubClassOf(:ElectricalEngineering :Engineering)
+
+# Class: :Employee (:Employee)
+
+SubClassOf(:Employee :Person)
+
+# Class: :EmployeeEvaluationCommittee (:EmployeeEvaluationCommittee)
+
+SubClassOf(:EmployeeEvaluationCommittee :EvaluationCommittee)
+DisjointClasses(:EmployeeEvaluationCommittee :StudentEvaluationCommittee)
+
+# Class: :Engineering (Engineering)
+
+AnnotationAssertion(rdfs:label :Engineering "Engineering")
+SubClassOf(:Engineering :CollegeDiscipline)
+
+# Class: :English (:English)
+
+SubClassOf(:English :HumanitiesAndSocial)
+
+# Class: :Faculty (:Faculty)
+
+SubClassOf(:Faculty :Employee)
+
+# Class: :FinancialAndAccountingManagement (:FinancialAndAccountingManagement)
+
+SubClassOf(:FinancialAndAccountingManagement :Management)
+
+# Class: :FineArts (:FineArts)
+
+SubClassOf(:FineArts :CollegeDiscipline)
+
+# Class: :FootBall (:FootBall)
+
+SubClassOf(:FootBall :Sports)
+
+# Class: :FullProfessor (:FullProfessor)
+
+SubClassOf(:FullProfessor :Professor)
+
+# Class: :Game (:Game)
+
+SubClassOf(:Game :Interest)
+
+# Class: :Geosciences (:Geosciences)
+
+SubClassOf(:Geosciences :Science)
+
+# Class: :History (:History)
+
+SubClassOf(:History :HumanitiesAndSocial)
+
+# Class: :HumanResourceManagement (:HumanResourceManagement)
+
+SubClassOf(:HumanResourceManagement :Management)
+
+# Class: :Humanities (:Humanities)
+
+SubClassOf(:Humanities :HumanitiesAndSocial)
+
+# Class: :HumanitiesAndSocial (HumanitiesAndSocial)
+
+AnnotationAssertion(rdfs:label :HumanitiesAndSocial "HumanitiesAndSocial")
+SubClassOf(:HumanitiesAndSocial :CollegeDiscipline)
+
+# Class: :IndustryEngineering (:IndustryEngineering)
+
+SubClassOf(:IndustryEngineering :Engineering)
+
+# Class: :Institute (:Institute)
+
+SubClassOf(:Institute :Organization)
+
+# Class: :Interest (:Interest)
+
+
+# Class: :JournalArticle (:JournalArticle)
+
+SubClassOf(:JournalArticle :Article)
+
+# Class: :LatinArts (:LatinArts)
+
+SubClassOf(:LatinArts :FineArts)
+
+# Class: :Lecturer (:Lecturer)
+
+SubClassOf(:Lecturer :Faculty)
+
+# Class: :LeisureStudent (:LeisureStudent)
+
+SubClassOf(:LeisureStudent :Student)
+SubClassOf(:LeisureStudent ObjectIntersectionOf(:Student ObjectMaxCardinality(1 :takesCourse :Course)))
+
+# Class: :Linguistics (:Linguistics)
+
+SubClassOf(:Linguistics :HumanitiesAndSocial)
+
+# Class: :Man (:Man)
+
+DisjointClasses(:Man :Woman)
+
+# Class: :Management (:Management)
+
+SubClassOf(:Management :CollegeDiscipline)
+
+# Class: :Manual (:Manual)
+
+SubClassOf(:Manual :Publication)
+
+# Class: :MarineScience (:MarineScience)
+
+SubClassOf(:MarineScience :Science)
+
+# Class: :MarketingManagement (:MarketingManagement)
+
+SubClassOf(:MarketingManagement :Management)
+
+# Class: :MaterialScienceEngineering (:MaterialScienceEngineering)
+
+SubClassOf(:MaterialScienceEngineering :Engineering)
+
+# Class: :MaterialsScience (:MaterialsScience)
+
+SubClassOf(:MaterialsScience :Science)
+
+# Class: :Mathematics (:Mathematics)
+
+SubClassOf(:Mathematics :Science)
+
+# Class: :MechanicalEngineering (:MechanicalEngineering)
+
+SubClassOf(:MechanicalEngineering :Engineering)
+
+# Class: :MediaArtsAndSciences (:MediaArtsAndSciences)
+
+SubClassOf(:MediaArtsAndSciences :FineArts)
+
+# Class: :MedievalArts (:MedievalArts)
+
+SubClassOf(:MedievalArts :FineArts)
+
+# Class: :ModernArts (:ModernArts)
+
+SubClassOf(:ModernArts :FineArts)
+
+# Class: :ModernLanguages (:ModernLanguages)
+
+SubClassOf(:ModernLanguages :HumanitiesAndSocial)
+
+# Class: :Movie (:Movie)
+
+SubClassOf(:Movie :Interest)
+
+# Class: :Music (:Music)
+
+SubClassOf(:Music :Interest)
+
+# Class: :MusicsClass (:MusicsClass)
+
+SubClassOf(:MusicsClass :FineArts)
+
+# Class: :OperationsManagement (:OperationsManagement)
+
+SubClassOf(:OperationsManagement :Management)
+
+# Class: :OtherStaff (:OtherStaff)
+
+SubClassOf(:OtherStaff :SupportingStaff)
+
+# Class: :PGProgram (:PGProgram)
+
+SubClassOf(:PGProgram :Program)
+
+# Class: :PGStudent (:PGStudent)
+
+SubClassOf(:PGStudent :Student)
+
+# Class: :Painting (:Painting)
+
+SubClassOf(:Painting :Interest)
+
+# Class: :PeopleWithHobby (:PeopleWithHobby)
+
+SubClassOf(:PeopleWithHobby :Person)
+
+# Class: :PerformingArts (:PerformingArts)
+
+SubClassOf(:PerformingArts :FineArts)
+
+# Class: :Person (:Person)
+
+
+# Class: :PetroleumlEngineering (:PetroleumlEngineering)
+
+SubClassOf(:PetroleumlEngineering :Engineering)
+
+# Class: :PhDProgram (:PhDProgram)
+
+SubClassOf(:PhDProgram :Program)
+
+# Class: :PhDStudent (:PhDStudent)
+
+SubClassOf(:PhDStudent :Student)
+
+# Class: :Philosophy (:Philosophy)
+
+SubClassOf(:Philosophy :HumanitiesAndSocial)
+
+# Class: :Physics (:Physics)
+
+SubClassOf(:Physics :Science)
+
+# Class: :PostDoc (:PostDoc)
+
+SubClassOf(:PostDoc :Faculty)
+
+# Class: :Professor (:Professor)
+
+SubClassOf(:Professor :Faculty)
+
+# Class: :Program (:Program)
+
+AnnotationAssertion(rdfs:comment :Program "Different programs offered in a department. UG, PG or PhD")
+
+# Class: :ProjectManagement (:ProjectManagement)
+
+SubClassOf(:ProjectManagement :Management)
+
+# Class: :Psychology (:Psychology)
+
+SubClassOf(:Psychology :HumanitiesAndSocial)
+
+# Class: :PublicRelationsManagement (:PublicRelationsManagement)
+
+SubClassOf(:PublicRelationsManagement :Management)
+
+# Class: :Reading (:Reading)
+
+SubClassOf(:Reading :Interest)
+
+# Class: :Religions (:Religions)
+
+SubClassOf(:Religions :HumanitiesAndSocial)
+
+# Class: :ResearchAssistant (:ResearchAssistant)
+
+SubClassOf(:ResearchAssistant :Employee)
+
+# Class: :ResearchGroup (:ResearchGroup)
+
+SubClassOf(:ResearchGroup :Organization)
+
+# Class: :ResearchProject (:ResearchProject)
+
+SubClassOf(:ResearchProject :Work)
+
+# Class: :RiskManagement (:RiskManagement)
+
+SubClassOf(:RiskManagement :Management)
+
+# Class: :SalesManagement (:SalesManagement)
+
+SubClassOf(:SalesManagement :Management)
+
+# Class: :School (:School)
+
+SubClassOf(:School :Organization)
+
+# Class: :Science (Science)
+
+AnnotationAssertion(rdfs:label :Science "Science")
+SubClassOf(:Science :CollegeDiscipline)
+
+# Class: :ScienceStudent (:ScienceStudent)
+
+SubClassOf(:ScienceStudent :Student)
+
+# Class: :Software (:Software)
+
+SubClassOf(:Software :Publication)
+
+# Class: :Specification (:Specification)
+
+SubClassOf(:Specification :Publication)
+
+# Class: :Sports (:Sports)
+
+SubClassOf(:Sports :Interest)
+
+# Class: :SportsFan (:SportsFan)
+
+SubClassOf(:SportsFan :Person)
+
+# Class: :SportsLover (:SportsLover)
+
+SubClassOf(:SportsLover :Person)
+
+# Class: :Statistics (:Statistics)
+
+SubClassOf(:Statistics :Science)
+
+# Class: :Student (:Student)
+
+SubClassOf(:Student :Person)
+
+# Class: :StudentEvaluationCommittee (:StudentEvaluationCommittee)
+
+SubClassOf(:StudentEvaluationCommittee :EvaluationCommittee)
+
+# Class: :SupplyChainManagement (:SupplyChainManagement)
+
+SubClassOf(:SupplyChainManagement :Management)
+
+# Class: :SupportingStaff (:SupportingStaff)
+
+SubClassOf(:SupportingStaff :Employee)
+
+# Class: :Swimming (:Swimming)
+
+SubClassOf(:Swimming :Sports)
+
+# Class: :SystemStaff (:SystemStaff)
+
+SubClassOf(:SystemStaff :SupportingStaff)
+
+# Class: :TeachingAssistant (:TeachingAssistant)
+
+SubClassOf(:TeachingAssistant :Student)
+
+# Class: :TeachingCourse (:TeachingCourse)
+
+SubClassOf(:TeachingCourse :Work)
+
+# Class: :TechnicalReport (:TechnicalReport)
+
+SubClassOf(:TechnicalReport :Article)
+
+# Class: :Tennis (:Tennis)
+
+SubClassOf(:Tennis :Sports)
+
+# Class: :TheatreAndDance (:TheatreAndDance)
+
+SubClassOf(:TheatreAndDance :FineArts)
+
+# Class: :ThesisEvaluationCommittee (:ThesisEvaluationCommittee)
+
+AnnotationAssertion(rdfs:comment :ThesisEvaluationCommittee "Evaluates PhD students")
+SubClassOf(:ThesisEvaluationCommittee :StudentEvaluationCommittee)
+
+# Class: :Travelling (:Travelling)
+
+SubClassOf(:Travelling :Interest)
+
+# Class: :UGCourse (:UGCourse)
+
+AnnotationAssertion(rdfs:comment :UGCourse "Mandatory courses for all UG students")
+SubClassOf(:UGCourse :Course)
+
+# Class: :UGProgram (:UGProgram)
+
+SubClassOf(:UGProgram :Program)
+
+# Class: :UGStudent (:UGStudent)
+
+SubClassOf(:UGStudent :Student)
+
+# Class: :University (:University)
+
+SubClassOf(:University :Organization)
+
+# Class: :UnofficialPublication (:UnofficialPublication)
+
+SubClassOf(:UnofficialPublication :Publication)
+
+# Class: :VisitingProfessor (:VisitingProfessor)
+
+SubClassOf(:VisitingProfessor :Professor)
+
+# Class: :WomanCollege (:WomanCollege)
+
+SubClassOf(:WomanCollege :College)
+SubClassOf(:WomanCollege ObjectIntersectionOf(:College ObjectAllValuesFrom(:hasStudent ObjectComplementOf(:Man))))
+
+
+############################
+#   Named Individuals
+############################
+
+# Individual: :AbstractPainting (:AbstractPainting)
+
+ClassAssertion(:Painting :AbstractPainting)
+
+# Individual: :ActionMovie (:ActionMovie)
+
+ClassAssertion(:Movie :ActionMovie)
+
+# Individual: :AeronauticalEngineering (:AeronauticalEngineering)
+
+ClassAssertion(:AeronauticalEngineering :AeronauticalEngineering)
+
+# Individual: :Anthropology (:Anthropology)
+
+ClassAssertion(:Anthropology :Anthropology)
+
+# Individual: :Architecture (:Architecture)
+
+ClassAssertion(:Architecture :Architecture)
+
+# Individual: :ArticleReading (:ArticleReading)
+
+ClassAssertion(:Reading :ArticleReading)
+
+# Individual: :AsianArts (:AsianArts)
+
+ClassAssertion(:AsianArts :AsianArts)
+
+# Individual: :Astronomy (:Astronomy)
+
+ClassAssertion(:Astronomy :Astronomy)
+
+# Individual: :BackStroke (:BackStroke)
+
+ClassAssertion(:Swimming :BackStroke)
+
+# Individual: :Badminton (:Badminton)
+
+ClassAssertion(:Badminton :Badminton)
+
+# Individual: :Basketball (:Basketball)
+
+ClassAssertion(:BasketBall :Basketball)
+
+# Individual: :Biology (:Biology)
+
+ClassAssertion(:Biology :Biology)
+
+# Individual: :BiomedicalEngineering (:BiomedicalEngineering)
+
+ClassAssertion(:BiomedicalEngineering :BiomedicalEngineering)
+
+# Individual: :BookReading (:BookReading)
+
+ClassAssertion(:Reading :BookReading)
+
+# Individual: :ChemicalEngineering (:ChemicalEngineering)
+
+ClassAssertion(:ChemicalEngineering :ChemicalEngineering)
+
+# Individual: :Chemistry (:Chemistry)
+
+ClassAssertion(:Chemistry :Chemistry)
+
+# Individual: :CivilEngineering (:CivilEngineering)
+
+ClassAssertion(:CivilEngineering :CivilEngineering)
+
+# Individual: :ClassicalMusic (:ClassicalMusic)
+
+ClassAssertion(:Music :ClassicalMusic)
+
+# Individual: :ComedyMovie (:ComedyMovie)
+
+ClassAssertion(:Movie :ComedyMovie)
+
+# Individual: :ComputerEngineering (:ComputerEngineering)
+
+ClassAssertion(:ComputerEngineering :ComputerEngineering)
+
+# Individual: :ComputerScience (:ComputerScience)
+
+ClassAssertion(:ComputerScience :ComputerScience)
+
+# Individual: :DocumentaryMovie (:DocumentaryMovie)
+
+ClassAssertion(:Movie :DocumentaryMovie)
+
+# Individual: :Drama (:Drama)
+
+ClassAssertion(:Drama :Drama)
+
+# Individual: :Economics (:Economics)
+
+ClassAssertion(:Economics :Economics)
+
+# Individual: :ElectricalEngineering (:ElectricalEngineering)
+
+ClassAssertion(:ElectricalEngineering :ElectricalEngineering)
+
+# Individual: :English (:English)
+
+ClassAssertion(:English :English)
+
+# Individual: :FictionMovie (:FictionMovie)
+
+ClassAssertion(:Movie :FictionMovie)
+
+# Individual: :Football (:Football)
+
+ClassAssertion(:FootBall :Football)
+
+# Individual: :FrontCrawl (:FrontCrawl)
+
+ClassAssertion(:Swimming :FrontCrawl)
+
+# Individual: :Geosciences (:Geosciences)
+
+ClassAssertion(:Geosciences :Geosciences)
+
+# Individual: :History (:History)
+
+ClassAssertion(:History :History)
+
+# Individual: :HorrorMovie (:HorrorMovie)
+
+ClassAssertion(:Movie :HorrorMovie)
+
+# Individual: :Humanities (:Humanities)
+
+ClassAssertion(:Humanities :Humanities)
+
+# Individual: :IndustryEngineering (:IndustryEngineering)
+
+ClassAssertion(:IndustryEngineering :IndustryEngineering)
+
+# Individual: :LatinArts (:LatinArts)
+
+ClassAssertion(:LatinArts :LatinArts)
+
+# Individual: :LawnTennis (:LawnTennis)
+
+ClassAssertion(:Tennis :LawnTennis)
+
+# Individual: :Linguistics (:Linguistics)
+
+ClassAssertion(:Linguistics :Linguistics)
+
+# Individual: :MarineScience (:MarineScience)
+
+ClassAssertion(:MarineScience :MarineScience)
+
+# Individual: :MaterialScienceEngineering (:MaterialScienceEngineering)
+
+ClassAssertion(:MaterialScienceEngineering :MaterialScienceEngineering)
+
+# Individual: :MaterialsScience (:MaterialsScience)
+
+ClassAssertion(:MaterialsScience :MaterialsScience)
+
+# Individual: :Mathematics (:Mathematics)
+
+ClassAssertion(:Mathematics :Mathematics)
+
+# Individual: :MechanicalEngineering (:MechanicalEngineering)
+
+ClassAssertion(:MechanicalEngineering :MechanicalEngineering)
+
+# Individual: :MediaArtsAndSiences (:MediaArtsAndSiences)
+
+ClassAssertion(:MediaArtsAndSciences :MediaArtsAndSiences)
+
+# Individual: :MedievalArts (:MedievalArts)
+
+ClassAssertion(:MedievalArts :MedievalArts)
+
+# Individual: :ModernArts (:ModernArts)
+
+ClassAssertion(:ModernArts :ModernArts)
+
+# Individual: :ModernLanguages (:ModernLanguages)
+
+ClassAssertion(:ModernLanguages :ModernLanguages)
+
+# Individual: :MusicsClass (:MusicsClass)
+
+ClassAssertion(:MusicsClass :MusicsClass)
+
+# Individual: :NewspaperReading (:NewspaperReading)
+
+ClassAssertion(:Reading :NewspaperReading)
+
+# Individual: :OilPainting (:OilPainting)
+
+ClassAssertion(:Painting :OilPainting)
+
+# Individual: :PCGame (:PCGame)
+
+ClassAssertion(:Game :PCGame)
+
+# Individual: :PerformingArts (:PerformingArts)
+
+ClassAssertion(:PerformingArts :PerformingArts)
+
+# Individual: :PetroleumEngineering (:PetroleumEngineering)
+
+ClassAssertion(:PetroleumlEngineering :PetroleumEngineering)
+
+# Individual: :Philosophy (:Philosophy)
+
+ClassAssertion(:Philosophy :Philosophy)
+
+# Individual: :Physics (:Physics)
+
+ClassAssertion(:Physics :Physics)
+
+# Individual: :PopMusic (:PopMusic)
+
+ClassAssertion(:Music :PopMusic)
+
+# Individual: :Psychology (:Psychology)
+
+ClassAssertion(:Psychology :Psychology)
+
+# Individual: :Religions (:Religions)
+
+ClassAssertion(:Religions :Religions)
+
+# Individual: :RockandRollMusic (:RockandRollMusic)
+
+ClassAssertion(:Music :RockandRollMusic)
+
+# Individual: :RomanticMovie (:RomanticMovie)
+
+ClassAssertion(:Movie :RomanticMovie)
+
+# Individual: :Shopping (:Shopping)
+
+ClassAssertion(:Interest :Shopping)
+
+# Individual: :SoloTravelling (:SoloTravelling)
+
+ClassAssertion(:Travelling :SoloTravelling)
+
+# Individual: :StampCollecting (:StampCollecting)
+
+ClassAssertion(:Interest :StampCollecting)
+
+# Individual: :Statistics (:Statistics)
+
+ClassAssertion(:Statistics :Statistics)
+
+# Individual: :T20Cricket (:T20Cricket)
+
+ClassAssertion(:Cricket :T20Cricket)
+
+# Individual: :TableTennis (:TableTennis)
+
+ClassAssertion(:Tennis :TableTennis)
+
+# Individual: :TheatreAndDance (:TheatreAndDance)
+
+ClassAssertion(:TheatreAndDance :TheatreAndDance)
+
+# Individual: :ThrillerMovie (:ThrillerMovie)
+
+ClassAssertion(:Movie :ThrillerMovie)
+
+# Individual: :VideoGame (:VideoGame)
+
+ClassAssertion(:Game :VideoGame)
+
+
+SubClassOf(ObjectIntersectionOf(:Employee ObjectSomeValuesFrom(:teachesCourse :Course)) :Faculty)
+SubClassOf(ObjectIntersectionOf(:Person ObjectSomeValuesFrom(:enrollIn :Department)) :Student)
+SubClassOf(ObjectIntersectionOf(:Person ObjectSomeValuesFrom(:isCrazyAbout :BasketBall)) :BasketBallFan)
+SubClassOf(ObjectIntersectionOf(:Person ObjectSomeValuesFrom(:isCrazyAbout :Sports)) :SportsFan)
+SubClassOf(ObjectIntersectionOf(:Person ObjectSomeValuesFrom(:likes :Interest)) :PeopleWithHobby)
+SubClassOf(ObjectIntersectionOf(:Person ObjectSomeValuesFrom(:loves :BasketBall)) :BasketBallLover)
+SubClassOf(ObjectIntersectionOf(:Person ObjectSomeValuesFrom(:loves :Sports)) :SportsLover)
+SubClassOf(ObjectIntersectionOf(:Person ObjectSomeValuesFrom(:worksFor :Organization)) :Employee)
+SubClassOf(ObjectIntersectionOf(:Student ObjectSomeValuesFrom(:enrollFor :PGProgram)) :PGStudent)
+SubClassOf(ObjectIntersectionOf(:Student ObjectSomeValuesFrom(:enrollFor :PhDProgram)) :PhDStudent)
+SubClassOf(ObjectIntersectionOf(:Student ObjectSomeValuesFrom(:enrollFor :UGProgram)) :UGStudent)
+SubClassOf(ObjectIntersectionOf(:Student ObjectSomeValuesFrom(:hasMajor :Science)) :ScienceStudent)
+SubClassOf(ObjectIntersectionOf(:Student ObjectSomeValuesFrom(:isTeachingAssistantOf :Course)) :TeachingAssistant)
+SubClassOf(ObjectUnionOf(:Man :Woman) :Person)
+SubClassOf(ObjectSomeValuesFrom(:isHeadOf :College) :Dean)
+SubClassOf(ObjectSomeValuesFrom(:isHeadOf :Department) :Chair)
+SubClassOf(ObjectSomeValuesFrom(:isHeadOf :Program) :Director)
+DisjointClasses(:AeronauticalEngineering :BiomedicalEngineering :ChemicalEngineering :CivilEngineering :ComputerEngineering :ElectricalEngineering :IndustryEngineering :MaterialScienceEngineering :MechanicalEngineering :PetroleumlEngineering)
+DisjointClasses(:Anthropology :Economics :English :History :Humanities :Linguistics :ModernLanguages :Philosophy :Psychology :Religions)
+DisjointClasses(:Architecture :AsianArts :Drama :LatinArts :MediaArtsAndSciences :MedievalArts :ModernArts :Music :PerformingArts :TheatreAndDance)
+DisjointClasses(:Astronomy :Biology :Chemistry :ComputerScience :Geosciences :MarineScience :MaterialsScience :Mathematics :Physics :Statistics)
+DisjointClasses(:CollegeDiscipline :Course :Interest :Person)
+DisjointClasses(:DesignManagement :FinancialAndAccountingManagement :HumanResourceManagement :MarketingManagement :OperationsManagement :ProjectManagement :PublicRelationsManagement :RiskManagement :SalesManagement :SupplyChainManagement)
+DisjointClasses(:Engineering :FineArts :HumanitiesAndSocial :Management :Science)
+DisjointClasses(:Game :Movie :Music :Painting :Reading :Sports :Travelling)
+DisjointClasses(:PGProgram :PhDProgram :UGProgram)
+DifferentIndividuals(:AbstractPainting :ActionMovie :ArticleReading :BackStroke :Badminton :Basketball :BookReading :ClassicalMusic :ComedyMovie :DocumentaryMovie :FictionMovie :Football :FrontCrawl :HorrorMovie :LawnTennis :NewspaperReading :OilPainting :PCGame :PopMusic :RockandRollMusic :RomanticMovie :Shopping :SoloTravelling :StampCollecting :T20Cricket :TableTennis :ThrillerMovie :VideoGame)
+SubObjectPropertyOf(ObjectPropertyChain(:enrollIn :isPartOf) :isMemberOf)
+SubObjectPropertyOf(ObjectPropertyChain(:enrollIn :isSubOrganizationOf) :isStudentOf)
+SubObjectPropertyOf(ObjectPropertyChain(:worksFor :isPartOf) :isMemberOf)
+SubObjectPropertyOf(ObjectPropertyChain(:worksFor :isSubOrganizationOf) :worksFor)
+HasKey(:Student () (:hasID))
+AnnotationAssertion(rdfs:label <http://benchmark/univ-bench-2dl.owl#AmericanFootball> "AmericanFootball")
+AnnotationAssertion(rdfs:label <http://benchmark/univ-bench-2dl.owl#Baseball> "Baseball")
+AnnotationAssertion(rdfs:label <http://benchmark/univ-bench-2dl.owl#Kickboxing> "Kickboxing")
+)

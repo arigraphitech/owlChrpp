@@ -18,6 +18,13 @@ extern "C" {
 #include <string.h>
 }
 
+// Type pour les ensembles de variables logiques
+#include <set>
+namespace chr {
+    template<typename T> class Logical_var;
+}
+using LogicalVarSet = std::set<chr::Logical_var<std::string>>;
+
 enum class XSDType  {
     // Numériques
     INTEGER, NON_NEGATIVE_INTEGER, NON_POSITIVE_INTEGER,
@@ -187,6 +194,7 @@ public:
     static void  iterateEquivDataProp(ParserCowl<T>* parser,CowlAny *axiom);
     static void  iterateDisjDataProp(ParserCowl<T>* parser,CowlAny *axiom);
     static void  iterateFuncDataProp(ParserCowl<T>* parser,CowlAny *axiom);
+    static void  iterateHasKey(ParserCowl<T>* parser,CowlAny *axiom);
     static bool for_each(void *stream, CowlAny *axiom) ;
     bool load() override;
     void print() override;
@@ -1335,24 +1343,71 @@ void ParserCowl<T>:: iterateNegObjPropAssert(ParserCowl<T>* parser, CowlAny *axi
 template <typename T>
 void ParserCowl<T>:: iterateSubObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     UOStream *stream = uostream_std();
-    CowlObjProp * sub=(CowlObjProp*)cowl_sub_obj_prop_axiom_get_sub((CowlSubObjPropAxiom *)axiom)  ;
+    //on teste si sub est une propriété ou un chaine de propriétés
+    CowlAny * sub = cowl_sub_obj_prop_axiom_get_sub((CowlSubObjPropAxiom *)axiom);
     CowlObjProp * sup=(CowlObjProp*)cowl_sub_obj_prop_axiom_get_super((CowlSubObjPropAxiom *)axiom);
 
-    // Créer des variables logiques pour les propriétés
-    std::string subUri = getFullIRI(cowl_obj_prop_get_iri(sub));
-    std::string supUri = getFullIRI(cowl_obj_prop_get_iri(sup));
+    // Vérifier si sub est une chaîne de propriétés (CowlVector) ou une propriété simple
+    CowlObjectType subType = cowl_get_type(sub);
+    
+    if (subType == COWL_OT_VECTOR) {
+        // C'est une chaîne de propriétés (property chain)
+        CowlVector* propChain = (CowlVector*)sub;
+        ulib_uint count = cowl_vector_count(propChain);
+        
+        cowl_write_static((UOStream *)stream, "Property chain: ");
+        for (ulib_uint i = 0; i < count; ++i) {
+            CowlObjProp* prop = (CowlObjProp*)cowl_vector_get_item(propChain, i);
+            cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(prop)));
+            if (i < count - 1) {
+                cowl_write_static((UOStream *)stream, " o ");
+            }
+        }
+        cowl_write_static((UOStream *)stream, " subObjectProperty de ");
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(sup)));
+        cowl_write_static((UOStream *)stream, "\n");
+        
+        std::string chainID = "http://anonymous.org#ChainProperty_" + std::to_string(++anonymousClassExpressionCounter);
+        chr::Logical_var<std::string> chainVar = parser->getOrCreateLogicalVar(chainID);
+        cowl_write_static((UOStream *)stream, "Property chain constraint: ");
+        for (ulib_uint i = 0; i < count; ++i) {
+            CowlObjProp* prop = (CowlObjProp*)cowl_vector_get_item(propChain, i);
+            cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(prop)));
+            if (i < count - 1) {
+                cowl_write_static((UOStream *)stream, " o ");
+            }
+            chr::Logical_var<std::string> property = parser->getOrCreateLogicalVar(getFullIRI(cowl_obj_prop_get_iri(prop)));
+            parser->space->owlObjectPropertyChain(chainVar, property, i, count-1);
+        }
+        cowl_write_static((UOStream *)stream, " subObjectProperty de ");
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(sup)));
+        cowl_write_static((UOStream *)stream, "\n");
+        
+        std::string supUri = getFullIRI(cowl_obj_prop_get_iri(sup));
+        chr::Logical_var<std::string>& supVar = parser->getOrCreateLogicalVar(supUri);
 
-    // Obtenir les références aux variables logiques depuis le cache
-    chr::Logical_var<std::string>& subVar = parser->getOrCreateLogicalVar(subUri);
-    chr::Logical_var<std::string>& supVar = parser->getOrCreateLogicalVar(supUri);
+        parser->space->owlSubObjectPropertyOf(chainVar, supVar);
 
-    cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(sub)));
-    cowl_write_static((UOStream *)stream, " subObjectproperty de  ");
-    cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(sup)));
+    } else {
+        // C'est une propriété simple
+        CowlObjProp* subProp = (CowlObjProp*)sub;
+        
+        // Créer des variables logiques pour les propriétés
+        std::string subUri = getFullIRI(cowl_obj_prop_get_iri(subProp));
+        std::string supUri = getFullIRI(cowl_obj_prop_get_iri(sup));
 
-    // Utiliser les variables logiques pour la contrainte
-    parser->space->owlSubObjectPropertyOf(subVar, supVar);
-    cowl_write_static((UOStream *)stream, "\n");
+        // Obtenir les références aux variables logiques depuis le cache
+        chr::Logical_var<std::string>& subVar = parser->getOrCreateLogicalVar(subUri);
+        chr::Logical_var<std::string>& supVar = parser->getOrCreateLogicalVar(supUri);
+
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(subProp)));
+        cowl_write_static((UOStream *)stream, " subObjectproperty de  ");
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(sup)));
+
+        // Utiliser les variables logiques pour la contrainte
+        parser->space->owlSubObjectPropertyOf(subVar, supVar);
+        cowl_write_static((UOStream *)stream, "\n");
+    }
 }
 
 template <typename T>
@@ -2229,6 +2284,72 @@ void ParserCowl<T>:: iterateFuncDataProp(ParserCowl<T>* parser, CowlAny *axiom){
     
 }
 
+template <typename T>
+void ParserCowl<T>:: iterateHasKey(ParserCowl<T>* parser, CowlAny *axiom){
+    UOStream *stream = uostream_std();
+    
+    // Récupérer la classe
+    CowlClsExp *cls_exp = cowl_has_key_axiom_get_cls_exp((CowlHasKeyAxiom *)axiom);
+    
+    // Récupérer les propriétés objets et données qui constituent la clé
+    CowlVector *obj_props = cowl_has_key_axiom_get_obj_props((CowlHasKeyAxiom *)axiom);
+    CowlVector *data_props = cowl_has_key_axiom_get_data_props((CowlHasKeyAxiom *)axiom);
+    
+    // Affichage
+    cowl_write_static((UOStream *)stream, "HasKey pour la classe ");
+    
+    // Traiter la classe (peut être une expression complexe)
+    chr::Logical_var<std::string> classVar;
+    CowlObjectType clsType = cowl_get_type(cls_exp);
+    
+    if (clsType == COWL_OT_CE_CLASS) {
+        CowlClass *cls = (CowlClass*)cls_exp;
+        std::string classUri = getFullIRI(cowl_class_get_iri(cls));
+        classVar = parser->getOrCreateLogicalVar(classUri);
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_class_get_iri(cls)));
+    } else {
+        // Expression de classe complexe
+        cowl_write_static((UOStream *)stream, "[expression complexe] non prise en charge en owl2 RL");
+    }
+    
+    cowl_write_static((UOStream *)stream, " avec les clés: ");
+    
+    LogicalVarSet keyProperties;
+    
+    // Ajouter les propriétés objets
+    ulib_uint obj_count = cowl_vector_count(obj_props);
+    for (ulib_uint i = 0; i < obj_count; ++i) {
+        CowlObjProp *prop = (CowlObjProp*)cowl_vector_get_item(obj_props, i);
+        std::string propUri = getFullIRI(cowl_obj_prop_get_iri(prop));
+        chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+        keyProperties.insert(propVar);
+        
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(prop)));
+        if (i < obj_count - 1 || cowl_vector_count(data_props) > 0) {
+            cowl_write_static((UOStream *)stream, ", ");
+        }
+    }
+    
+    // Ajouter les propriétés de données
+    ulib_uint data_count = cowl_vector_count(data_props);
+    for (ulib_uint i = 0; i < data_count; ++i) {
+        CowlDataProp *prop = (CowlDataProp*)cowl_vector_get_item(data_props, i);
+        std::string propUri = getFullIRI(cowl_data_prop_get_iri(prop));
+        chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
+        keyProperties.insert(propVar);
+        
+        cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri(prop)));
+        if (i < data_count - 1) {
+            cowl_write_static((UOStream *)stream, ", ");
+        }
+    }
+    
+    cowl_write_static((UOStream *)stream, "\n");
+    
+    // Ajouter la contrainte CHR
+    parser->space->owlHasKey(classVar, keyProperties);
+}
+
 
 template <typename T>
 void ParserCowl<T>:: iterateInvObjProp(ParserCowl<T>* parser, CowlAny *axiom){
@@ -2411,9 +2532,11 @@ bool ParserCowl<T>::for_each(void *stream, CowlAny *axiom) {
         iterateEquivObjProp(parser,axiom); 
         break;
     case COWL_AT_OBJ_PROP_DOMAIN:
+        cowl_write_static((UOStream *)stream, " domain ");
         iterateObjPropDomain(parser,axiom);
         break;
     case COWL_AT_OBJ_PROP_RANGE:
+        cowl_write_static((UOStream *)stream, " range ");
         iterateObjPropRange(parser,axiom);
         break;
     case COWL_AT_DIFF_IND:
@@ -2474,6 +2597,9 @@ bool ParserCowl<T>::for_each(void *stream, CowlAny *axiom) {
     case COWL_AT_DISJ_OBJ_PROP:
         iterateDisjObjProp(parser,axiom);
         break;
+    case COWL_AT_HAS_KEY:
+        iterateHasKey(parser,axiom);
+        break;
     case COWL_AT_ANNOT_ASSERT:{
         UOStream *out = uostream_std();
         cowl_write_static(out, "annotation pas prise en charge \n");
@@ -2502,7 +2628,6 @@ template <typename T>
 bool ParserCowl<T>::load()
 {
     //test d'insertion dans l'espace CHR++
-    this->space->owlClass(chr::Logical_var_ground<std::string>("Ari"));
 
     std::ifstream f("example2.ofn");
             if (!f) {
