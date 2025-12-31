@@ -1087,20 +1087,54 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateMaxCardinality(ParserCowl<T>
         CowlObjCard* objCard = (CowlObjCard*)maxCardExp;
         CowlClsExp* filler = cowl_obj_card_get_filler(objCard);
         
-        if (filler == NULL) {
+        // Vérifier si c'est qualifié (filler != owl:Thing)
+        bool isQualified = false;
+        if (filler != NULL) {
+            CowlClsExpType fillerType = cowl_cls_exp_get_type(filler);
+            if (fillerType == COWL_CET_CLASS) {
+                CowlClass* fillerClass = (CowlClass*)filler;
+                std::string fillerUri = getFullIRI(cowl_class_get_iri(fillerClass));
+                // Qualifié si le filler n'est pas owl:Thing
+                isQualified = (fillerUri != "http://www.w3.org/2002/07/owl#Thing");
+            } else {
+                // Si c'est une expression complexe, c'est qualifié
+                isQualified = true;
+            }
+        }
+        
+        // Traiter la cardinalité (qualifiée ou non)
+        ulib_uint cardinality = cowl_obj_card_get_cardinality(objCard);
+        CowlObjPropExp* property = cowl_obj_card_get_prop(objCard);
+        
+        // Obtenir l'IRI de la propriété
+        std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
+        chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+        
+        if (!isQualified) {
             // Non qualifié (autorisé en OWL2 RL)
-            ulib_uint cardinality = cowl_obj_card_get_cardinality(objCard);
-            CowlObjPropExp* property = cowl_obj_card_get_prop(objCard);
-            
-            // Obtenir l'IRI de la propriété
-            std::string propertyUri = getFullIRI(cowl_obj_prop_get_iri((CowlObjProp*)property));
-            chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
-            
             cowl_write_static((UOStream*)stream, "    ObjectMaxCardinality non qualifié terminé\n");
-            // TODO: Ajouter l'appel à la contrainte CHR++ appropriée
-            // parser->space->owlObjectMaxCardinality(maxCardVar, propertyVar, cardinality);
+            parser->space->owlObjectMaxCardinality(maxCardVar, propertyVar, cardinality);
         } else {
-            cowl_write_static((UOStream*)stream, "    ObjectMaxCardinality qualifié - non pris en charge en OWL2 RL\n");
+            // Qualifié : traiter le filler
+            cowl_write_static((UOStream*)stream, "    ObjectMaxCardinality qualifié - traitement du filler\n");
+            
+            chr::Logical_var<std::string> fillerVar;
+            if (cowl_cls_exp_get_type(filler) == COWL_CET_CLASS) {
+                // Classe simple
+                CowlClass* fillerClass = (CowlClass*)filler;
+                std::string fillerUri = getFullIRI(cowl_class_get_iri(fillerClass));
+                fillerVar = parser->getOrCreateLogicalVar(fillerUri);
+            } else {
+                // Expression complexe : traiter récursivement
+                fillerVar = processComplexClass(parser, filler);
+            }
+            
+            // Générer la contrainte qualifiée : ObjectMaxCardinality(C, P, n, Filler)
+            // Pour l'instant on utilise owlObjectSomeValuesFrom pour exprimer la qualification
+            parser->space->owlObjectMaxCardinality(maxCardVar, propertyVar, cardinality);
+            parser->space->owlObjectAllValuesFrom(maxCardVar, propertyVar, fillerVar);
+            
+            cowl_write_static((UOStream*)stream, "    ObjectMaxCardinality qualifié terminé\n");
         }
         
     } else if (expType == COWL_CET_DATA_MAX_CARD) {
@@ -1108,20 +1142,69 @@ chr::Logical_var<std::string> ParserCowl<T>::iterateMaxCardinality(ParserCowl<T>
         CowlDataCard* dataCard = (CowlDataCard*)maxCardExp;
         CowlDataRange* range = cowl_data_card_get_range(dataCard);
         
-        if (range == NULL) {
-            // Non qualifié (autorisé en OWL2 RL)
-            ulib_uint cardinality = cowl_data_card_get_cardinality(dataCard);
-            CowlDataPropExp* property = cowl_data_card_get_prop(dataCard);
-            
-            // Obtenir l'IRI de la propriété
-            std::string propertyUri = getFullIRI(cowl_data_prop_get_iri((CowlDataProp*)property));
-            chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
-            
+        // Vérifier si c'est qualifié (range != rdfs:Literal)
+        bool isQualified = false;
+        if (range != NULL) {
+            CowlDataRangeType rangeType = cowl_data_range_get_type(range);
+            if (rangeType == COWL_DRT_DATATYPE) {
+                CowlDatatype* datatype = (CowlDatatype*)range;
+                std::string rangeUri = getFullIRI(cowl_datatype_get_iri(datatype));
+                // Qualifié si le range n'est pas rdfs:Literal
+                isQualified = (rangeUri != "http://www.w3.org/2000/01/rdf-schema#Literal");
+            } else {
+                // Si c'est un range complexe, c'est qualifié
+                isQualified = true;
+            }
+        }
+        
+        // Traiter la cardinalité (qualifiée ou non)
+        ulib_uint cardinality = cowl_data_card_get_cardinality(dataCard);
+        CowlDataPropExp* property = cowl_data_card_get_prop(dataCard);
+        
+        // Obtenir l'IRI de la propriété
+        std::string propertyUri = getFullIRI(cowl_data_prop_get_iri((CowlDataProp*)property));
+        chr::Logical_var<std::string> propertyVar = parser->getOrCreateLogicalVar(propertyUri);
+        
+        if (!isQualified) {
+            // Non qualifié
             cowl_write_static((UOStream*)stream, "    DataMaxCardinality non qualifié terminé\n");
-            // TODO: Ajouter l'appel à la contrainte CHR++ appropriée
-            // parser->space->owlDataMaxCardinality(maxCardVar, propertyVar, cardinality);
+            parser->space->owlDataMaxCardinality(maxCardVar, propertyVar, cardinality);
         } else {
-            cowl_write_static((UOStream*)stream, "    DataMaxCardinality qualifié - non pris en charge en OWL2 RL\n");
+            // Qualifié : traiter le range
+            cowl_write_static((UOStream*)stream, "    DataMaxCardinality qualifié - traitement du range\n");
+            
+            // Convertir le range en type XSD approprié
+            std::shared_ptr<AnySimpleType> rangeType = nullptr;
+            if (cowl_data_range_get_type(range) == COWL_DRT_DATATYPE) {
+                CowlDatatype* datatype = (CowlDatatype*)range;
+                std::string rangeUri = getFullIRI(cowl_datatype_get_iri(datatype));
+                
+                // Extraire le nom du type XSD et utiliser mapXsdType
+                size_t pos = rangeUri.find_last_of("#/");
+                if (pos != std::string::npos) {
+                    std::string typeName = rangeUri.substr(pos + 1);
+                    XSDType xsdType = mapXsdType(typeName);
+                    
+                    // Créer le type approprié (logique similaire à iterateDataPropertyRange)
+                    switch (xsdType) {
+                        case XSDType::INTEGER: rangeType = std::make_shared<IntegerType>(); break;
+                        case XSDType::STRING: rangeType = std::make_shared<StringType>(); break;
+                        case XSDType::BOOLEAN: rangeType = std::make_shared<BooleanType>(); break;
+                        case XSDType::DOUBLE: rangeType = std::make_shared<DoubleType>(); break;
+                        case XSDType::FLOAT: rangeType = std::make_shared<FloatType>(); break;
+                        // Ajouter d'autres types selon les besoins
+                        default: rangeType = std::make_shared<StringType>(); break;
+                    }
+                }
+            }
+            
+            // Générer les contraintes qualifiées
+            parser->space->owlDataMaxCardinality(maxCardVar, propertyVar, cardinality);
+            if (rangeType) {
+                parser->space->owlDataAllValuesFrom(maxCardVar, propertyVar, rangeType);
+            }
+            
+            cowl_write_static((UOStream*)stream, "    DataMaxCardinality qualifié terminé\n");
         }
         
     } else {
@@ -1558,13 +1641,21 @@ void ParserCowl<T>:: iterateDataPropAssert(ParserCowl<T>* parser, CowlAny *axiom
     CowlDataPropExp *prop=cowl_data_prop_assert_axiom_get_prop((CowlDataPropAssertAxiom *)axiom);
     CowlDatatype * dataType=cowl_literal_get_datatype(objet);
     
+    // Obtenir les URIs
+    std::string propUri = getFullIRI(cowl_data_prop_get_iri((CowlDataProp *)prop));
+    std::string dataTypeUri = getFullIRI(cowl_datatype_get_iri(dataType));
+    
+    cowl_write_static((UOStream *)stream, "data: ");
+    cowl_write_string((UOStream *)stream, cowl_literal_get_value(objet));
+    cowl_write_static((UOStream *)stream, "\ntype: ");
+    cowl_write_cstring((UOStream *)stream, dataTypeUri.c_str());
+
 
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_named_ind_get_iri((CowlNamedInd*)sujet)));
     std::string sujetUri = getFullIRI(cowl_named_ind_get_iri((CowlNamedInd*)sujet));
     chr::Logical_var<std::string>& sujetVar = parser->getOrCreateLogicalVar(sujetUri);
     cowl_write_static((UOStream *)stream, " ");
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_data_prop_get_iri((CowlDataProp*)prop)));
-    std::string propUri = getFullIRI(cowl_data_prop_get_iri((CowlDataProp *)prop));
     chr::Logical_var<std::string>& propVar = parser->getOrCreateLogicalVar(propUri);
     cowl_write_static((UOStream *)stream, " ");
     cowl_write_string((UOStream *)stream, cowl_literal_get_value(objet));
@@ -1573,7 +1664,6 @@ void ParserCowl<T>:: iterateDataPropAssert(ParserCowl<T>* parser, CowlAny *axiom
     std::string objetValue = ustring_to_string(cowl_string_get_raw(cowl_literal_get_value(objet)));
     cowl_write_static((UOStream *)stream, " ^^ ");
     cowl_write_string((UOStream *)stream, cowl_iri_get_rem(cowl_datatype_get_iri(dataType)));
-    std::string dataTypeUri = getFullIRI(cowl_datatype_get_iri(dataType));
     XSDType type = mapXsdType(dataTypeUri);
     
         switch (type) {

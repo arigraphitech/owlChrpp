@@ -1,6 +1,36 @@
 Prefix(ex:=<http://example.org#>)
 Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
-Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(rdf:=<http://www.w3.org/1999/02ClassAssertion(ex:Student ex:Alice)
+ObjectPropertyAssertion(ex:enrolledIn ex:Alice ex:Math101)
+
+# Data properties
+DataPropertyAssertion(ex:hasAge ex:Alice "22"^^xsd:integer)
+DataPropertyAssertion(ex:fullName ex:Bob "Robert Brown"^^xsd:string)
+
+# --- ❗ Ajout d'une NegativeDataPropertyAssertion ---
+NegativeDataPropertyAssertion(ex:hasAge ex:Alice "30"^^xsd:integer)
+
+ClassAssertion(ex:Professor ex:Bob)
+ObjectPropertyAssertion(ex:teaches ex:Bob ex:Math101)
+
+############################
+#   Test instances for querySuperClassOf
+############################
+
+# Carol est un DoctoralStudent
+# querySuperClassOf(DoctoralStudent) devrait retourner:
+# DoctoralStudent, GraduateStudent, Student, Learner (équivalent), Academic, Person, owl:Thing
+ClassAssertion(ex:DoctoralStudent ex:Carol)
+
+# David est un UndergraduateStudent
+# querySuperClassOf(UndergraduateStudent) devrait retourner:
+# UndergraduateStudent, Student, Learner (équivalent), Academic, Person, owl:Thing
+ClassAssertion(ex:UndergraduateStudent ex:David)
+
+# Emma est un MasterStudent
+# querySuperClassOf(MasterStudent) devrait retourner:
+# MasterStudent, GraduateStudent, Student, Learner (équivalent), Academic, Person, owl:Thing
+ClassAssertion(ex:MasterStudent ex:Emma)ax-ns#>)
 Prefix(xml:=<http://www.w3.org/XML/1991998/namespace>)
 Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
 Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
@@ -16,6 +46,42 @@ Declaration(Class(ex:Professor))
 Declaration(Class(ex:Student))
 Declaration(Class(ex:Learner))
 EquivalentClasses(ex:Student ex:Learner)
+
+############################
+#   Class Hierarchy for testing querySuperClassOf
+############################
+
+# Hiérarchie académique : Person -> Academic -> Professor/Student
+Declaration(Class(ex:Person))
+Declaration(Class(ex:Academic))
+Declaration(Class(ex:UndergraduateStudent))
+Declaration(Class(ex:GraduateStudent))
+Declaration(Class(ex:MasterStudent))
+Declaration(Class(ex:DoctoralStudent))
+
+# Person est la classe racine
+SubClassOf(ex:Academic ex:Person)
+SubClassOf(ex:Professor ex:Academic)
+SubClassOf(ex:Student ex:Academic)
+
+# Hiérarchie des étudiants
+SubClassOf(ex:UndergraduateStudent ex:Student)
+SubClassOf(ex:GraduateStudent ex:Student)
+SubClassOf(ex:MasterStudent ex:GraduateStudent)
+SubClassOf(ex:DoctoralStudent ex:GraduateStudent)
+
+# Hiérarchie des cours
+Declaration(Class(ex:UndergraduateCourse))
+Declaration(Class(ex:GraduateCourse))
+Declaration(Class(ex:AdvancedCourse))
+
+SubClassOf(ex:UndergraduateCourse ex:Course)
+SubClassOf(ex:GraduateCourse ex:Course)
+SubClassOf(ex:AdvancedCourse ex:GraduateCourse)
+
+# Classes équivalentes supplémentaires
+Declaration(Class(ex:Teacher))
+EquivalentClasses(ex:Professor ex:Teacher)
 
 ############################
 #   Object properties
@@ -61,6 +127,11 @@ Declaration(DataProperty(ex:hasPhone))
 Declaration(NamedIndividual(ex:Alice))
 Declaration(NamedIndividual(ex:Bob))
 Declaration(NamedIndividual(ex:Math101))
+
+# Nouveaux individus pour tester la hiérarchie
+Declaration(NamedIndividual(ex:Carol))
+Declaration(NamedIndividual(ex:David))
+Declaration(NamedIndividual(ex:Emma))
 
 AnnotationAssertion(rdfs:label ex:enrolledIn "enrolledIn")
 ObjectPropertyDomain(ex:enrolledIn ex:Student)
