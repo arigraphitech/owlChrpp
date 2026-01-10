@@ -152,6 +152,63 @@ Voir les rapports d'analyse détaillés :
 - [RAPPORT_FINAL_TESTS_APRES_CORRECTIONS.md](RAPPORT_FINAL_TESTS_APRES_CORRECTIONS.md)
 - [DIAGNOSTIC_FINAL_QUERIES.md](DIAGNOSTIC_FINAL_QUERIES.md)
 
+## 📊 Génération des Résultats de Référence (Pellet)
+
+Pour comparer les résultats du raisonneur CHR++ avec Pellet, utilisez les commandes suivantes depuis le dossier `owl2bench/` :
+
+### Classification (CT) - Hiérarchie des classes
+
+```bash
+java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl classification > classification_results.txt
+```
+
+### Réalisation (CR) - Types des individus
+
+```bash
+java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl realisation > realisation_results.txt
+```
+
+### Consistency Check
+
+```bash
+java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl consistency
+```
+
+## 🔍 Comparaison des Résultats
+
+### Classification (CT) - compare_classification.py
+
+Compare les résultats de classification (hiérarchie des classes) entre CHR++ et Pellet :
+
+```bash
+python3 compare_classification.py <fichier_chrpp> <fichier_pellet>
+
+# Exemple :
+python3 compare_classification.py res_classification classification_pellet_OWL2RL-11.txt
+```
+
+### Réalisation (CR) - compare_instances.py
+
+Compare les résultats de réalisation (instances des classes) entre CHR++ et Pellet :
+
+```bash
+python3 compare_instances.py <fichier_chrpp> <dossier_pellet>
+
+# Exemple :
+python3 compare_instances.py build/sortie.txt ../../../owl2bench/sparql_reference_results/pellet_results/OWL2RL-11
+```
+
+### Requêtes SPARQL - compare_query_results.py
+
+Compare les résultats des requêtes SPARQL entre CHR++ et Pellet :
+
+```bash
+python3 compare_query_results.py <fichier_sortie_chrpp> <dossier_pellet_results>
+
+# Exemple :
+python3 compare_query_results.py sortie.txt ../../../owl2bench/sparql_reference_results/pellet_results/OWL2RL-11
+```
+
 ## 📚 Documentation
 
 ### Règles CHR++ Principales
