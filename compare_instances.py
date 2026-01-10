@@ -56,7 +56,7 @@ NODE_RE = re.compile(r"Node\(\s*(.*?)\s*\)")
 LEFT_IND_RE = re.compile(r"^\s*<([^>]+)>\s*->")
 IRI_ANYWHERE_RE = re.compile(r"<([^>]+)>")
 
-def parse_file2(path: str, ignore_owl_thing: bool = True) -> dict[str, set[str]]:
+def parse_file2(path: str) -> dict[str, set[str]]:
     data: dict[str, set[str]] = defaultdict(set)
 
     with open(path, "r", encoding="utf-8") as f:
@@ -96,14 +96,10 @@ def parse_file2(path: str, ignore_owl_thing: bool = True) -> dict[str, set[str]]
 
                     for uri in iris:
                         uri = uri.strip()
-                        if ignore_owl_thing and uri == "owl:Thing":
-                            continue
                         data[ind].add(uri)
                 else:
                     # fallback: QName style "owl:Thing"
                     cls = raw
-                    if ignore_owl_thing and cls == "owl:Thing":
-                        continue
                     data[ind].add(cls)
 
     return data
@@ -186,18 +182,14 @@ def compare(file1_map: dict[str, set[str]], gold_map: dict[str, set[str]]) -> No
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: compare_gold.py <fichier1.txt> <fichier2_gold.txt> [--keep-owl-thing]", file=sys.stderr)
+        print("Usage: compare_gold.py <fichier1.txt> <fichier2_gold.txt>", file=sys.stderr)
         sys.exit(2)
 
     file1_path = sys.argv[1]
     gold_path  = sys.argv[2]
-    ignore_owl_thing = True
-
-    if len(sys.argv) >= 4 and sys.argv[3] == "--keep-owl-thing":
-        ignore_owl_thing = False
 
     file1_map = parse_file1(file1_path)
-    gold_map  = parse_file2(gold_path, ignore_owl_thing=ignore_owl_thing)
+    gold_map  = parse_file2(gold_path)
 
     compare(file1_map, gold_map)
 
