@@ -567,7 +567,7 @@ subclass @ owlSubclassOf(A,B) ,owlClassAssertion(X,A,true) ==> !(A==B) |  owlCla
 //owlEquivalentClass(A,B) is true if the class A is equivalent with the class B
 equivalentClass @ owlEquivalentClass(A,B),owlClassAssertion(X,A,true) ==> !(A==B) |owlClassAssertion(X,B,true);;
 
-owlEquivalentClass(A,B) ==> !(A==B)  | owlSubclassOf(A,B) ;;
+owlEquivalentClass(A,B) ==> !(A==B)  | owlSubclassOf(A,B) , owlSubclassOf(B,A) ;;
 
 //ObjectPropertyAssertion(X,P,Y) is true if the individual X has the property P with the value Y
 // owlSubPropertyOf(P2,P1)  is true if P2 is a subPropertyof the property P1
@@ -620,6 +620,7 @@ inverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAsser
 //owlTransitiveObjectProperty(P) is true if P is a transitive object property
 // Changed guard: allow X==Z (reflexivity via symmetric+transitive) but prevent X==Y or Y==Z to avoid trivial loops
 transitiveObjectProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> !(X==Y) && !(Y==Z) | owlObjectPropertyAssertion(X,P,Z);;
+transitiveObjectPropertySpecialCase @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,X) ==> !(X==Y)  | owlObjectPropertyAssertion(X,P,X), owlObjectPropertyAssertion(Y,P,Y);;
 
 //Extract data value information from data property assertions (needed for DataSomeValuesFrom)
 owlDataPropertyAssertion(X,P,Y) ==> owlDataValue(Y,(*Y).val,(*Y).typeVal) ;;
@@ -805,6 +806,8 @@ queryEquivalentClassReal(I,X) ,  owlEquivalentClass(X,Y), logicalName(URIY,Y) #p
 realisation() , owlNamedIndividual(X), logicalName(URIX,X) #passive ==> queryClassificationReal(X) ;;
 
 //teste classification : CT owlBENCH
+//regle pour n'avoir en sortie que les subclassof stricte pas bidirectionnel(equivalent) comme pelet
+owlEquivalentClass(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive \ resultClassification(URIX,URIY) <=> true ;;
 resultClassification(URIX,URIY) ==> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | stockerClassification(URIX,URIY);;
 
 classification(), owlSubclassOf(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive  ==> resultClassification(URIX,URIY);;
@@ -928,7 +931,7 @@ int main(int argc, char* argv[])
     
     parser.load();
     // space->realisation();
-    space->classification();
+     space->classification();
    /* space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf"));
     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isPartOf"));
     space->queryDataAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasAge"));
@@ -950,7 +953,7 @@ int main(int argc, char* argv[])
     */
 
  )
-   print(*space);
+   //print(*space);
     chr::Statistics::print(std::cout);
 
     return 0;
