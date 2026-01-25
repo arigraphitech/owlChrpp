@@ -144,29 +144,105 @@ owlFunctional.chrpp
   ParserProject (executable)
 ```
 
-## 🧪 Tests
+## 🧪 Tests et Benchmarks
 
-Le projet inclut un système de tests intégré qui vérifie les inférences et requêtes OWL 2.
+Le projet inclut un système de tests pour comparer les résultats du raisonneur CHR++ avec le raisonneur de référence Pellet.
 
-Voir les rapports d'analyse détaillés :
-- [RAPPORT_FINAL_TESTS_APRES_CORRECTIONS.md](RAPPORT_FINAL_TESTS_APRES_CORRECTIONS.md)
-- [DIAGNOSTIC_FINAL_QUERIES.md](DIAGNOSTIC_FINAL_QUERIES.md)
+### Lancer les Tests CHR++
 
-## 📊 Génération des Résultats de Référence (Pellet)
+Les tests sont configurés dans la fonction `main()` du fichier `owlFunctional.chrpp`. Pour activer un test, décommentez la ligne correspondante :
 
-Pour comparer les résultats du raisonneur CHR++ avec Pellet, utilisez les commandes suivantes depuis le dossier `owl2bench/` :
+#### Classification (CT) - Hiérarchie des classes
 
-### Classification (CT) - Hiérarchie des classes
-
-```bash
-java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl classification > classification_results.txt
+```cpp
+// Dans owlFunctional.chrpp, décommentez :
+space->classification();
 ```
 
-### Réalisation (CR) - Types des individus
+Génère le fichier `res_classification` contenant toutes les paires SubClassOf inférées.
+
+#### Réalisation (CR) - Types des individus
+
+```cpp
+// Dans owlFunctional.chrpp, décommentez :
+space->realisation();
+```
+
+Génère les types inférés pour chaque individu.
+
+#### Requêtes SPARQL
+
+```cpp
+// Dans owlFunctional.chrpp, décommentez les requêtes souhaitées :
+space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf"));
+space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isPartOf"));
+space->queryDataAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasAge"));
+space->queryInstancesURI(std::string("https://kracr.iiitd.edu.in/OWL2Bench#T20CricketFan"));
+space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasSameHomeTownWith"));
+// ... etc.
+```
+
+Les résultats sont écrits dans `sortie.txt`.
+
+### Recompiler et Exécuter
 
 ```bash
-java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl realisation > realisation_results.txt
+make build
+./build/ParserProject results/OWL2RL-11.ofn
 ```
+
+## 📊 Génération des Résultats de Référence (Pellet + Jena)
+
+Les résultats de référence ont été générés avec **Pellet** (raisonneur OWL) et **Apache Jena** (requêtes SPARQL).
+
+### Classification (CT) - Pellet
+
+Le fichier JAR Pellet original (`owl2bench/Experiments/java runnable jar files/pellet.jar`) a été modifié pour afficher les résultats de classification.
+
+**Modification apportée** dans `Pellet.java` :
+
+```java
+else if(task.matches("classification")) {
+    reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+    // Afficher les paires SubClassOf inférées
+    for (OWLClass cls : ontology.getClassesInSignature()) {
+        for (OWLClass superCls : reasoner.getSuperClasses(cls, false).getFlattened()) {
+            System.out.println(cls + " SubClassOf " + superCls);
+        }
+    }
+}
+```
+
+**Recompilation avec Maven** :
+
+```bash
+cd owl2bench/Experiments/java\ runnable\ jar\ files/Java\ codes\ of\ the\ runnable\ jars/pellet2/
+mvn clean package -DskipTests
+cp target/pellet2-1.0-SNAPSHOT-jar-with-dependencies.jar ../../pellet.jar
+```
+
+**Exécution** :
+
+```bash
+cd owl2bench/
+java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl classification > classification_pellet.txt
+```
+
+### Réalisation (CR) - Pellet
+
+```bash
+java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl realisation > realisation_pellet.txt
+```
+
+### Requêtes SPARQL - Apache Jena + Pellet
+
+Les résultats de référence des requêtes SPARQL ont été générés avec Apache Jena en utilisant Pellet comme raisonneur.
+
+**Fichiers de requêtes SPARQL** : `owl2bench/Queries/OWL2RL/*.sparql`
+
+**Résultats Pellet** : `owl2bench/sparql_reference_results/pellet_results/OWL2RL-11/`
+
+Les fichiers de résultats sont nommés `OWL2RL-11_queryXX.txt` où XX correspond au numéro de la requête SPARQL.
 
 ### Consistency Check
 
@@ -192,11 +268,12 @@ python3 compare_classification.py res_classification classification_pellet_OWL2R
 Compare les résultats de réalisation (instances des classes) entre CHR++ et Pellet :
 
 ```bash
-python3 compare_instances.py <fichier_chrpp> <dossier_pellet>
+python3 compare_instances.py <fichier_chrpp> <fichier_gold>
 
 # Exemple :
-python3 compare_instances.py build/sortie.txt ../../../owl2bench/sparql_reference_results/pellet_results/OWL2RL-11
-```
+ python3 compare_instances.py res_realisation resultats_pellet_OWL2RL-11.txt 
+ 
+ ``` 
 
 ### Requêtes SPARQL - compare_query_results.py
 

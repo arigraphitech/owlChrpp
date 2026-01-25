@@ -7,13 +7,25 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Mode Release par défaut avec optimisations -O3
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 # Options de compilation
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wpedantic)
 endif()
 
+# === PROFILAGE GPROF ===
+# Décommenter pour activer gprof (ralentit beaucoup l'exécution)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+
 # Active les traces CHR++ (définit la macro TRACE_ON)
-add_compile_definitions(TRACE_ON)
+# DÉSACTIVÉ pour la performance
+#add_compile_definitions(TRACE_ON)
 
 # === Partie CHRPP ===
 # Définis où se trouve CHRPP (adapte le chemin si nécessaire)
@@ -34,7 +46,7 @@ add_custom_command(
     OUTPUT ${GENERATED_CPP}
     COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -t -sout > ${GENERATED_CPP}
     DEPENDS ${CHR_FILE}
-    COMMENT "⏳ Génération de ${GENERATED_CPP} depuis ${CHR_FILE} via chrppc"
+    COMMENT "Génération de ${GENERATED_CPP} depuis ${CHR_FILE} via chrppc"
 )
 
 # Ajoute COWL comme sous-module (inclut aussi uLib)
