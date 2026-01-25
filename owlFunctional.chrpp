@@ -8,11 +8,11 @@
 #include "AnySimpleType.h"
 #include "parsercowl.h"
 #include <fstream>
-const std::string owlThing = "http://www.w3.org/2002/07/owl#Thing";
+const std::string owlThing = "owl:Thing";
 const std::string owlNothing = "owl:Nothing";
 const std::string emptyString = "";
 
-const std::string output_file_Real = "res2";
+const std::string output_file_Real = "res_realisation";
 const std::string output_file_Classif = "res_classification";
 const std::string output_file_Queries = "sortie.txt";
 /**
@@ -94,9 +94,9 @@ struct chr::XXHash<Value>
 };
 
 
-using LogicalVarSet = std::set<chr::Logical_var<std::string>>;
+using LogicalVarSet = std::set<chr::Logical_var<int>>;
 using StringSet = std::vector<std::string>;
-using LogicalVarSetIterator = std::set<chr::Logical_var<std::string>>::iterator;
+using LogicalVarSetIterator = std::set<chr::Logical_var<int>>::iterator;
 
 
 namespace chr {
@@ -137,7 +137,7 @@ struct chr::XXHash<LogicalVarSetIterator>
         chr::XXHash<size_t>::update(reinterpret_cast<size_t>(&(*it)));
     }
 };
-bool different(const chr::Logical_var<std::string>&  A, const chr::Logical_var<std::string>&  B, const chr::Logical_var<std::string>&  C) {
+bool different(const chr::Logical_var<int>&  A, const chr::Logical_var<int>&  B, const chr::Logical_var<int>&  C) {
     return A != B && B != C && A != C;
 }
 
@@ -197,7 +197,7 @@ std::string valueToString(const Value & v){
         return composite ;
 }
 
-bool contains(const chr::Logical_var<std::string>& x, const LogicalVarSet& l){
+bool contains(const chr::Logical_var<int>& x, const LogicalVarSet& l){
     return l.find(x) != l.end();
 }
 
@@ -293,99 +293,99 @@ bool equalIncrement(int j,int i){
 <CHR name="OWL2">
     // === Contraintes ===
     <chr_constraint>
-            owlPrefix(?std::string,?std::string),
-			owlClass(?std::string),
-			owlObjectProperty(?std::string),
-			owlDataProperty(?std::string),
-            owlNamedIndividual(?std::string),
-			owlSubclassOf(?std::string,?std::string),
-			owlEquivalentClass(?std::string,?std::string),
-			owlSubDataPropertyOf(?std::string,?std::string),
-			owlSubObjectPropertyOf(?std::string,?std::string),
-			owlEquivalentDataProperty(?std::string,?std::string),
-			owlEquivalentObjectProperty(?std::string,?std::string),
-			owlObjectPropertyDomain(?std::string,?std::string),
-			owlDataPropertyDomain(?std::string,?std::string),
-			owlObjectPropertyRange(?std::string,?std::string),
-			owlClassAssertion(?std::string,?std::string,+bool),
-			owlDisjointClass(?std::string,?std::string),
-            owlNegativeObjectAssertion(?std::string,?std::string,?std::string),
-            owlObjectPropertyAssertion(?std::string,?std::string,?std::string),
-            owlSameIndividual(?std::string,?std::string),
-            owlDifferentIndividual(?std::string,?std::string),
-            owlInverseObjectProperty(?std::string,?std::string),
-            owlSymmetricObjectProperty(?std::string),
-            owlAsymmetricObjectProperty(?std::string),
-            owlDisjointObjectProperty(?std::string,?std::string),
-            owlDisjointDataProperty(?std::string,?std::string),
-            owlReflexiveObjectProperty(?std::string),
-            owlIrreflexiveObjectProperty(?std::string),
-            owlFunctionalObjectProperty(?std::string),
-            owlFunctionalDataProperty(?std::string),
-            owlInverseFunctionalObjectProperty(?std::string),
-            owlTransitiveObjectProperty(?std::string),
-            owlDataPropertyAssertion(?std::string,?std::string,+Value),
-            owlNegativeDataAssertion(?std::string,?std::string,+Value),
-            owlDataPropertyRange(?std::string,+std::shared_ptr<[AnySimpleType]>),
-            owlUnionClass(?std::string,?std::string),
-            owlUnionOf(?std::string,+LogicalVarSet),
-            owlUnionOfLoop(?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator),
-            owlIntersectionOf(?std::string,+LogicalVarSet),
-            owlIntersectionClass(?std::string,?std::string,+int),
-            owlIntersectionOfLoop(?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator,+int),
-            intersectionSubclassCheck(?std::string,?std::string,+int),
-            owlCandidatsIntersection(?std::string,?std::string,+int),
-            owlObjectAllValuesFrom(?std::string,?std::string,?std::string),
-            owlDataAllValuesFrom(?std::string,?std::string,+std::shared_ptr<[AnySimpleType]>),
-            owlObjectSomeValuesFrom(?std::string,?std::string,?std::string),
-            owlDataSomeValuesFrom(?std::string,?std::string,+std::shared_ptr<[AnySimpleType]>),
+            owlPrefix(?int,?int),
+			owlClass(?int),
+			owlObjectProperty(?int),
+			owlDataProperty(?int),
+            owlNamedIndividual(?int),
+			owlSubclassOf(?int,?int),
+			owlEquivalentClass(?int,?int),
+			owlSubDataPropertyOf(?int,?int),
+			owlSubObjectPropertyOf(?int,?int),
+			owlEquivalentDataProperty(?int,?int),
+			owlEquivalentObjectProperty(?int,?int),
+			owlObjectPropertyDomain(?int,?int),
+			owlDataPropertyDomain(?int,?int),
+			owlObjectPropertyRange(?int,?int),
+			owlClassAssertion(?int,?int,+bool),
+			owlDisjointClass(?int,?int),
+            owlNegativeObjectAssertion(?int,?int,?int),
+            owlObjectPropertyAssertion(?int,?int,?int),
+            owlSameIndividual(?int,?int),
+            owlDifferentIndividual(?int,?int),
+            owlInverseObjectProperty(?int,?int),
+            owlSymmetricObjectProperty(?int),
+            owlAsymmetricObjectProperty(?int),
+            owlDisjointObjectProperty(?int,?int),
+            owlDisjointDataProperty(?int,?int),
+            owlReflexiveObjectProperty(?int),
+            owlIrreflexiveObjectProperty(?int),
+            owlFunctionalObjectProperty(?int),
+            owlFunctionalDataProperty(?int),
+            owlInverseFunctionalObjectProperty(?int),
+            owlTransitiveObjectProperty(?int),
+            owlDataPropertyAssertion(?int,?int,+Value),
+            owlNegativeDataAssertion(?int,?int,+Value),
+            owlDataPropertyRange(?int,+std::shared_ptr<[AnySimpleType]>),
+            owlUnionClass(?int,?int),
+            owlUnionOf(?int,+LogicalVarSet),
+            owlUnionOfLoop(?int,+LogicalVarSetIterator,+LogicalVarSetIterator),
+            owlIntersectionOf(?int,+LogicalVarSet),
+            owlIntersectionClass(?int,?int,+int),
+            owlIntersectionOfLoop(?int,+LogicalVarSetIterator,+LogicalVarSetIterator,+int),
+            intersectionSubclassCheck(?int,?int,+int),
+            owlCandidatsIntersection(?int,?int,+int),
+            owlObjectAllValuesFrom(?int,?int,?int),
+            owlDataAllValuesFrom(?int,?int,+std::shared_ptr<[AnySimpleType]>),
+            owlObjectSomeValuesFrom(?int,?int,?int),
+            owlDataSomeValuesFrom(?int,?int,+std::shared_ptr<[AnySimpleType]>),
             owlDataValue(+Value,+std::string,+std::shared_ptr<[AnySimpleType]>),
-            owlComplementOf(?std::string,?std::string),
-            owlObjectMaxCardinality(?std::string,?std::string,+int),
-            owlDataMaxCardinality(?std::string,?std::string,+int),
-            owlHasValueObject(?std::string,?std::string,?std::string),
-            owlOneOf(?std::string,+LogicalVarSet),
-            owlOneOfLoop(?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator),
-            owlObjectPropertyChain(?std::string,?std::string,+int,+int),
-            constructPropertyChain(?std::string,+int,?std::string,?std::string,+int) ,
-            owlHasKey(?std::string,+LogicalVarSet),
-            owlHasKeyLoop(?std::string,?std::string,+LogicalVarSetIterator,+LogicalVarSetIterator),
+            owlComplementOf(?int,?int),
+            owlObjectMaxCardinality(?int,?int,+int),
+            owlDataMaxCardinality(?int,?int,+int),
+            owlHasValueObject(?int,?int,?int),
+            owlOneOf(?int,+LogicalVarSet),
+            owlOneOfLoop(?int,+LogicalVarSetIterator,+LogicalVarSetIterator),
+            owlObjectPropertyChain(?int,?int,+int,+int),
+            constructPropertyChain(?int,+int,?int,?int,+int) ,
+            owlHasKey(?int,+LogicalVarSet),
+            owlHasKeyLoop(?int,?int,+LogicalVarSetIterator,+LogicalVarSetIterator),
             querySuperClassOfUri(+std::string),
             querySubClassOfUri(+std::string),
-            querySuperClassOf(?std::string),
-            querySuperClassOfReal(?std::string,?std::string),
-            querySubClassOf(?std::string),
-            queryClassification(?std::string),
-            queryClassificationReal(?std::string),
+            querySuperClassOf(?int),
+            querySuperClassOfReal(?int,?int),
+            querySubClassOf(?int),
+            queryClassification(?int),
+            queryClassificationReal(?int),
             queryClassificationUri(+std::string),
-            queryClassificationTemp(?std::string),
+            queryClassificationTemp(?int),
             queryClassificationTempUri(+std::string),
             queryInstanceURI(+std::string,+std::string),
-            queryInstance(?std::string,?std::string),
+            queryInstance(?int,?int),
             queryInstancesURI(+std::string),
-            queryInstances(?std::string,+int),
+            queryInstances(?int,+int),
             queryObjAssertionUri(+std::string),
-            queryObjAssertion(?std::string,+int),
+            queryObjAssertion(?int,+int),
             querySubjectByObjectUri(+std::string),
-            querySubjectByObject(?std::string,+int),
+            querySubjectByObject(?int,+int),
             queryDataAssertionUri(+std::string),
-            queryDataAssertion(?std::string,+int),
+            queryDataAssertion(?int,+int),
             queryEngineeringStudentsUri(+std::string,+std::string,+std::string,+std::string,+std::string),
-            queryEngineeringStudents(?std::string,?std::string,?std::string,?std::string,?std::string,+int),
+            queryEngineeringStudents(?int,?int,?int,?int,?int,+int),
             queryComplexStudentsUri(+std::string,+std::string,+std::string,+std::string,+std::string),
-            queryComplexStudents(?std::string,?std::string,?std::string,?std::string,?std::string,+int),
+            queryComplexStudents(?int,?int,?int,?int,?int,+int),
             queryObjAssertionSubjectUri(+std::string,+std::string),
-            queryObjAssertionSubject(?std::string,?std::string,+int),
-            queryObjAssertionClassUri(?std::string,?std::string),
-            queryObjAssertionClass(?std::string,?std::string),
-            queryEquivalentClass(?std::string)    ,
-            queryEquivalentClassReal(?std::string,?std::string)    ,
+            queryObjAssertionSubject(?int,?int,+int),
+            queryObjAssertionClassUri(?int,?int),
+            queryObjAssertionClass(?int,?int),
+            queryEquivalentClass(?int)    ,
+            queryEquivalentClassReal(?int,?int)    ,
             res(+std::string),
             resultRealisation(+std::string,+std::string),
             classification(),
             resultClassification(+std::string,+std::string),
-            queryFullUri(?std::string),
-            logicalName(+std::string,?std::string),
+            queryFullUri(?int),
+            logicalName(+std::string,?int),
             realisation(),
             queryisMemberOf(),
             ResultVec(+StringSet,+int),
@@ -529,10 +529,11 @@ owlSubclassOf(A,B), owlSubclassOf(B,A) ==> !(A==B) | owlEquivalentClass(A,B);;
 
 
 //owl:Thing and owl:Nothing: every class is a subclass of owl:Thing
-owlClass(C) , logicalName(URIC,C)  ==> !(URIC==owlThing)| owlSubclassOf(C,owlThing);;
+// Note: owlThingLogicalVar doit être passé depuis le main()
+owlClass(C) , logicalName(URIC,C), logicalName(owlThing, OwlThingVar) #passive  ==> !(URIC=="http://www.w3.org/2002/07/owl#Thing")| owlSubclassOf(C,OwlThingVar);;
 
 //owl:Nothing is a subclass of every class
-owlClass(C) ==>  owlSubclassOf(owlNothing,C);;
+owlClass(C) , logicalName(URIC,C), logicalName(owlNothing, OwlNothingVar) #passive ==> !(URIC==owlNothing) | owlSubclassOf(OwlNothingVar,C);;
 
 //Object property: every object property is a sub-property of itself and equivalent to itself
 owlObjectProperty(P) ==> owlSubObjectPropertyOf(P,P), owlEquivalentObjectProperty(P,P);;
@@ -603,7 +604,7 @@ sameIndividual3 @ owlSameIndividual(X,Y), owlObjectPropertyAssertion(X,P,O) ==> 
 sameIndividual4 @ owlSameIndividual(X,Y), owlDataPropertyAssertion(X,P,O) ==> !(X==Y) |  owlDataPropertyAssertion(Y,P,O);; 
 sameIndividual5 @ owlSameIndividual(O1,O2), owlObjectPropertyAssertion(X,P,O1) ==> !(O1==O2) |  owlObjectPropertyAssertion(X,P,O2);;  
 sameIndividual6 @ owlSameIndividual(X,Y), owlClassAssertion(X,C,B) ==> !(X==Y) |  owlClassAssertion(Y,C,B);;
-sameIndividual7 @ owlSameIndividual(X,Y), owlClassAssertion(Y,C,B) ==> !(X==Y) |  owlClassAssertion(X,C,B);;
+//sameIndividual7 @ owlSameIndividual(X,Y), owlClassAssertion(Y,C,B) ==> !(X==Y) |  owlClassAssertion(X,C,B);;
 
 //owlDifferentIndividual(X,Y) is true if it's excluded that X and Y are the same individual
 DifferentIndividual @ owlDifferentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  failure();;
@@ -727,7 +728,7 @@ owlObjectPropertyAssertion(U,P,W),logicalName(URI,W) #passive,owlClassAssertion(
 owlDataSomeValuesFrom(C,P,DR) , owlDataPropertyAssertion(U,P,V) ==> ! invalidType(DR,V) | owlClassAssertion(U,C,true) ;;
 
 //DataSomeValuesFrom: if U is instance of ∃P.DR, then U must have data property P with some value of type DR (witness creation)
-owlDataSomeValuesFrom(C,P,DR), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,createValue(V,DR)),logicalName(emptyString,V);;
+owlDataSomeValuesFrom(C,P,DR), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,createValue(emptyString,DR)),logicalName(emptyString,V);;
 
 //DataSomeValuesFrom cleanup: remove anonymous data value witness if a named value already exists
 owlDataPropertyAssertion(U,P,W),owlDataValue(W,ValW,TypeW)\owlDataValue(V,emptyString,TypeV), owlDataPropertyAssertion(U,P,V)<=> sameDataType(TypeV,TypeW) && !(ValW==emptyString)| success() ;;
@@ -852,9 +853,9 @@ rule3 @ queryInstance(X,C)<=> afficher("false");;
 resultRealisation(URIX,URIY) ==> ! prefixIntern(URIY)| stockerRealisation(URIX,URIY);;
 
 //cas general x et c sont differents
-loopRealisation @ queryClassificationReal(X), owlClassAssertion(X,C,true), logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive ==>  resultRealisation(URIX,URIC), resultRealisation(URIX,owlThing), querySuperClassOfReal(X,C) , queryEquivalentClassReal(X,C);;
+loopRealisation @ queryClassificationReal(X), owlClassAssertion(X,C,true), logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive ==>  resultRealisation(URIX,URIC),  querySuperClassOfReal(X,C) , queryEquivalentClassReal(X,C);;
 // Cas spécial : X et C sont la même variable (punning)
-loopRealisationSame @ queryClassificationReal(X), owlClassAssertion(X,X,true), logicalName(URI,X) #passive ==> resultRealisation(URI,URI), resultRealisation(URI,owlThing), querySuperClassOfReal(X,X) , queryEquivalentClassReal(X,X);;
+loopRealisationSame @ queryClassificationReal(X), owlClassAssertion(X,X,true), logicalName(URI,X) #passive ==> resultRealisation(URI,URI), querySuperClassOfReal(X,X) , queryEquivalentClassReal(X,X);;
 querySuperClassOfReal(I,C) , logicalName(URIC,C) #passive , logicalName(URII,I) #passive ==>  resultRealisation(URII,URIC) ;;
 querySuperClassOfReal(I,X) , owlSubclassOf(X,Y) ==> !(X==Y) | querySuperClassOfReal(I,Y) , queryEquivalentClassReal(I,X) ;;
 queryEquivalentClassReal(I,X) ,  owlEquivalentClass(X,Y), logicalName(URIY,Y) #passive ,logicalName(URII,I) #passive ==> !(X==Y) |  resultRealisation(URII,URIY) ;;
@@ -866,8 +867,7 @@ realisation() , owlNamedIndividual(X), logicalName(URIX,X) #passive ==> queryCla
 owlEquivalentClass(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive \ resultClassification(URIX,URIY) <=> true ;;
 resultClassification(URIX,URIY) ==> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | stockerClassification(URIX,URIY);;
 
-classification(), owlSubclassOf(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive  ==> resultClassification(URIX,URIY);;
-classification(), owlSubclassOf(X,owlThing) , logicalName(URIX,X) #passive  ==> resultClassification(URIX,owlThing);;
+classification(), owlSubclassOf(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive  ==> !(URIX==owlNothing) | resultClassification(URIX,URIY);;
 classification(), owlSubclassOf(X,X) , logicalName(URIX,X) #passive  ==> resultClassification(URIX,URIX) ;;
 
 //translate sparql querries (OWLBENCH)
@@ -969,26 +969,49 @@ void print(T& pb)
 
 int main(int argc, char* argv[])
 {
-    
+
      std::ofstream fileReal(output_file_Real);
      std::ofstream fileClassif(output_file_Classif);
     //TRACE(chr::Log::register_flags(chr::Log::ALL);)
+    //TRACE(chr::Log::register_flags(chr::Log::NONE);)
+    // Tracer seulement les règles qui se déclenchent (COMMIT)
+    TRACE(chr::Log::register_flags(chr::Log::COMMIT);)
+    // Rediriger les traces vers un fichier
+    std::ofstream traceFile("trace_rules.txt");
+    TRACE(chr::Log::set_output(traceFile);)
     // Déterminer le fichier à utiliser
-   // std::string filename = "results/OWL2RL-1.ofn"; // Valeur par défaut
-   std::string filename = "results/OWL2RL-11.ofn"; 
+    std::string filename = "results/OWL2RL-10.ofn"; // Valeur par défaut
+      // std::string filename = "results/OWL2RL-11.ofn";
 
     if (argc > 1) {
         filename = argv[1];
     }
-    
-    auto space = OWL2::create();
 
- CHR_RUN(   
-    ParserCowl<OWL2> parser(filename, *space);
+    //std::cout << "=== DÉMARRAGE ===" << std::endl << std::flush;
+
+    auto space = OWL2::create();
+chr::Logical_var<int> owlThingLogicalVar;
+chr::Logical_var<int> owlNothingLogicalVar;
+ CHR_RUN(
     
+    space->logicalName(owlThing, owlThingLogicalVar);
+    space->logicalName(owlNothing, owlNothingLogicalVar);
+    ParserCowl<OWL2> parser(filename, *space);
     parser.load();
-    // space->realisation();
-     space->classification();
+
+
+    /* Compter les contraintes après parsing, avant inférence */
+    /*
+    int constraintsAfterParsing = 0;
+    {
+        auto it = space->chr_store_begin();
+        while (!it.at_end()) { ++constraintsAfterParsing; ++it; }
+    }
+    */
+
+
+    space->realisation();
+    space->classification();
    /* space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf"));
     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isPartOf"));
     space->queryDataAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasAge"));
@@ -1009,9 +1032,16 @@ int main(int argc, char* argv[])
     space->queryComplexStudentsUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#Student"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#Organization"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasDean"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#teachesCourse"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#takesCourse"));
     */
 
+    /* STATISTIQUES APRÈS INFÉRENCE - Compte total via itérateur */
+    /*
+    int totalConstraints = 0;
+    auto it = space->chr_store_begin();
+    while (!it.at_end()) { ++totalConstraints; ++it; }
+    std::cout << "   STATISTIQUES APRÈS INFÉRENCE : " << totalConstraints << std::endl;
+    */
  )
    //print(*space);
-    chr::Statistics::print(std::cout);
+    //chr::Statistics::print(std::cout);
 
     return 0;
 }
