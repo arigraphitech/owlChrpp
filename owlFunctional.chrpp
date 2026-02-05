@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 #include <set>
 #include <algorithm>
 #include <chrpp.hh>
@@ -508,6 +509,9 @@ NegativeDataAssertion @ owlNegativeDataAssertion(X,P,Y),owlDataPropertyAssertion
 
 //owlIrreflexiveObjectProperty(P) is true if the property P is an irreflexive object property
 irreflexiveProperty @ owlIrreflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,X)<=> failure();;
+ 
+//if c1 complementOf c2 and x rdf:type c1 and  x rdf:type c2 it fail
+complementOf @ owlComplementOf(A,NOTA) , owlClassAssertion(X,A,true), owlClassAssertion(X,NOTA,true)<=> failure();;
 
 
 //onto schema inference
@@ -637,8 +641,8 @@ inverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAsser
 
 //owlTransitiveObjectProperty(P) is true if P is a transitive object property
 // Changed guard: allow X==Z (reflexivity via symmetric+transitive) but prevent X==Y or Y==Z to avoid trivial loops
-transitiveObjectProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> !(X==Y) && !(Y==Z) | owlObjectPropertyAssertion(X,P,Z);;
-transitiveObjectPropertySpecialCase @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,X) ==> !(X==Y)  | owlObjectPropertyAssertion(X,P,X), owlObjectPropertyAssertion(Y,P,Y);;
+//transitiveObjectProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> !(X==Y) && !(Y==Z) | owlObjectPropertyAssertion(X,P,Z);;
+//transitiveObjectPropertySpecialCase @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,X) ==> !(X==Y)  | owlObjectPropertyAssertion(X,P,X), owlObjectPropertyAssertion(Y,P,Y);;
 
 //Extract data value information from data property assertions (needed for DataSomeValuesFrom)
 owlDataPropertyAssertion(X,P,Y) ==> owlDataValue(Y,(*Y).val,(*Y).typeVal) ;;
@@ -851,16 +855,10 @@ rule3 @ queryInstance(X,C)<=> afficher("false");;
 
 //teste realisation : CR owlBENCH
 resultRealisation(URIX,URIY) ==> ! prefixIntern(URIY)| stockerRealisation(URIX,URIY);;
-
 //cas general x et c sont differents
-loopRealisation @ queryClassificationReal(X), owlClassAssertion(X,C,true), logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive ==>  resultRealisation(URIX,URIC),  querySuperClassOfReal(X,C) , queryEquivalentClassReal(X,C);;
+realisation @ realisation(), owlClassAssertion(X,C,true), logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive ==>  resultRealisation(URIX,URIC);;
 // Cas spécial : X et C sont la même variable (punning)
-loopRealisationSame @ queryClassificationReal(X), owlClassAssertion(X,X,true), logicalName(URI,X) #passive ==> resultRealisation(URI,URI), querySuperClassOfReal(X,X) , queryEquivalentClassReal(X,X);;
-querySuperClassOfReal(I,C) , logicalName(URIC,C) #passive , logicalName(URII,I) #passive ==>  resultRealisation(URII,URIC) ;;
-querySuperClassOfReal(I,X) , owlSubclassOf(X,Y) ==> !(X==Y) | querySuperClassOfReal(I,Y) , queryEquivalentClassReal(I,X) ;;
-queryEquivalentClassReal(I,X) ,  owlEquivalentClass(X,Y), logicalName(URIY,Y) #passive ,logicalName(URII,I) #passive ==> !(X==Y) |  resultRealisation(URII,URIY) ;;
-
-realisation() , owlNamedIndividual(X), logicalName(URIX,X) #passive ==> queryClassificationReal(X) ;;
+realisationPunning @ realisation(), owlClassAssertion(X,X,true), logicalName(URI,X) #passive ==> resultRealisation(URI,URI);;
 
 //teste classification : CT owlBENCH
 //regle pour n'avoir en sortie que les subclassof stricte pas bidirectionnel(equivalent) comme pelet
@@ -972,23 +970,16 @@ int main(int argc, char* argv[])
 
      std::ofstream fileReal(output_file_Real);
      std::ofstream fileClassif(output_file_Classif);
-    //TRACE(chr::Log::register_flags(chr::Log::ALL);)
-    //TRACE(chr::Log::register_flags(chr::Log::NONE);)
-    // Tracer seulement les règles qui se déclenchent (COMMIT)
-    TRACE(chr::Log::register_flags(chr::Log::COMMIT);)
-    // Rediriger les traces vers un fichier
-    std::ofstream traceFile("trace_rules.txt");
-    TRACE(chr::Log::set_output(traceFile);)
-    // Déterminer le fichier à utiliser
-    std::string filename = "results/OWL2RL-10.ofn"; // Valeur par défaut
-      // std::string filename = "results/OWL2RL-11.ofn";
+     
+   // Déterminer le fichier à utiliser
+    std::string filename = "results/OWL2RL-1.ofn"; // Valeur par défaut
 
     if (argc > 1) {
         filename = argv[1];
     }
 
     //std::cout << "=== DÉMARRAGE ===" << std::endl << std::flush;
-
+auto start =std::chrono::steady_clock::now();
     auto space = OWL2::create();
 chr::Logical_var<int> owlThingLogicalVar;
 chr::Logical_var<int> owlNothingLogicalVar;
@@ -1011,7 +1002,7 @@ chr::Logical_var<int> owlNothingLogicalVar;
 
 
     space->realisation();
-    space->classification();
+   // space->classification();
    /* space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf"));
     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isPartOf"));
     space->queryDataAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasAge"));
@@ -1040,6 +1031,9 @@ chr::Logical_var<int> owlNothingLogicalVar;
     std::cout << "   STATISTIQUES APRÈS INFÉRENCE : " << totalConstraints << std::endl;
     */
  )
+ auto end = std::chrono::steady_clock::now();
+     std::chrono::duration<double> elapsed = end - start;
+ std::cout<<"temps "<<  elapsed.count()  <<std::endl;
    //print(*space);
     //chr::Statistics::print(std::cout);
 

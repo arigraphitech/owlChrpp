@@ -768,4 +768,3 @@ Started Instance Checking
 <https://kracr.iiitd.edu.in/OWL2Bench#P11> -> Nodeset[Node( owl:Thing ), Node( <https://kracr.iiitd.edu.in/OWL2Bench#Publication> )]
 <https://kracr.iiitd.edu.in/OWL2Bench#T20Cricket> -> Nodeset[Node( owl:Thing ), Node( <https://kracr.iiitd.edu.in/OWL2Bench#Interest> ), Node( <https://kracr.iiitd.edu.in/OWL2Bench#Cricket> ), Node( <https://kracr.iiitd.edu.in/OWL2Bench#Sports> )]
 <https://kracr.iiitd.edu.in/OWL2Bench#P10> -> Nodeset[Node( owl:Thing ), Node( <https://kracr.iiitd.edu.in/OWL2Bench#ConferencePaper> ), Node( <https://kracr.iiitd.edu.in/OWL2Bench#Article> ), Node( <https://kracr.iiitd.edu.in/OWL2Bench#Publication> )]
-Pellet : Realisation in seconds =1
