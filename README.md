@@ -1,6 +1,6 @@
-# ParserProject - OWL 2 Reasoner with CHR++
+# owl2chr - Moteur de raisonnement déclaratif pour OWL 2 RL basé sur CHR++
 
-Un raisonneur sémantique OWL 2 implémenté en CHR++ (Constraint Handling Rules) utilisant la bibliothèque COWL pour le parsing d'ontologies.
+owl2chr est un moteur de raisonnement déclaratif pour OWL 2 RL basé sur CHR++ (Constraint Handling Rules) et la bibliothèque COWL pour le parsing d'ontologies.
 
 ## Description
 
@@ -115,7 +115,7 @@ space->classification();
 ### Structure du Projet
 
 ```
-ParserProject/
+owlChrpp/
 owlFunctional.chrpp      # Règles CHR++ (fichier principal)
 parsercowl.h              # Parser COWL pour OWL 2
 Parser.h                  # Interface de parsing générique

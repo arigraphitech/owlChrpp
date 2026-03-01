@@ -1,6 +1,6 @@
-# Dépendances du Projet ParserProject
+# Dépendances du Projet owlChrpp (owl2chr)
 
-Ce document liste toutes les dépendances nécessaires pour compiler et exécuter ParserProject.
+Ce document liste toutes les dépendances nécessaires pour compiler et exécuter owlChrpp.
 
 ---
 
@@ -311,7 +311,7 @@ Créez un fichier `check_dependencies.sh` :
 ```bash
 #!/bin/bash
 
-echo "=== Vérification des Dépendances ParserProject ==="
+echo "=== Vérification des Dépendances owlChrpp ==="
 echo ""
 
 # Fonction de vérification
@@ -388,7 +388,7 @@ Créez `install_all.sh` :
 #!/bin/bash
 set -e
 
-echo "=== Installation Automatique ParserProject ==="
+echo "=== Installation Automatique owlChrpp ==="
 
 # 1. Installer les outils système
 echo " Installation des outils système..."
@@ -397,8 +397,8 @@ sudo apt install -y build-essential cmake git
 
 # 2. Cloner le projet
 echo " Clonage du projet..."
-git clone --recursive https://github.com/arigraphitech/owlChrpp.git ParserProject
-cd ParserProject
+git clone --recursive https://github.com/arigraphitech/owlChrpp.git owlChrpp
+cd owlChrpp
 
 # 3. Vérifier les sous-modules
 echo " Vérification des sous-modules..."
