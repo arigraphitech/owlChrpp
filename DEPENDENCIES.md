@@ -1,10 +1,10 @@
-# 📦 Dépendances du Projet ParserProject
+# Dépendances du Projet ParserProject
 
 Ce document liste toutes les dépendances nécessaires pour compiler et exécuter ParserProject.
 
 ---
 
-## 🔧 Dépendances Principales
+## Dépendances Principales
 
 ### 1. CHR++ (Constraint Handling Rules++)
 
@@ -17,18 +17,19 @@ Ce document liste toutes les dépendances nécessaires pour compiler et exécute
 - **runtime** : Bibliothèque d'exécution des règles CHR++
 
 **Installation** :
-```bash
-# Chemin typique
-~/Téléchargements/stage/chrpp/
-├── chrppc/chrppc          # Exécutable du compilateur
-└── runtime/               # Headers et runtime
+```
+<répertoire-chrpp>/
+    chrppc/chrppc      # Exécutable du compilateur
+    runtime/           # Headers et runtime
 ```
 
-**Utilisation dans le projet** :
-```cmake
-set(CHRPP_ROOT /home/etud/Téléchargements/stage/chrpp)
-set(CHRPP_COMPILER ${CHRPP_ROOT}/chrppc/chrppc)
-include_directories(${CHRPP_RUNTIME})
+**Utilisation dans le projet** (configurable sans modifier le code) :
+```bash
+# Chemin par défaut : ../chrpp (à côté du projet)
+cmake ..
+
+# Ou spécifier le chemin :
+cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..
 ```
 
 **Lien** : [CHR++ Documentation](http://chr.pl/)
@@ -88,7 +89,7 @@ target_link_libraries(ParserProject PRIVATE cowl)
 
 ---
 
-## 🛠️ Outils de Compilation
+## Outils de Compilation
 
 ### 1. CMake
 
@@ -186,7 +187,7 @@ sudo apt install git
 
 ---
 
-## 📚 Bibliothèques Standard C++
+## Bibliothèques Standard C++
 
 ### STL (Standard Template Library)
 
@@ -219,7 +220,7 @@ sudo apt install git
 
 ---
 
-## 🎯 Dépendances Projet-Spécifiques
+## Dépendances Projet-Spécifiques
 
 ### 1. AnySimpleType (Inclus)
 
@@ -237,12 +238,12 @@ sudo apt install git
 **Hiérarchie** :
 ```
 AnySimpleType (base)
-├── StringType
-├── IntegerType
-├── FloatType
-├── DoubleType
-├── BooleanType
-└── DateTimeType
+StringType
+IntegerType
+FloatType
+DoubleType
+BooleanType
+DateTimeType
 ```
 
 ---
@@ -276,19 +277,19 @@ public:
 
 ---
 
-## 📊 Résumé des Dépendances
+## Résumé des Dépendances
 
 ### Dépendances Obligatoires
 
 | Nom | Version | Type | Statut |
 |-----|---------|------|--------|
-| **CHR++** | v3171db7+ | Compilateur | ⚠️ Externe |
-| **COWL** | Latest | Bibliothèque | ✅ Sous-module |
-| **uLib** | Latest | Bibliothèque | ✅ Avec COWL |
-| **CMake** | ≥ 3.14 | Outil | 🔧 À installer |
-| **GCC/G++** | ≥ 9.0 | Compilateur | 🔧 À installer |
-| **Make** | ≥ 4.0 | Outil | 🔧 À installer |
-| **Git** | ≥ 2.20 | Outil | 🔧 À installer |
+| **CHR++** | v3171db7+ | Compilateur |  Externe |
+| **COWL** | Latest | Bibliothèque |  Sous-module |
+| **uLib** | Latest | Bibliothèque |  Avec COWL |
+| **CMake** | ≥ 3.14 | Outil |  À installer |
+| **GCC/G++** | ≥ 9.0 | Compilateur |  À installer |
+| **Make** | ≥ 4.0 | Outil |  À installer |
+| **Git** | ≥ 2.20 | Outil |  À installer |
 
 ### Dépendances Incluses
 
@@ -301,7 +302,7 @@ public:
 
 ---
 
-## 🔍 Vérification des Dépendances
+## Vérification des Dépendances
 
 ### Script de Vérification
 
@@ -316,10 +317,10 @@ echo ""
 # Fonction de vérification
 check_cmd() {
     if command -v $1 &> /dev/null; then
-        echo "✅ $1: $(command -v $1)"
+        echo " $1: $(command -v $1)"
         $1 --version 2>&1 | head -1
     else
-        echo "❌ $1: NON TROUVÉ"
+        echo " $1: NON TROUVÉ"
         return 1
     fi
     echo ""
@@ -334,20 +335,21 @@ check_cmd git
 
 # Vérifier CHR++
 echo "=== CHR++ ==="
-if [ -f "$HOME/Téléchargements/stage/chrpp/chrppc/chrppc" ]; then
-    echo "✅ CHR++ trouvé: $HOME/Téléchargements/stage/chrpp/chrppc/chrppc"
+CHRPP_ROOT="${CHRPP_ROOT:-$(pwd)/../chrpp}"
+if [ -f "$CHRPP_ROOT/chrppc/chrppc" ]; then
+    echo "CHR++ trouvé: $CHRPP_ROOT/chrppc/chrppc"
 else
-    echo "❌ CHR++ non trouvé à l'emplacement par défaut"
-    echo "   Chercher avec: find ~ -name chrppc 2>/dev/null"
+    echo "CHR++ non trouvé. Chercher avec: find ~ -name chrppc 2>/dev/null"
+    echo "Puis: cmake -DCHRPP_ROOT=/chemin/vers/chrpp .."
 fi
 echo ""
 
 # Vérifier COWL
 echo "=== COWL ==="
 if [ -d "lib/cowl" ] && [ "$(ls -A lib/cowl)" ]; then
-    echo "✅ COWL présent (sous-module)"
+    echo " COWL présent (sous-module)"
 else
-    echo "❌ COWL manquant ou vide"
+    echo " COWL manquant ou vide"
     echo "   Exécuter: git submodule update --init --recursive"
 fi
 echo ""
@@ -357,11 +359,11 @@ echo "=== Support C++17 ==="
 echo '#include <iostream>' > /tmp/test_cpp17.cpp
 echo 'int main() { if constexpr (true) { std::cout << "C++17 OK"; } }' >> /tmp/test_cpp17.cpp
 if g++ -std=c++17 /tmp/test_cpp17.cpp -o /tmp/test_cpp17 2>/dev/null; then
-    echo "✅ Support C++17 confirmé"
+    echo " Support C++17 confirmé"
     /tmp/test_cpp17
     rm /tmp/test_cpp17 /tmp/test_cpp17.cpp
 else
-    echo "❌ Support C++17 non disponible"
+    echo " Support C++17 non disponible"
 fi
 echo ""
 
@@ -376,7 +378,7 @@ chmod +x check_dependencies.sh
 
 ---
 
-## 📦 Installation Automatisée
+## Installation Automatisée
 
 ### Script d'Installation Complet
 
@@ -389,28 +391,28 @@ set -e
 echo "=== Installation Automatique ParserProject ==="
 
 # 1. Installer les outils système
-echo "📦 Installation des outils système..."
+echo " Installation des outils système..."
 sudo apt update
 sudo apt install -y build-essential cmake git
 
 # 2. Cloner le projet
-echo "📥 Clonage du projet..."
+echo " Clonage du projet..."
 git clone --recursive https://github.com/arigraphitech/owlChrpp.git ParserProject
 cd ParserProject
 
 # 3. Vérifier les sous-modules
-echo "🔍 Vérification des sous-modules..."
+echo " Vérification des sous-modules..."
 git submodule update --init --recursive
 
 # 4. Compiler
-echo "🔨 Compilation..."
+echo " Compilation..."
 mkdir -p build && cd build
 cmake ..
 make -j$(nproc)
 
 # 5. Test
-echo "✅ Test de l'installation..."
-./ParserProject ../example2.ofn
+echo " Test de l'installation..."
+./ParserProject ../results/OWL2RL-1.ofn
 
 echo ""
 echo "=== Installation Terminée ! ==="
@@ -419,7 +421,7 @@ echo "Exécutable: $(pwd)/ParserProject"
 
 ---
 
-## 🔗 Liens Utiles
+## Liens Utiles
 
 - **CHR++** : [http://chr.pl/](http://chr.pl/)
 - **COWL** : [https://github.com/sisinflab-swot/cowl](https://github.com/sisinflab-swot/cowl)

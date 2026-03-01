@@ -1,8 +1,8 @@
 # ParserProject - OWL 2 Reasoner with CHR++
 
-🦉 Un raisonneur sémantique OWL 2 implémenté en CHR++ (Constraint Handling Rules) utilisant la bibliothèque COWL pour le parsing d'ontologies.
+Un raisonneur sémantique OWL 2 implémenté en CHR++ (Constraint Handling Rules) utilisant la bibliothèque COWL pour le parsing d'ontologies.
 
-## 📋 Description
+## Description
 
 Ce projet implémente un moteur d'inférence et de raisonnement pour les ontologies OWL 2 (Web Ontology Language). Il combine :
 - **CHR++** : Système de règles de contraintes pour l'inférence logique
@@ -11,7 +11,7 @@ Ce projet implémente un moteur d'inférence et de raisonnement pour les ontolog
 
 ### Fonctionnalités
 
-#### 🎯 Inférences OWL 2 Supportées
+#### Inférences OWL 2 Supportées
 
 - **Hiérarchie de classes** : SubClassOf, EquivalentClass, transitivité
 - **Propriétés d'objets** : SubObjectProperty, transitivité, symétrie, inversibilité
@@ -29,7 +29,7 @@ Ce projet implémente un moteur d'inférence et de raisonnement pour les ontolog
 - **Contraintes** : DisjointClasses, DisjointProperties
 - **owl:Thing** et **owl:Nothing**
 
-#### 🔍 Système de Requêtes
+#### Système de Requêtes
 
 1. **querySuperClassOfUri(URI)** - Récupère toutes les superclasses d'une classe (incluant owl:Thing)
 2. **querySubClassOfUri(URI)** - Récupère toutes les sous-classes d'une classe
@@ -37,7 +37,7 @@ Ce projet implémente un moteur d'inférence et de raisonnement pour les ontolog
 4. **queryInstanceURI(IndividualURI, ClassURI)** - Vérifie si un individu est instance d'une classe
 5. **queryInstancesURI(ClassURI)** - Liste tous les individus d'une classe
 
-## 🚀 Installation
+## Installation
 
 Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 
@@ -46,8 +46,8 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 - **CMake** ≥ 3.14
 - **GCC/G++** avec support C++17
 - **Git**
-- **CHR++** (compilateur de règles de contraintes)
 - **COWL** (bibliothèque OWL 2 - incluse en sous-module)
+- **CHR++** *(optionnel)* : uniquement si vous modifiez `owlFunctional.chrpp` (le fichier `owl.cpp` pré-généré est fourni)
 
 ### Installation Rapide
 
@@ -56,16 +56,16 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 git clone --recursive https://github.com/arigraphitech/owlChrpp.git
 cd owlChrpp
 
-# Construire le projet
+# Construire (owl.cpp est pré-généré, CHR++ non requis)
 mkdir -p build && cd build
 cmake ..
 make
 
-# Exécuter
-./ParserProject ../example2.ofn
+# Exécuter (depuis la racine du projet)
+./build/ParserProject results/OWL2RL-11.ofn
 ```
 
-## 📖 Utilisation
+## Utilisation
 
 ### Exécution Basique
 
@@ -73,14 +73,12 @@ make
 ./build/ParserProject [fichier_ontologie.ofn]
 ```
 
-Si aucun fichier n'est spécifié, `example2.ofn` est utilisé par défaut.
+Si aucun fichier n'est spécifié, `results/OWL2RL-1.ofn` est utilisé par défaut (valeur codée dans `main()`).
 
-### Exemples d'Ontologies
+### Ontologies de Test
 
-Le projet inclut plusieurs exemples :
-- **example2.ofn** : Ontologie académique (Student, Professor, Course)
-- **example_pizza.owl** : Ontologie de pizzas (format RDF/XML)
-- **example1.rdf** : Exemple en RDF/XML
+Le projet inclut des ontologies de test dans `results/` :
+- **OWL2RL-1.ofn** à **OWL2RL-11.ofn** : Ontologies de benchmark OWL2Bench
 
 ### Format de Fichier Supporté
 
@@ -102,49 +100,43 @@ Ontology(
 ```cpp
 // Dans le main() de owlFunctional.chrpp
 auto space = OWL2::create();
-ParserCowl<OWL2> parser("example2.ofn", *space);
+ParserCowl<OWL2> parser("results/OWL2RL-11.ofn", *space);
 parser.load();
 
-// Requêtes disponibles
-space->querySuperClassOfUri("http://example.org#PhDStudent");
-// Résultat: PhDStudent, Student, Learner, owl:Thing
-
-space->queryInstancesURI("http://example.org#Professor");
-// Résultat: Bob, Robert
-
-space->queryInstanceURI("http://example.org#Alice", "http://example.org#Student");
-// Résultat: true
+// Requêtes disponibles (décommenter dans main())
+space->querySuperClassOfUri("https://kracr.iiitd.edu.in/OWL2Bench#Student");
+space->queryInstancesURI("https://kracr.iiitd.edu.in/OWL2Bench#Faculty");
+space->realisation();
+space->classification();
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Structure du Projet
 
 ```
 ParserProject/
-├── owlFunctional.chrpp      # Règles CHR++ (fichier principal)
-├── parsercowl.h/.cpp         # Parser COWL pour OWL 2
-├── Parser.h                  # Interface de parsing générique
-├── AnySimpleType.h           # Types de données XSD
-├── stringType.h              # Gestion des chaînes de caractères
-├── CMakeLists.txt            # Configuration CMake
-├── Makefile                  # Makefile principal
-├── example*.ofn/owl/rdf      # Ontologies d'exemple
-├── lib/cowl/                 # COWL (sous-module Git)
-└── build/                    # Répertoire de build (généré)
+owlFunctional.chrpp      # Règles CHR++ (fichier principal)
+parsercowl.h              # Parser COWL pour OWL 2
+Parser.h                  # Interface de parsing générique
+AnySimpleType.h           # Types de données XSD
+CMakeLists.txt            # Configuration CMake
+results/                  # Ontologies de test OWL2Bench
+lib/cowl/                 # COWL (sous-module Git)
+build/                    # Répertoire de build (généré)
 ```
 
 ### Workflow de Compilation
 
 ```
 owlFunctional.chrpp
-        ↓ (chrppc compiler)
-    owl.cpp
+        ↓ (chrppc - optionnel, make generate_owl_cpp)
+    owl.cpp  ← pré-généré et commité dans le dépôt
         ↓ (g++ -std=c++17)
-  ParserProject (executable)
+  build/ParserProject (executable)
 ```
 
-## 🧪 Tests et Benchmarks
+## Tests et Benchmarks
 
 Le projet inclut un système de tests pour comparer les résultats du raisonneur CHR++ avec le raisonneur de référence Pellet.
 
@@ -187,11 +179,11 @@ Les résultats sont écrits dans `sortie.txt`.
 ### Recompiler et Exécuter
 
 ```bash
-make build
+cd build && make
 ./build/ParserProject results/OWL2RL-11.ofn
 ```
 
-## 📊 Génération des Résultats de Référence (Pellet + Jena)
+## Génération des Résultats de Référence (Pellet + Jena)
 
 Les résultats de référence ont été générés avec **Pellet** (raisonneur OWL) et **Apache Jena** (requêtes SPARQL).
 
@@ -250,17 +242,14 @@ Les fichiers de résultats sont nommés `OWL2RL-11_queryXX.txt` où XX correspon
 java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-11.owl consistency
 ```
 
-## 🔍 Comparaison des Résultats
+## Comparaison des Résultats
 
 ### Classification (CT) - compare_classification.py
 
 Compare les résultats de classification (hiérarchie des classes) entre CHR++ et Pellet :
 
 ```bash
-python3 compare_classification.py <fichier_chrpp> <fichier_pellet>
-
-# Exemple :
-python3 compare_classification.py res_classification classification_pellet_OWL2RL-11.txt
+python3 compare_classification.py <fichier_chrpp> <fichier_pellet_reference>
 ```
 
 ### Réalisation (CR) - compare_instances.py
@@ -269,11 +258,7 @@ Compare les résultats de réalisation (instances des classes) entre CHR++ et Pe
 
 ```bash
 python3 compare_instances.py <fichier_chrpp> <fichier_gold>
-
-# Exemple :
- python3 compare_instances.py res_realisation resultats_pellet_OWL2RL-11.txt 
- 
- ``` 
+```
 
 ### Requêtes SPARQL - compare_query_results.py
 
@@ -286,7 +271,7 @@ python3 compare_query_results.py <fichier_sortie_chrpp> <dossier_pellet_results>
 python3 compare_query_results.py sortie.txt ../../../owl2bench/sparql_reference_results/pellet_results/OWL2RL-11
 ```
 
-## 📚 Documentation
+## Documentation
 
 ### Règles CHR++ Principales
 
@@ -307,13 +292,14 @@ owlObjectSomeValuesFrom(C,P,Y), owlObjectPropertyAssertion(U,P,V), owlClassAsser
     ==> owlClassAssertion(U,C,true);;
 ```
 
-## 🔧 Développement
+## Développement
 
 ### Modifier les Règles CHR++
 
 1. Éditez `owlFunctional.chrpp`
-2. Recompilez avec `make` (régénère automatiquement `owl.cpp`)
-3. Testez avec vos ontologies
+2. Régénérez `owl.cpp` (nécessite CHR++) : `make generate_owl_cpp`
+3. Recompilez l'exécutable : `make ParserProject`
+4. Committez `owl.cpp` mis à jour si vous partagez vos modifications
 
 ### Ajouter une Nouvelle Requête
 

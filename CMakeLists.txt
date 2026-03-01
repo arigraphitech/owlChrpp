@@ -28,26 +28,45 @@ endif()
 #add_compile_definitions(TRACE_ON)
 
 # === Partie CHRPP ===
-# Définis où se trouve CHRPP (adapte le chemin si nécessaire)
-set(CHRPP_ROOT /home/etud/Téléchargements/stage/chrpp)
+# owl.cpp est pré-généré et commité dans le dépôt.
+# CHR++ (chrppc) est optionnel : nécessaire uniquement si owlFunctional.chrpp est modifié.
+#
+# Pour régénérer owl.cpp après modification de owlFunctional.chrpp :
+#   cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..
+#   make generate_owl_cpp
+# Ou via variable d'environnement : export CHRPP_ROOT=/chemin/vers/chrpp
+
+set(OWL_CPP ${CMAKE_SOURCE_DIR}/owl.cpp)
+set(CHR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/owlFunctional.chrpp)
+
+if(NOT DEFINED CHRPP_ROOT)
+    if(DEFINED ENV{CHRPP_ROOT})
+        set(CHRPP_ROOT "$ENV{CHRPP_ROOT}")
+    else()
+        set(CHRPP_ROOT "${CMAKE_SOURCE_DIR}/../chrpp")
+    endif()
+endif()
 set(CHRPP_COMPILER ${CHRPP_ROOT}/chrppc/chrppc)
 set(CHRPP_RUNTIME ${CHRPP_ROOT}/runtime)
 
-# Inclut le runtime CHRPP
-include_directories(${CHRPP_RUNTIME})
-
-# Fichier CHR++ source
-set(CHR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/owlFunctional.chrpp)
-# Fichier C++ généré
-set(GENERATED_CPP ${CMAKE_CURRENT_BINARY_DIR}/owl.cpp)
-
-# Génère owl.cpp depuis owl.chrpp
-add_custom_command(
-    OUTPUT ${GENERATED_CPP}
-    COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -t -sout > ${GENERATED_CPP}
-    DEPENDS ${CHR_FILE}
-    COMMENT "Génération de ${GENERATED_CPP} depuis ${CHR_FILE} via chrppc"
-)
+if(EXISTS ${CHRPP_COMPILER})
+    message(STATUS "CHR++ trouvé: ${CHRPP_COMPILER} (régénération de owl.cpp possible)")
+    # Inclut le runtime CHR++ (nécessaire pour compiler owl.cpp)
+    include_directories(${CHRPP_RUNTIME})
+    # Cible explicite pour régénérer owl.cpp dans la racine du projet
+    add_custom_target(generate_owl_cpp
+        COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -t -sout > ${OWL_CPP}
+        DEPENDS ${CHR_FILE}
+        COMMENT "Régénération de owl.cpp depuis owlFunctional.chrpp"
+    )
+else()
+    message(STATUS "chrppc non trouvé - utilisation de owl.cpp pré-généré (lecture seule)")
+    message(STATUS "Pour modifier owlFunctional.chrpp, installer CHR++ et relancer cmake -DCHRPP_ROOT=...")
+    # Inclure quand même le runtime si disponible
+    if(EXISTS ${CHRPP_RUNTIME})
+        include_directories(${CHRPP_RUNTIME})
+    endif()
+endif()
 
 # Ajoute COWL comme sous-module (inclut aussi uLib)
 add_subdirectory(lib/cowl EXCLUDE_FROM_ALL)
@@ -58,7 +77,7 @@ add_executable(ParserProject
     parsercowl.h
     Parser.h
     AnySimpleType.h
-    ${GENERATED_CPP} # Ajoute le fichier généré à la compilation
+    ${OWL_CPP}
 )
 
 # Lier la lib COWL (et uLib automatiquement)
@@ -70,6 +89,3 @@ target_link_libraries(ParserProject PRIVATE cowl ulib)
 target_include_directories(ParserProject PRIVATE lib/cowl/include)
 # Inclut les headers du projet (Parser.h, parsercowl.h)
 target_include_directories(ParserProject PRIVATE ${CMAKE_SOURCE_DIR})
-# Copie les fichiers d'ontologie dans le dossier de build
-configure_file(example_pizza.owl example_pizza.owl COPYONLY)
-configure_file(example2.ofn example2.ofn COPYONLY)
