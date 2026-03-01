@@ -1,47 +1,60 @@
-# Fichiers de build CMake
+# Build CMake (hors-source)
 build/
+build_test/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
-CMakeLists.txt.user
+CMakeLists.txt.user*
 CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
+CMakeLists_*.txt
+
+# Fichiers générés par CHR++ (owl.cpp est commité volontairement - voir owlFunctional.chrpp)
+*.hh
+
 # Executables
-owl
-owl.cpp
 ParserProject
 *.exe
 *.out
+
+# Fichiers objets et bibliothèques
 *.o
 *.obj
 *.a
 *.so
 *.dll
 *.dylib
+*.gch
 
-# Fichiers temporaires et de log
+# Fichiers de résultats générés à l'exécution
+res_realisation
+res_classification
+sortie.txt
+output.txt
+
+# Fichiers temporaires
 *.log
 *.tmp
 *.swp
 *.swo
 *~
 
-# Dossiers de bibliothèques externes (optionnel)
+# Bibliothèques externes (sous-modules)
 lib/cowl/build/
 lib/cowl/lib/ulib/build/
 
-# Dossiers générés par l'IDE
+# IDE
 .vscode/
 .idea/
 
-# Fichiers Python (si jamais)
+# Python
 __pycache__/
 *.pyc
 
-# Doxygen docs
+# Doxygen
 html/
 latex/
 
-# Autres fichiers à ignorer
+# macOS / Windows
 .DS_Store
 Thumbs.db

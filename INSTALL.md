@@ -1,8 +1,8 @@
-# 📦 Guide d'Installation - ParserProject
+# Guide d'Installation - ParserProject
 
 Ce guide détaille l'installation complète du projet ParserProject (OWL 2 Reasoner avec CHR++).
 
-## 📋 Table des Matières
+## Table des Matières
 
 1. [Prérequis Système](#prérequis-système)
 2. [Installation des Dépendances](#installation-des-dépendances)
@@ -13,7 +13,7 @@ Ce guide détaille l'installation complète du projet ParserProject (OWL 2 Reaso
 
 ---
 
-## 🖥️ Prérequis Système
+## Prérequis Système
 
 ### Systèmes d'Exploitation Supportés
 
@@ -32,7 +32,7 @@ Ce guide détaille l'installation complète du projet ParserProject (OWL 2 Reaso
 
 ---
 
-## 🔧 Installation des Dépendances
+## Installation des Dépendances
 
 ### Ubuntu / Debian
 
@@ -88,34 +88,31 @@ wsl --install -d Ubuntu
 
 ---
 
-## 🧩 Installation de CHR++
+## Installation de CHR++
 
 CHR++ est le compilateur de règles de contraintes nécessaire pour le projet.
 
 ### Option 1 : Installation depuis les Sources (Recommandé)
 
 ```bash
-# 1. Créer un répertoire pour CHR++
-mkdir -p ~/Téléchargements/stage
-cd ~/Téléchargements/stage
-
-# 2. Cloner ou télécharger CHR++
-# (Adaptez selon votre source de CHR++)
-# Exemple si vous avez un repository CHR++ :
+# 1. Cloner ou télécharger CHR++ (idéalement à côté du projet)
+# Structure recommandée : projet/ et chrpp/ dans le même dossier parent
 git clone <url_chrpp_repository> chrpp
 cd chrpp
 
-# 3. Compiler CHR++
+# 2. Compiler CHR++
 cd chrppc
 make
 
-# 4. Vérifier que le compilateur fonctionne
+# 3. Vérifier que le compilateur fonctionne
 ./chrppc --version
 # ou
 ./chrppc --help
 
-# 5. Ajouter CHR++ au PATH (optionnel)
-echo 'export PATH="$HOME/Téléchargements/stage/chrpp/chrppc:$PATH"' >> ~/.bashrc
+# 4. (Optionnel) Ajouter CHR++ au PATH ou définir CHRPP_ROOT
+export CHRPP_ROOT=/chemin/absolu/vers/chrpp
+# ou ajouter dans ~/.bashrc pour le conserver entre sessions :
+echo 'export CHRPP_ROOT=/chemin/absolu/vers/chrpp' >> ~/.bashrc
 source ~/.bashrc
 ```
 
@@ -134,17 +131,16 @@ Vous devrez modifier `CMakeLists.txt` pour pointer vers ce chemin (voir section 
 
 ---
 
-## 📥 Installation du Projet
+## Installation du Projet
 
 ### 1. Cloner le Repository
 
 ```bash
 # Cloner avec les sous-modules (COWL)
-cd ~/Téléchargements/stage/stage_labo
 git clone --recursive https://github.com/arigraphitech/owlChrpp.git ParserProject
+cd ParserProject
 
 # Si vous avez déjà cloné sans --recursive :
-cd ParserProject
 git submodule update --init --recursive
 ```
 
@@ -161,31 +157,22 @@ git submodule update --init --recursive
 
 ### 3. Configurer le Chemin de CHR++
 
-Éditez `CMakeLists.txt` pour pointer vers votre installation de CHR++ :
+Le chemin CHR++ se configure **sans modifier le code source**, via la variable cmake `CHRPP_ROOT`.
+
+**Chemin par défaut** : `../chrpp` (à côté du projet). Si votre installation est ailleurs :
 
 ```bash
-nano CMakeLists.txt
-# ou
-vi CMakeLists.txt
-# ou utilisez votre éditeur préféré
+# Méthode A : variable cmake (recommandé)
+cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..
+
+# Méthode B : variable d'environnement
+export CHRPP_ROOT=/chemin/vers/chrpp
+cmake ..
 ```
-
-Modifiez la ligne suivante (ligne ~20) :
-
-```cmake
-# Adaptez ce chemin selon votre installation
-set(CHRPP_ROOT /home/etud/Téléchargements/stage/chrpp)
-```
-
-Remplacez par le chemin correct, par exemple :
-- `/home/votre_utilisateur/chrpp`
-- `/usr/local/chrpp`
-- `~/Téléchargements/stage/chrpp`
 
 ### 4. Créer le Répertoire de Build
 
 ```bash
-cd ~/Téléchargements/stage/stage_labo/ParserProject
 mkdir -p build
 cd build
 ```
@@ -193,11 +180,14 @@ cd build
 ### 5. Configurer avec CMake
 
 ```bash
-# Configuration avec CMake
+# Si CHR++ est à ../chrpp (défaut) :
 cmake ..
 
-# En cas d'erreur, essayez avec des options spécifiques :
-cmake .. -DCMAKE_BUILD_TYPE=Release
+# Si CHR++ est ailleurs :
+cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..
+
+# En mode Release (déjà le défaut) :
+cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
 
 **Sortie attendue** :
@@ -226,7 +216,7 @@ make -j$(nproc)
 
 **Sortie attendue** :
 ```
-⏳ Génération de .../build/owl.cpp depuis .../owlFunctional.chrpp via chrppc
+Génération de .../build/owl.cpp depuis .../owlFunctional.chrpp via chrppc
 Scanning dependencies of target cowl
 [ 10%] Building C object lib/cowl/...
 ...
@@ -242,7 +232,7 @@ cd ..
 
 ---
 
-## ✅ Vérification de l'Installation
+## Vérification de l'Installation
 
 ### Test 1 : Exécutable Créé
 
@@ -257,39 +247,32 @@ ls -lh build/ParserProject
 ### Test 2 : Exécution avec Ontologie d'Exemple
 
 ```bash
-# Exécuter avec l'ontologie par défaut
+# Exécuter avec le fichier par défaut (results/OWL2RL-1.ofn)
 ./build/ParserProject
 
 # Ou spécifier un fichier :
-./build/ParserProject example2.ofn
+./build/ParserProject results/OWL2RL-11.ofn
 ```
 
 **Sortie attendue** :
 ```
-same individuals : http://example.org#Alice , http://example.org#AliceAlias
-same individuals : http://example.org#Bob , http://example.org#Robert
-...
-=== TEST 1: querySuperClassOfUri(PhDStudent) ===
-Résultat attendu: Student, Learner, owl:Thing
-http://example.org#PhDStudent
-http://example.org#Student
-http://example.org#Learner
-owl:Thing
-...
+temps 0.17
 ```
+(Le temps d'exécution en secondes. Les résultats sont écrits dans `res_realisation`, `res_classification` ou `sortie.txt` selon les requêtes activées dans `main()`.)
 
-### Test 3 : Tests Complets
+### Test 3 : Comparer avec les Résultats Pellet
 
 ```bash
-# Exécuter tous les tests
-./build/ParserProject 2>&1 | grep "TEST"
+# Comparer la réalisation
+python3 compare_instances.py res_realisation resultats_pellet_OWL2RL-11.txt
 
-# Vous devriez voir 8 tests s'exécuter
+# Comparer la classification (nécessite d'activer classification() dans main())
+python3 compare_classification.py res_classification classification_pellet_OWL2RL-11.txt
 ```
 
 ---
 
-## 🐛 Dépannage
+## Dépannage
 
 ### Problème 1 : CMake ne trouve pas CHR++
 
@@ -299,21 +282,22 @@ CMake Error: Could not find chrppc compiler
 ```
 
 **Solution** :
-1. Vérifier que CHR++ est bien installé :
+1. Vérifier que CHR++ est bien installé et noter son chemin :
    ```bash
-   ls ~/Téléchargements/stage/chrpp/chrppc/chrppc
+   find / -name chrppc -type f 2>/dev/null
    ```
 
-2. Modifier `CMakeLists.txt` avec le bon chemin :
-   ```cmake
-   set(CHRPP_ROOT /chemin/vers/votre/chrpp)
-   ```
-
-3. Nettoyer et reconfigurer :
+2. Reconfigurer avec le bon chemin via variable cmake :
    ```bash
    cd build
    rm -rf *
-   cmake ..
+   cmake -DCHRPP_ROOT=/chemin/vers/votre/chrpp ..
+   ```
+
+3. Ou via variable d'environnement :
+   ```bash
+   export CHRPP_ROOT=/chemin/vers/votre/chrpp
+   cd build && rm -rf * && cmake ..
    ```
 
 ### Problème 2 : Erreur "C++17 required"
@@ -348,8 +332,7 @@ fatal error: cowl.h: No such file or directory
 
 **Solution** :
 ```bash
-# Initialiser les sous-modules
-cd ~/Téléchargements/stage/stage_labo/ParserProject
+# Depuis la racine du projet
 git submodule update --init --recursive
 
 # Vérifier :
@@ -414,7 +397,7 @@ make
 
 ---
 
-## 🔄 Recompilation Après Modifications
+## Recompilation Après Modifications
 
 ### Modifier les Règles CHR++
 
@@ -446,36 +429,34 @@ make
 
 ---
 
-## 📊 Arborescence Finale
+## Arborescence Finale
 
 Après installation complète, votre arborescence devrait ressembler à :
 
 ```
-~/Téléchargements/stage/
-├── chrpp/                    # CHR++ compiler
-│   ├── chrppc/
-│   │   └── chrppc           # Exécutable du compilateur
-│   └── runtime/             # Runtime CHR++
-│
-└── stage_labo/
-    └── ParserProject/       # Votre projet
-        ├── owlFunctional.chrpp
-        ├── parsercowl.h
-        ├── CMakeLists.txt
-        ├── example2.ofn
-        ├── lib/
-        │   └── cowl/        # Sous-module Git
-        │       ├── include/
-        │       ├── src/
-        │       └── build/
-        └── build/           # Répertoire de build
-            ├── owl.cpp      # Généré par chrppc
-            └── ParserProject # Exécutable final
+<dossier-parent>/
+    chrpp/                    # CHR++ (externe, configurable via CHRPP_ROOT)
+        chrppc/
+            chrppc            # Exécutable du compilateur
+        runtime/              # Runtime CHR++
+
+    ParserProject/            # Ce projet
+        owlFunctional.chrpp   # Règles CHR++ (source principale)
+        parsercowl.h          # Parser COWL
+        CMakeLists.txt
+        lib/
+            cowl/             # Sous-module Git COWL
+                include/
+                src/
+        build/                # Répertoire de build (généré)
+            owl.cpp           # Généré par chrppc
+            ParserProject     # Exécutable final
+        results/              # Ontologies de test OWL2Bench
 ```
 
 ---
 
-## 🎉 Installation Terminée !
+## Installation Terminée !
 
 Vous êtes maintenant prêt à utiliser ParserProject. Consultez le [README.md](README.md) pour les instructions d'utilisation.
 
@@ -497,10 +478,10 @@ make clean
 
 ### Prochaines Étapes
 
-1. ✅ Tester avec vos propres ontologies OWL 2
-2. ✅ Modifier les règles CHR++ selon vos besoins
-3. ✅ Ajouter de nouvelles requêtes
-4. ✅ Contribuer au projet !
+1.  Tester avec vos propres ontologies OWL 2
+2.  Modifier les règles CHR++ selon vos besoins
+3.  Ajouter de nouvelles requêtes
+4.  Contribuer au projet !
 
 ---
 

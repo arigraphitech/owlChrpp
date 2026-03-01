@@ -991,15 +991,6 @@ chr::Logical_var<int> owlNothingLogicalVar;
     parser.load();
 
 
-    /* Compter les contraintes après parsing, avant inférence */
-    /*
-    int constraintsAfterParsing = 0;
-    {
-        auto it = space->chr_store_begin();
-        while (!it.at_end()) { ++constraintsAfterParsing; ++it; }
-    }
-    */
-
 
     space->realisation();
    // space->classification();
