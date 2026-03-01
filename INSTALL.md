@@ -1,6 +1,6 @@
-# Guide d'Installation - ParserProject
+# Guide d'Installation - owlChrpp (owl2chr)
 
-Ce guide détaille l'installation complète du projet ParserProject (OWL 2 Reasoner avec CHR++).
+Ce guide détaille l'installation complète de owlChrpp / owl2chr, un moteur de raisonnement déclaratif pour OWL 2 RL basé sur CHR++.
 
 ## Table des Matières
 
@@ -137,8 +137,8 @@ Vous devrez modifier `CMakeLists.txt` pour pointer vers ce chemin (voir section 
 
 ```bash
 # Cloner avec les sous-modules (COWL)
-git clone --recursive https://github.com/arigraphitech/owlChrpp.git ParserProject
-cd ParserProject
+git clone --recursive https://github.com/arigraphitech/owlChrpp.git owlChrpp
+cd owlChrpp
 
 # Si vous avez déjà cloné sans --recursive :
 git submodule update --init --recursive
@@ -440,7 +440,7 @@ Après installation complète, votre arborescence devrait ressembler à :
             chrppc            # Exécutable du compilateur
         runtime/              # Runtime CHR++
 
-    ParserProject/            # Ce projet
+    owlChrpp/                 # Ce projet (owl2chr)
         owlFunctional.chrpp   # Règles CHR++ (source principale)
         parsercowl.h          # Parser COWL
         CMakeLists.txt
@@ -458,7 +458,7 @@ Après installation complète, votre arborescence devrait ressembler à :
 
 ## Installation Terminée !
 
-Vous êtes maintenant prêt à utiliser ParserProject. Consultez le [README.md](README.md) pour les instructions d'utilisation.
+Vous êtes maintenant prêt à utiliser owl2chr. Consultez le [README.md](README.md) pour les instructions d'utilisation.
 
 ### Commandes Utiles
 
