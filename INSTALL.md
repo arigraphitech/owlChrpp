@@ -90,27 +90,39 @@ wsl --install -d Ubuntu
 
 ## Installation de CHR++
 
-⚠️ **Note importante** : CHR++ est **optionnel** pour compiler et exécuter le projet.
-- ✅ **Sans CHR++** : Vous pouvez compiler et utiliser le raisonneur (le fichier `owl.cpp` est pré-généré)
-- 🔧 **Avec CHR++** : Nécessaire uniquement si vous voulez **modifier** les règles dans `owlFunctional.chrpp`
+**Note importante** : Le **runtime CHR++** (headers) est **REQUIS** pour compiler le projet.
 
-### Option 1 : Utilisation sans CHR++ (Recommandé pour débuter)
+Deux composants CHR++ :
+1. **Runtime CHR++** (headers: `chrpp.hh`, `logical_var.hpp`, etc.) → **OBLIGATOIRE**
+   - Nécessaire pour compiler `owl.cpp` (même pré-généré)
+   - Contient les définitions de types et classes CHR++
 
-Si vous voulez simplement compiler et exécuter le projet :
+2. **Compilateur CHR++ (chrppc)** → **OPTIONNEL**
+   - Nécessaire uniquement pour **régénérer** `owl.cpp` depuis `owlFunctional.chrpp`
+   - Pas besoin si vous ne modifiez pas les règles CHR++
+
+### Option 1 : Installation minimale (Runtime seulement)
+
+Si vous voulez simplement compiler et exécuter (sans modifier les règles) :
 
 ```bash
-# Cloner et compiler directement (CHR++ non requis)
-git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
-cd owlChrpp
-cmake -S . -B build
-cmake --build build -- -j$(nproc)
-./build/ParserProject results/OWL2RL-11.ofn
+# Cloner CHR++ pour obtenir les headers du runtime
+cd ~/projets  # ou votre répertoire de travail
+git clone https://github.com/chr-projects/chrpp.git
+# ou télécharger depuis http://chr.pl/
+
+# PAS besoin de compiler chrppc !
+# Les headers dans chrpp/runtime/ suffisent
+
+# Définir CHRPP_ROOT
+export CHRPP_ROOT=~/projets/chrpp
+echo 'export CHRPP_ROOT=~/projets/chrpp' >> ~/.bashrc
 ```
 
-✅ CMake affichera : `chrppc non trouvé - utilisation de owl.cpp pré-généré`
-- C'est **normal** et le projet fonctionnera parfaitement !
+Avec juste le runtime, vous pouvez **compiler et exécuter** le projet.
+Sans le runtime, **impossible de compiler** (erreur: `chrpp.hh: No such file`).
 
-### Option 2 : Installation de CHR++ (Pour développeurs)
+### Option 2 : Installation complète (Runtime + Compiler)
 
 Si vous voulez **modifier** `owlFunctional.chrpp` et régénérer `owl.cpp` :
 
