@@ -136,12 +136,17 @@ Vous devrez modifier `CMakeLists.txt` pour pointer vers ce chemin (voir section 
 ### 1. Cloner le Repository
 
 ```bash
-# Cloner avec les sous-modules (COWL)
-git clone --recursive https://github.com/arigraphitech/owlChrpp.git owlChrpp
+# Cloner en récupérant les sous-modules (méthode recommandée)
+git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git owlChrpp
 cd owlChrpp
 
-# Si vous avez déjà cloné sans --recursive :
+# Si les sous-modules n'ont pas été initialisés correctement (par ex. .gitmodules manquant ou clone partiel) :
+git submodule sync --recursive
 git submodule update --init --recursive
+
+# Cas rare : ajouter manuellement le sous-module COWL si nécessaire
+# git submodule add https://github.com/sisinflab-swot/cowl.git lib/cowl
+# git submodule update --init --recursive
 ```
 
 ### 2. Vérifier les Sous-Modules
@@ -179,15 +184,17 @@ cd build
 
 ### 5. Configurer avec CMake
 
+Remarque importante : pour garantir que les fichiers de configuration et de build sont générés dans le dossier `build`, utilisez les options -S (source) et -B (build) de CMake :
+
 ```bash
-# Si CHR++ est à ../chrpp (défaut) :
-cmake ..
+# Depuis la racine du dépôt :
+cmake -DCHRPP_ROOT=/chemin/vers/chrpp -S . -B build
 
-# Si CHR++ est ailleurs :
-cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..
+# ou, si vous êtes déjà dans build, utilisez la syntaxe suivante pour forcer le répertoire source :
+cmake -DCHRPP_ROOT=/chemin/vers/chrpp -S .. -B .
 
-# En mode Release (déjà le défaut) :
-cmake -DCMAKE_BUILD_TYPE=Release ..
+# En mode Release :
+cmake -DCHRPP_ROOT=/chemin/vers/chrpp -DCMAKE_BUILD_TYPE=Release -S . -B build
 ```
 
 **Sortie attendue** :
@@ -341,6 +348,47 @@ ls lib/cowl/include/
 ```
 
 ### Problème 4 : Erreur de Linking avec uLib
+### Problème 5 : Plantage à l'exécution - assertion dans `logical_var.hpp`
+
+Symptôme : l'exécutable se termine avec une assertion du type :
+
+```
+ParserProject: /.../chrpp/runtime/logical_var.hpp:201: const chr::Logical_var_imp<T>& chr::Logical_var_imp<T>::ra() const [with T = int]: Assertion '_backtrack_depth < Back' failed.
+Aborted (core dumped)
+```
+
+Causes possibles et solutions :
+
+1. Incohérence de versions entre les fichiers générés par `chrppc` et la bibliothèque runtime :
+    - Si `owl.cpp` a été généré avec une version différente de CHR++ que la bibliothèque `runtime` utilisée lors de la compilation, des incompatibilités (notamment au niveau de `Logical_var<T>`) peuvent provoquer des assertions.
+    - Solution : régénérer `owl.cpp` avec le même compilateur `chrppc` que celui présent dans `CHRPP_ROOT` avant de recompiler le projet.
+
+    Exemple :
+
+    ```bash
+    # Supprimer l'ancien owl.cpp généré
+    rm -f build/owl.cpp
+
+    # Regénérer depuis la racine du projet en utilisant chrppc du CHRPP_ROOT
+    ${CHRPP_ROOT}/chrppc/chrppc owlFunctional.chrpp -t -sout > build/owl.cpp
+
+    # Reconfigurer et reconstruire
+    cmake -DCHRPP_ROOT=${CHRPP_ROOT} -S . -B build
+    cmake --build build -- -j$(nproc)
+    ```
+
+2. Mismatch de paramètres de template (`Logical_var<int>` vs `Logical_var<bool>`)
+    - Si vous avez modifié manuellement le code source (par ex. migration de `Logical_var<int>` vers `Logical_var<bool>`), assurez-vous que tous les fichiers sources et en-têtes (y compris le code généré `owl.cpp`) sont cohérents.
+    - Solution : refaire la migration *et* régénérer `owl.cpp` puis recompiler.
+
+3. Corruption d'état de backtracking pendant l'exécution
+    - Peut venir d'un bug dans une règle CHR++ ou d'une utilisation incorrecte des variables logiques dans les règles.
+    - Solution : exécuter en debug (build non optimisé) et activer les logs/résultats minima pour isoler la règle fautive.
+
+4. Si rien ne fonctionne
+    - Essayez de compiler et exécuter l'exemple minimal fourni par CHR++ pour vérifier que `chrppc` et la runtime fonctionnent correctement ensemble.
+    - Comparez les versions (hash git) de CHR++ utilisées pour générer et compiler.
+
 
 **Erreur** :
 ```
