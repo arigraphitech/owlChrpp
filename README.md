@@ -48,8 +48,8 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 - **Git**
 - **COWL** (bibliothèque OWL 2 - incluse en sous-module)
 - **CHR++** *(optionnel)* : uniquement si vous modifiez `owlFunctional.chrpp`
-  - ⚠️ Le fichier `owl.cpp` est **pré-généré** et inclus dans le dépôt
-  - ✅ Vous pouvez compiler **sans installer CHR++**
+  - Le fichier `owl.cpp` est **pré-généré** et inclus dans le dépôt
+  - Vous pouvez compiler **sans installer CHR++**
 
 ### Installation Rapide (Sans CHR++)
 
