@@ -47,14 +47,23 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 - **GCC/G++** avec support C++17
 - **Git**
 - **COWL** (bibliothèque OWL 2 - incluse en sous-module)
-- **CHR++** *(optionnel)* : uniquement si vous modifiez `owlFunctional.chrpp`
-  - Le fichier `owl.cpp` est **pré-généré** et inclus dans le dépôt
-  - Vous pouvez compiler **sans installer CHR++**
+- **CHR++ Runtime** (headers) - **REQUIS** pour compiler `owl.cpp`
+  - Les headers CHR++ (`chrpp.hh`, `logical_var.hpp`, etc.) sont **obligatoires**
+  - Le fichier `owl.cpp` est pré-généré mais nécessite les headers pour compiler
+- **CHR++ Compiler (chrppc)** *(optionnel)* : uniquement pour modifier `owlFunctional.chrpp`
+  - Le compilateur `chrppc` est optionnel (seulement pour régénérer `owl.cpp`)
 
-### Installation Rapide (Sans CHR++)
+### Installation Rapide
+
+**Important** : CHR++ runtime (headers) est **requis** pour compiler le projet.
 
 ```bash
-# Cloner le dépôt en récupérant les sous-modules
+# 1. Cloner CHR++ (runtime requis pour les headers)
+cd ~/projets  # ou votre répertoire de travail
+git clone <url_chrpp_repository> chrpp
+# Note: pas besoin de compiler chrppc si vous ne modifiez pas owlFunctional.chrpp
+
+# 2. Cloner owlChrpp avec les sous-modules
 git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
 cd owlChrpp
 
@@ -62,15 +71,19 @@ cd owlChrpp
 git submodule sync --recursive
 git submodule update --init --recursive
 
-# Construire (owl.cpp pré-généré, CHR++ non requis)
-cmake -S . -B build
+# 3. Construire (owl.cpp pré-généré, mais headers CHR++ requis)
+export CHRPP_ROOT=~/projets/chrpp  # Ajustez selon votre installation
+cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
 cmake --build build -- -j$(nproc)
 
-# Exécuter l'exécutable généré
+# 4. Exécuter
 ./build/ParserProject results/OWL2RL-11.ofn
 ```
 
-**Note** : CMake affichera `chrppc non trouvé - utilisation de owl.cpp pré-généré`. C'est normal !
+**Note sur les messages CMake** :
+- `CHR++ runtime trouvé: .../chrpp/runtime ` → Parfait, vous pouvez compiler
+- `CHR++ compiler non trouvé (chrppc)` → Normal si vous ne modifiez pas `.chrpp`
+- `CHR++ runtime non trouvé` → **Erreur fatale**, installer CHR++ (voir ci-dessous)
 
 ### Installation avec CHR++ (Développeurs)
 
