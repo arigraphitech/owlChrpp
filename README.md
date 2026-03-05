@@ -52,16 +52,20 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 ### Installation Rapide
 
 ```bash
-# Cloner le dépôt avec les sous-modules
-git clone --recursive https://github.com/arigraphitech/owlChrpp.git
+# Cloner le dépôt en récupérant les sous-modules (méthode recommandée)
+git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
 cd owlChrpp
 
-# Construire (owl.cpp est pré-généré, CHR++ non requis)
-mkdir -p build && cd build
-cmake ..
-make
+# Si les sous-modules n'ont pas été récupérés (ex : .gitmodules manquant ou clone partiel), exécutez :
+git submodule sync --recursive
+git submodule update --init --recursive
 
-# Exécuter (depuis la racine du projet)
+# Construire (recommandation : utilisez -S/-B pour contrôler les dossiers de build)
+# depuis la racine du dépôt :
+cmake -DCHRPP_ROOT=/path/to/chrpp -S . -B build
+cmake --build build -- -j$(nproc)
+
+# Exécuter l'exécutable généré
 ./build/ParserProject results/OWL2RL-11.ofn
 ```
 

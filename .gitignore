@@ -1,60 +1,27 @@
-# Build CMake (hors-source)
+# Build directories
 build/
+build-*/
 build_test/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-CMakeLists.txt.user*
-CMakeDoxyfile.in
-CMakeDoxygenDefaults.cmake
-CMakeLists_*.txt
+cmake-build*/
 
-# Fichiers générés par CHR++ (owl.cpp est commité volontairement - voir owlFunctional.chrpp)
-*.hh
-
-# Executables
-ParserProject
-*.exe
-*.out
-
-# Fichiers objets et bibliothèques
+# Generated files
+owl.cpp.backup
 *.o
-*.obj
 *.a
 *.so
-*.dll
 *.dylib
-*.gch
-
-# Fichiers de résultats générés à l'exécution
-res_realisation
-res_classification
-sortie.txt
-output.txt
-
-# Fichiers temporaires
-*.log
-*.tmp
-*.swp
-*.swo
-*~
-
-# Bibliothèques externes (sous-modules)
-lib/cowl/build/
-lib/cowl/lib/ulib/build/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Python
-__pycache__/
-*.pyc
+# Results
+res_*
+sortie.txt
+*.log
 
-# Doxygen
-html/
-latex/
-
-# macOS / Windows
+# Mac
 .DS_Store
-Thumbs.db
