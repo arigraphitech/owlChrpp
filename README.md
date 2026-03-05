@@ -47,23 +47,50 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 - **GCC/G++** avec support C++17
 - **Git**
 - **COWL** (bibliothèque OWL 2 - incluse en sous-module)
-- **CHR++** *(optionnel)* : uniquement si vous modifiez `owlFunctional.chrpp` (le fichier `owl.cpp` pré-généré est fourni)
+- **CHR++** *(optionnel)* : uniquement si vous modifiez `owlFunctional.chrpp`
+  - ⚠️ Le fichier `owl.cpp` est **pré-généré** et inclus dans le dépôt
+  - ✅ Vous pouvez compiler **sans installer CHR++**
 
-### Installation Rapide
+### Installation Rapide (Sans CHR++)
 
 ```bash
-# Cloner le dépôt en récupérant les sous-modules (méthode recommandée)
+# Cloner le dépôt en récupérant les sous-modules
 git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
 cd owlChrpp
 
-# Si les sous-modules n'ont pas été récupérés (ex : .gitmodules manquant ou clone partiel), exécutez :
+# Si les sous-modules n'ont pas été récupérés, exécutez :
 git submodule sync --recursive
 git submodule update --init --recursive
 
-# Construire (recommandation : utilisez -S/-B pour contrôler les dossiers de build)
-# depuis la racine du dépôt :
-cmake -DCHRPP_ROOT=/path/to/chrpp -S . -B build
+# Construire (owl.cpp pré-généré, CHR++ non requis)
+cmake -S . -B build
 cmake --build build -- -j$(nproc)
+
+# Exécuter l'exécutable généré
+./build/ParserProject results/OWL2RL-11.ofn
+```
+
+**Note** : CMake affichera `chrppc non trouvé - utilisation de owl.cpp pré-généré`. C'est normal !
+
+### Installation avec CHR++ (Développeurs)
+
+Si vous voulez **modifier les règles** dans `owlFunctional.chrpp` :
+
+```bash
+# 1. Installer CHR++ (voir INSTALL.md pour les détails)
+# Exemple : cloner CHR++ dans le dossier parent
+cd ..
+git clone <url_chrpp> chrpp
+cd chrpp/chrppc && make && cd ../../owlChrpp
+
+# 2. Construire avec CHR++
+export CHRPP_ROOT=/chemin/absolu/vers/chrpp
+cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
+cmake --build build -- -j$(nproc)
+
+# Exécuter
+./build/ParserProject results/OWL2RL-11.ofn
+```
 
 # Exécuter l'exécutable généré
 ./build/ParserProject results/OWL2RL-11.ofn

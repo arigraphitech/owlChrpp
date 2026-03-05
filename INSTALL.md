@@ -90,44 +90,135 @@ wsl --install -d Ubuntu
 
 ## Installation de CHR++
 
-CHR++ est le compilateur de règles de contraintes nécessaire pour le projet.
+⚠️ **Note importante** : CHR++ est **optionnel** pour compiler et exécuter le projet.
+- ✅ **Sans CHR++** : Vous pouvez compiler et utiliser le raisonneur (le fichier `owl.cpp` est pré-généré)
+- 🔧 **Avec CHR++** : Nécessaire uniquement si vous voulez **modifier** les règles dans `owlFunctional.chrpp`
 
-### Option 1 : Installation depuis les Sources (Recommandé)
+### Option 1 : Utilisation sans CHR++ (Recommandé pour débuter)
+
+Si vous voulez simplement compiler et exécuter le projet :
 
 ```bash
-# 1. Cloner ou télécharger CHR++ (idéalement à côté du projet)
-# Structure recommandée : projet/ et chrpp/ dans le même dossier parent
-git clone <url_chrpp_repository> chrpp
-cd chrpp
+# Cloner et compiler directement (CHR++ non requis)
+git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
+cd owlChrpp
+cmake -S . -B build
+cmake --build build -- -j$(nproc)
+./build/ParserProject results/OWL2RL-11.ofn
+```
 
-# 2. Compiler CHR++
+✅ CMake affichera : `chrppc non trouvé - utilisation de owl.cpp pré-généré`
+- C'est **normal** et le projet fonctionnera parfaitement !
+
+### Option 2 : Installation de CHR++ (Pour développeurs)
+
+Si vous voulez **modifier** `owlFunctional.chrpp` et régénérer `owl.cpp` :
+
+#### Étape 1 : Obtenir CHR++
+
+**Option A - Dépôt public (si disponible)** :
+```bash
+# Cloner dans le dossier parent du projet
+cd ~/projets/  # ou votre répertoire de travail
+git clone https://github.com/chr-projects/chrpp.git
+# ou télécharger depuis http://chr.pl/
+```
+
+**Option B - Archive locale** :
+```bash
+# Si vous avez une archive CHR++
+cd ~/projets/
+wget http://example.com/chrpp.tar.gz
+tar xzf chrpp.tar.gz
+```
+
+**Option C - Demander l'accès** :
+CHR++ peut nécessiter une demande d'accès auprès des mainteneurs.
+Contactez : chr-support@example.org (ou consultez http://chr.pl/)
+
+#### Étape 2 : Compiler CHR++
+
+```bash
+cd chrpp
 cd chrppc
 make
 
-# 3. Vérifier que le compilateur fonctionne
+# Vérifier que le compilateur fonctionne
 ./chrppc --version
-# ou
-./chrppc --help
+```
 
-# 4. (Optionnel) Ajouter CHR++ au PATH ou définir CHRPP_ROOT
-export CHRPP_ROOT=/chemin/absolu/vers/chrpp
-# ou ajouter dans ~/.bashrc pour le conserver entre sessions :
-echo 'export CHRPP_ROOT=/chemin/absolu/vers/chrpp' >> ~/.bashrc
+**Sortie attendue** :
+```
+CHR++ Compiler version X.Y.Z
+```
+
+#### Étape 3 : Configurer le Chemin
+
+**Méthode A - Variable d'environnement (recommandé)** :
+```bash
+# Ajouter dans ~/.bashrc ou ~/.zshrc
+export CHRPP_ROOT=$HOME/projets/chrpp
+
+# Recharger la configuration
 source ~/.bashrc
 ```
 
-### Option 2 : CHR++ Déjà Installé
+**Méthode B - Spécifier à chaque build** :
+```bash
+cmake -DCHRPP_ROOT=/chemin/absolu/vers/chrpp -S . -B build
+```
 
-Si CHR++ est déjà installé ailleurs sur votre système, notez le chemin complet :
+#### Étape 4 : Vérifier l'Installation
+
+```bash
+cd owlChrpp
+rm -rf build
+cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
+```
+
+**Sortie attendue** :
+```
+-- CHR++ trouvé: /chemin/vers/chrpp/chrppc/chrppc (régénération de owl.cpp possible)
+```
+
+### Option 3 : CHR++ Déjà Installé Système
+
+Si CHR++ est installé système (rare) :
 
 ```bash
 # Trouver où est installé CHR++
 which chrppc
-# ou
-find / -name chrppc 2>/dev/null
+# Exemple : /usr/local/bin/chrppc
+
+# Trouver la racine CHR++
+find /usr -name chrppc 2>/dev/null
+# Exemple : /usr/local/share/chrpp/chrppc/chrppc
+
+# Définir CHRPP_ROOT vers le dossier parent de chrppc/
+export CHRPP_ROOT=/usr/local/share/chrpp
 ```
 
-Vous devrez modifier `CMakeLists.txt` pour pointer vers ce chemin (voir section suivante).
+### Dépannage CHR++
+
+**Problème** : `chrppc: command not found` lors du build
+
+**Solution 1** : Vérifier que CHRPP_ROOT est défini
+```bash
+echo $CHRPP_ROOT
+# Doit afficher : /chemin/vers/chrpp
+```
+
+**Solution 2** : Vérifier que chrppc existe
+```bash
+ls -la $CHRPP_ROOT/chrppc/chrppc
+# Doit afficher : -rwxr-xr-x ... chrppc
+```
+
+**Solution 3** : Utiliser le mode sans CHR++ (owl.cpp pré-généré)
+```bash
+cmake -S . -B build  # Sans -DCHRPP_ROOT
+cmake --build build
+```
 
 ---
 
