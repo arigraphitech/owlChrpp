@@ -60,10 +60,16 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 ```bash
 # 1. Cloner CHR++ (runtime requis pour les headers)
 cd ~/projets  # ou votre répertoire de travail
-git clone <url_chrpp_repository> chrpp
-# Note: pas besoin de compiler chrppc si vous ne modifiez pas owlFunctional.chrpp
+git clone https://gitlab.com/vynce/chrpp.git
+cd chrpp
 
-# 2. Cloner owlChrpp avec les sous-modules
+# 2. Compiler CHR++ avec CMake (génère chrpp.hh)
+mkdir -p build && cd build
+cmake ..
+make
+cd ../..
+
+# 3. Cloner owlChrpp avec les sous-modules
 git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
 cd owlChrpp
 
@@ -71,12 +77,12 @@ cd owlChrpp
 git submodule sync --recursive
 git submodule update --init --recursive
 
-# 3. Construire (owl.cpp pré-généré, mais headers CHR++ requis)
-export CHRPP_ROOT=~/projets/chrpp  # Ajustez selon votre installation
+# 4. Construire owlChrpp (owl.cpp pré-généré, mais headers CHR++ requis)
+export CHRPP_ROOT=~/projets/chrpp
 cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
 cmake --build build -- -j$(nproc)
 
-# 4. Exécuter
+# 5. Exécuter
 ./build/ParserProject results/OWL2RL-11.ofn
 ```
 
@@ -90,22 +96,26 @@ cmake --build build -- -j$(nproc)
 Si vous voulez **modifier les règles** dans `owlFunctional.chrpp` :
 
 ```bash
-# 1. Installer CHR++ (voir INSTALL.md pour les détails)
-# Exemple : cloner CHR++ dans le dossier parent
-cd ..
-git clone <url_chrpp> chrpp
-cd chrpp/chrppc && make && cd ../../owlChrpp
+# 1. Cloner et compiler CHR++ (voir INSTALL.md pour les détails)
+cd ~/projets
+git clone https://gitlab.com/vynce/chrpp.git
+cd chrpp
+mkdir -p build && cd build
+cmake ..
+make
+cd ../..
 
-# 2. Construire avec CHR++
-export CHRPP_ROOT=/chemin/absolu/vers/chrpp
+# 2. Cloner owlChrpp
+cd ~/projets
+git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
+cd owlChrpp
+
+# 3. Construire avec CHR++
+export CHRPP_ROOT=~/projets/chrpp
 cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
 cmake --build build -- -j$(nproc)
 
 # Exécuter
-./build/ParserProject results/OWL2RL-11.ofn
-```
-
-# Exécuter l'exécutable généré
 ./build/ParserProject results/OWL2RL-11.ofn
 ```
 

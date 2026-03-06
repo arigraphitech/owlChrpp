@@ -96,22 +96,23 @@ Vous modifiez seulement `parsercowl.h` ou d'autres fichiers `.cpp/.h`
 
 ### Où obtenir CHR++ ?
 
-CHR++ n'est pas toujours publiquement disponible. Voici les options :
+CHR++ est disponible publiquement. Voici les options :
 
-#### Option 1 : Dépôt GitHub (si disponible)
+#### Option 1 : Dépôt officiel GitLab (Recommandé)
 ```bash
-git clone https://github.com/chr-projects/chrpp.git
-# ou chercher "CHR++ compiler" sur GitHub
+git clone https://gitlab.com/vynce/chrpp.git
 ```
+- Dépôt maintenu par Vincent Barichard (auteur de CHR++)
+- URL : https://gitlab.com/vynce/chrpp
 
 #### Option 2 : Site officiel
 - Visitez : http://chr.pl/
-- Cherchez la section "Downloads" ou "Getting Started"
+- Documentation et ressources officielles
 
 #### Option 3 : Archive académique
 Si vous êtes dans un contexte académique, CHR++ peut être disponible via :
 - Votre institution
-- Contact direct avec les mainteneurs : Vincent Barichard (voir INSTALL.md)
+- Contact direct avec les mainteneurs
 
 #### Option 4 : Utiliser la version locale (si vous avez accès)
 Si quelqu'un dans votre équipe a déjà CHR++, vous pouvez :

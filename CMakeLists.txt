@@ -47,8 +47,16 @@ if(NOT DEFINED CHRPP_ROOT)
         set(CHRPP_ROOT "${CMAKE_SOURCE_DIR}/../chrpp")
     endif()
 endif()
-set(CHRPP_COMPILER ${CHRPP_ROOT}/chrppc/chrppc)
+# Chercher chrppc dans les deux emplacements possibles :
+#   - build out-of-source : chrpp/build/chrppc/chrppc
+#   - build in-source     : chrpp/chrppc/chrppc
+if(EXISTS ${CHRPP_ROOT}/build/chrppc/chrppc)
+    set(CHRPP_COMPILER ${CHRPP_ROOT}/build/chrppc/chrppc)
+else()
+    set(CHRPP_COMPILER ${CHRPP_ROOT}/chrppc/chrppc)
+endif()
 set(CHRPP_RUNTIME ${CHRPP_ROOT}/runtime)
+set(CHRPP_BUILD_RUNTIME ${CHRPP_ROOT}/build/runtime)
 
 # Vérifier que le runtime CHR++ existe (OBLIGATOIRE)
 if(NOT EXISTS ${CHRPP_RUNTIME})
@@ -56,14 +64,29 @@ if(NOT EXISTS ${CHRPP_RUNTIME})
         "CHR++ runtime non trouvé à ${CHRPP_RUNTIME}\n"
         "Le runtime CHR++ est REQUIS pour compiler owl.cpp (même pré-généré).\n"
         "Solution:\n"
-        "  1. Cloner CHR++ : git clone <url_chrpp> ../chrpp\n"
-        "  2. Ou spécifier: cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..\n"
-        "  3. Ou définir: export CHRPP_ROOT=/chemin/vers/chrpp\n"
+        "  1. Cloner CHR++ : git clone https://gitlab.com/vynce/chrpp.git\n"
+        "  2. Compiler CHR++ : cd chrpp && mkdir build && cd build && cmake .. && make\n"
+        "  3. Spécifier: cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..\n"
+        "  4. Ou définir: export CHRPP_ROOT=/chemin/vers/chrpp\n"
         "Voir INSTALL.md pour plus de détails.")
 endif()
 
-# Inclut le runtime CHR++ (nécessaire pour compiler owl.cpp)
+# Vérifier que chrpp.hh a été généré (dans build/runtime/)
+if(NOT EXISTS ${CHRPP_BUILD_RUNTIME}/chrpp.hh)
+    message(FATAL_ERROR 
+        "chrpp.hh non trouvé dans ${CHRPP_BUILD_RUNTIME}\n"
+        "CHR++ doit être compilé pour générer chrpp.hh depuis chrpp.in.hh.\n"
+        "Solution:\n"
+        "  cd ${CHRPP_ROOT}\n"
+        "  mkdir -p build && cd build\n"
+        "  cmake ..\n"
+        "  make\n"
+        "Voir INSTALL.md pour plus de détails.")
+endif()
+
+# Inclut le runtime CHR++ (source et build pour les headers générés)
 include_directories(${CHRPP_RUNTIME})
+include_directories(${CHRPP_BUILD_RUNTIME})
 
 if(EXISTS ${CHRPP_COMPILER})
     message(STATUS "CHR++ complet trouvé: ${CHRPP_COMPILER}")
