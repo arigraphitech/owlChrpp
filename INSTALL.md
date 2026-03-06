@@ -106,21 +106,26 @@ Deux composants CHR++ :
 Si vous voulez simplement compiler et exécuter (sans modifier les règles) :
 
 ```bash
-# Cloner CHR++ pour obtenir les headers du runtime
+# 1. Cloner CHR++ pour obtenir les headers du runtime
 cd ~/projets  # ou votre répertoire de travail
-git clone https://github.com/chr-projects/chrpp.git
-# ou télécharger depuis http://chr.pl/
+git clone https://gitlab.com/vynce/chrpp.git
+cd chrpp
 
-# PAS besoin de compiler chrppc !
-# Les headers dans chrpp/runtime/ suffisent
+# 2. Compiler CHR++ avec CMake (génère chrpp.hh et autres headers)
+mkdir -p build && cd build
+cmake ..
+make
 
-# Définir CHRPP_ROOT
+# 3. Définir CHRPP_ROOT
 export CHRPP_ROOT=~/projets/chrpp
 echo 'export CHRPP_ROOT=~/projets/chrpp' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-Avec juste le runtime, vous pouvez **compiler et exécuter** le projet.
-Sans le runtime, **impossible de compiler** (erreur: `chrpp.hh: No such file`).
+**Important** : Même pour la compilation "minimale", il faut compiler CHR++ avec CMake pour générer `chrpp.hh` depuis `chrpp.in.hh`.
+
+Avec le runtime compilé, vous pouvez **compiler et exécuter** le projet.
+Sans le runtime compilé, **impossible de compiler** (erreur: `chrpp.hh: No such file`).
 
 ### Option 2 : Installation complète (Runtime + Compiler)
 
@@ -128,35 +133,29 @@ Si vous voulez **modifier** `owlFunctional.chrpp` et régénérer `owl.cpp` :
 
 #### Étape 1 : Obtenir CHR++
 
-**Option A - Dépôt public (si disponible)** :
+**Dépôt officiel GitLab** :
 ```bash
 # Cloner dans le dossier parent du projet
 cd ~/projets/  # ou votre répertoire de travail
-git clone https://github.com/chr-projects/chrpp.git
-# ou télécharger depuis http://chr.pl/
+git clone https://gitlab.com/vynce/chrpp.git
 ```
 
-**Option B - Archive locale** :
-```bash
-# Si vous avez une archive CHR++
-cd ~/projets/
-wget http://example.com/chrpp.tar.gz
-tar xzf chrpp.tar.gz
-```
-
-**Option C - Demander l'accès** :
-CHR++ peut nécessiter une demande d'accès auprès des mainteneurs.
-Contactez : chr-support@example.org (ou consultez http://chr.pl/)
+**Alternatives** :
+- Site officiel : http://chr.pl/
+- Archive locale si disponible
 
 #### Étape 2 : Compiler CHR++
 
 ```bash
 cd chrpp
-cd chrppc
+
+# Compiler avec CMake (génère runtime ET compiler)
+mkdir -p build && cd build
+cmake ..
 make
 
 # Vérifier que le compilateur fonctionne
-./chrppc --version
+./chrppc/chrppc --version
 ```
 
 **Sortie attendue** :
