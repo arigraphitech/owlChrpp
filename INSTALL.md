@@ -37,199 +37,93 @@ Ce guide détaille l'installation complète de owlChrpp / owl2chr, un moteur de 
 ### Ubuntu / Debian
 
 ```bash
-# Mettre à jour les paquets
 sudo apt update && sudo apt upgrade -y
-
-# Installer les outils de compilation
 sudo apt install -y build-essential cmake git
 
 # Vérifier les versions
 gcc --version      # Doit être ≥ 9.0
-g++ --version      # Doit être ≥ 9.0
 cmake --version    # Doit être ≥ 3.14
-git --version
-make --version
 ```
 
 ### Fedora / Red Hat / CentOS
 
 ```bash
-# Installer les outils de compilation
 sudo dnf groupinstall "Development Tools" -y
 sudo dnf install cmake git -y
-
-# Vérifier les versions
-gcc --version
-cmake --version
 ```
 
 ### macOS
 
 ```bash
-# Installer Homebrew si ce n'est pas déjà fait
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Installer les outils
 brew install cmake git gcc
-
-# Vérifier les versions
-gcc --version
-cmake --version
 ```
 
 ### Windows (WSL2)
 
 ```bash
-# Activer WSL2 et installer Ubuntu
 wsl --install -d Ubuntu
-
-# Dans WSL2, suivre les instructions pour Ubuntu ci-dessus
+# Dans WSL2, suivre les instructions Ubuntu ci-dessus
 ```
 
 ---
 
 ## Installation de CHR++
 
-**Note importante** : Le **runtime CHR++** (headers) est **REQUIS** pour compiler le projet.
+CHR++ fournit deux composants :
+1. **Runtime** (headers : `chrpp.hh`, `logical_var.hpp`, etc.) → nécessaire pour compiler `owl.cpp`
+2. **Compilateur `chrppc`** → nécessaire pour régénérer `owl.cpp` après modification de `owlFunctional.chrpp`
 
-Deux composants CHR++ :
-1. **Runtime CHR++** (headers: `chrpp.hh`, `logical_var.hpp`, etc.) → **OBLIGATOIRE**
-   - Nécessaire pour compiler `owl.cpp` (même pré-généré)
-   - Contient les définitions de types et classes CHR++
+### Version requise
 
-2. **Compilateur CHR++ (chrppc)** → **OPTIONNEL**
-   - Nécessaire uniquement pour **régénérer** `owl.cpp` depuis `owlFunctional.chrpp`
-   - Pas besoin si vous ne modifiez pas les règles CHR++
+> **Important** : ce projet requiert CHR++ **commit `a9ebc45` ou ultérieur** (correctif de génération de gardes, 2 février 2026).
+> La branche `master` actuelle (`v1.7.0-44` ou plus récente) convient.
+> Les versions antérieures à ce commit génèrent des gardes incorrectes et produisent des résultats d'inférence erronés.
 
-### Option 1 : Installation minimale (Runtime seulement)
+### Étape 1 : Cloner CHR++
 
-Si vous voulez simplement compiler et exécuter (sans modifier les règles) :
+Cloner CHR++ dans le **dossier parent** du projet (ou n'importe où, en définissant `CHRPP_ROOT`) :
 
 ```bash
-# 1. Cloner CHR++ pour obtenir les headers du runtime
-cd ~/projets  # ou votre répertoire de travail
+# Recommandé : à côté du projet owlChrpp
+cd ~/projets
 git clone https://gitlab.com/vynce/chrpp.git
 cd chrpp
 
-# 2. Compiler CHR++ avec CMake (génère chrpp.hh et autres headers)
-mkdir -p build && cd build
-cmake ..
-make
+# Vérifier la version (doit être >= a9ebc45)
+git log --oneline -3
+```
 
-# 3. Définir CHRPP_ROOT
-export CHRPP_ROOT=~/projets/chrpp
-echo 'export CHRPP_ROOT=~/projets/chrpp' >> ~/.bashrc
+### Étape 2 : Compiler CHR++ en in-source
+
+CHR++ **doit être compilé en in-source** (cmake directement dans le dossier chrpp, sans sous-dossier `build/`) pour que `chrppc` soit accessible au bon chemin (`chrpp/chrppc/chrppc`) :
+
+```bash
+cd ~/projets/chrpp
+
+# Compilation in-source (IMPORTANT : ne pas créer de sous-dossier build/)
+cmake .
+make
+```
+
+**Vérifier que chrppc est bien généré** :
+```bash
+ls chrppc/chrppc
+# Doit afficher : chrppc/chrppc
+```
+
+### Étape 3 : Configurer CHRPP_ROOT
+
+Si CHR++ n'est **pas** dans le dossier `../chrpp` par rapport au projet, définir la variable d'environnement :
+
+```bash
+# Ajouter dans ~/.bashrc
+export CHRPP_ROOT=/chemin/absolu/vers/chrpp
 source ~/.bashrc
 ```
 
-**Important** : Même pour la compilation "minimale", il faut compiler CHR++ avec CMake pour générer `chrpp.hh` depuis `chrpp.in.hh`.
-
-Avec le runtime compilé, vous pouvez **compiler et exécuter** le projet.
-Sans le runtime compilé, **impossible de compiler** (erreur: `chrpp.hh: No such file`).
-
-### Option 2 : Installation complète (Runtime + Compiler)
-
-Si vous voulez **modifier** `owlFunctional.chrpp` et régénérer `owl.cpp` :
-
-#### Étape 1 : Obtenir CHR++
-
-**Dépôt officiel GitLab** :
-```bash
-# Cloner dans le dossier parent du projet
-cd ~/projets/  # ou votre répertoire de travail
-git clone https://gitlab.com/vynce/chrpp.git
-```
-
-**Alternatives** :
-- Site officiel : http://chr.pl/
-- Archive locale si disponible
-
-#### Étape 2 : Compiler CHR++
-
-```bash
-cd chrpp
-
-# Compiler avec CMake (génère runtime ET compiler)
-mkdir -p build && cd build
-cmake ..
-make
-
-# Vérifier que le compilateur fonctionne
-./chrppc/chrppc --version
-```
-
-**Sortie attendue** :
-```
-CHR++ Compiler version X.Y.Z
-```
-
-#### Étape 3 : Configurer le Chemin
-
-**Méthode A - Variable d'environnement (recommandé)** :
-```bash
-# Ajouter dans ~/.bashrc ou ~/.zshrc
-export CHRPP_ROOT=$HOME/projets/chrpp
-
-# Recharger la configuration
-source ~/.bashrc
-```
-
-**Méthode B - Spécifier à chaque build** :
-```bash
-cmake -DCHRPP_ROOT=/chemin/absolu/vers/chrpp -S . -B build
-```
-
-#### Étape 4 : Vérifier l'Installation
-
-```bash
-cd owlChrpp
-rm -rf build
-cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
-```
-
-**Sortie attendue** :
-```
--- CHR++ trouvé: /chemin/vers/chrpp/chrppc/chrppc (régénération de owl.cpp possible)
-```
-
-### Option 3 : CHR++ Déjà Installé Système
-
-Si CHR++ est installé système (rare) :
-
-```bash
-# Trouver où est installé CHR++
-which chrppc
-# Exemple : /usr/local/bin/chrppc
-
-# Trouver la racine CHR++
-find /usr -name chrppc 2>/dev/null
-# Exemple : /usr/local/share/chrpp/chrppc/chrppc
-
-# Définir CHRPP_ROOT vers le dossier parent de chrppc/
-export CHRPP_ROOT=/usr/local/share/chrpp
-```
-
-### Dépannage CHR++
-
-**Problème** : `chrppc: command not found` lors du build
-
-**Solution 1** : Vérifier que CHRPP_ROOT est défini
-```bash
-echo $CHRPP_ROOT
-# Doit afficher : /chemin/vers/chrpp
-```
-
-**Solution 2** : Vérifier que chrppc existe
-```bash
-ls -la $CHRPP_ROOT/chrppc/chrppc
-# Doit afficher : -rwxr-xr-x ... chrppc
-```
-
-**Solution 3** : Utiliser le mode sans CHR++ (owl.cpp pré-généré)
-```bash
-cmake -S . -B build  # Sans -DCHRPP_ROOT
-cmake --build build
-```
+Le CMakeLists cherche chrppc dans cet ordre :
+1. `$CHRPP_ROOT/chrppc/chrppc`
+2. `../chrpp/chrppc/chrppc` (chemin par défaut, relatif au projet)
 
 ---
 
@@ -238,105 +132,48 @@ cmake --build build
 ### 1. Cloner le Repository
 
 ```bash
-# Cloner en récupérant les sous-modules (méthode recommandée)
-git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git owlChrpp
+git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
 cd owlChrpp
 
-# Si les sous-modules n'ont pas été initialisés correctement (par ex. .gitmodules manquant ou clone partiel) :
+# Si les sous-modules ne sont pas initialisés :
 git submodule sync --recursive
 git submodule update --init --recursive
-
-# Cas rare : ajouter manuellement le sous-module COWL si nécessaire
-# git submodule add https://github.com/sisinflab-swot/cowl.git lib/cowl
-# git submodule update --init --recursive
 ```
 
-### 2. Vérifier les Sous-Modules
+### 2. Configurer et Compiler
 
 ```bash
-# Vérifier que COWL est bien présent
-ls -la lib/cowl/
+# Configurer (Release avec -O3 par défaut)
+cmake -S . -B build
 
-# Vous devriez voir des fichiers dans lib/cowl/
-# Si le dossier est vide, exécutez :
-git submodule update --init --recursive
+# Compiler (régénère automatiquement owl.cpp si owlFunctional.chrpp a changé)
+cd build && make
 ```
 
-### 3. Configurer le Chemin de CHR++
-
-Le chemin CHR++ se configure **sans modifier le code source**, via la variable cmake `CHRPP_ROOT`.
-
-**Chemin par défaut** : `../chrpp` (à côté du projet). Si votre installation est ailleurs :
-
+Si `CHRPP_ROOT` n'est pas dans l'environnement, spécifier le chemin :
 ```bash
-# Méthode A : variable cmake (recommandé)
-cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..
-
-# Méthode B : variable d'environnement
-export CHRPP_ROOT=/chemin/vers/chrpp
-cmake ..
-```
-
-### 4. Créer le Répertoire de Build
-
-```bash
-mkdir -p build
-cd build
-```
-
-### 5. Configurer avec CMake
-
-Remarque importante : pour garantir que les fichiers de configuration et de build sont générés dans le dossier `build`, utilisez les options -S (source) et -B (build) de CMake :
-
-```bash
-# Depuis la racine du dépôt :
 cmake -DCHRPP_ROOT=/chemin/vers/chrpp -S . -B build
-
-# ou, si vous êtes déjà dans build, utilisez la syntaxe suivante pour forcer le répertoire source :
-cmake -DCHRPP_ROOT=/chemin/vers/chrpp -S .. -B .
-
-# En mode Release :
-cmake -DCHRPP_ROOT=/chemin/vers/chrpp -DCMAKE_BUILD_TYPE=Release -S . -B build
+cd build && make
 ```
 
 **Sortie attendue** :
 ```
--- The C compiler identification is GNU 11.4.0
--- The CXX compiler identification is GNU 11.4.0
+-- CHR++ trouvé: .../chrpp/chrppc/chrppc (régénération de owl.cpp possible)
 -- Configuring done
--- Generating done
--- Build files have been written to: .../build
-```
-
-### 6. Compiler le Projet
-
-```bash
-# Compilation avec Make
-make
-
-# Ou avec tous les cœurs disponibles :
-make -j$(nproc)
-```
-
-**Étapes de compilation** :
-1. **Génération de owl.cpp** : CHR++ compile `owlFunctional.chrpp` → `owl.cpp`
-2. **Compilation de COWL** : Construction de la bibliothèque COWL
-3. **Compilation de ParserProject** : Compilation finale de l'exécutable
-
-**Sortie attendue** :
-```
-Génération de .../build/owl.cpp depuis .../owlFunctional.chrpp via chrppc
-Scanning dependencies of target cowl
-[ 10%] Building C object lib/cowl/...
 ...
-[100%] Linking CXX executable ParserProject
 [100%] Built target ParserProject
 ```
 
-### 7. Retour au Répertoire Principal
+### Mode de compilation
 
+Le projet compile en **Release avec -O3** par défaut. Pour forcer explicitement :
 ```bash
-cd ..
+cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
+```
+
+Pour un build de debug (sans optimisations, avec assertions) :
+```bash
+cmake -DCMAKE_BUILD_TYPE=Debug -S . -B build
 ```
 
 ---
@@ -346,203 +183,25 @@ cd ..
 ### Test 1 : Exécutable Créé
 
 ```bash
-# Vérifier que l'exécutable existe
 ls -lh build/ParserProject
-
-# Doit afficher quelque chose comme :
-# -rwxr-xr-x 1 user user 2.5M Dec 7 16:00 build/ParserProject
 ```
 
 ### Test 2 : Exécution avec Ontologie d'Exemple
 
 ```bash
-# Exécuter avec le fichier par défaut (results/OWL2RL-1.ofn)
-./build/ParserProject
-
-# Ou spécifier un fichier :
-./build/ParserProject results/OWL2RL-11.ofn
+# Lancer depuis la racine du projet (chemin relatif vers results/)
+./build/ParserProject results/OWL2RL-1.ofn
 ```
 
 **Sortie attendue** :
 ```
-temps 0.17
+temps 0.XX
 ```
-(Le temps d'exécution en secondes. Les résultats sont écrits dans `res_realisation`, `res_classification` ou `sortie.txt` selon les requêtes activées dans `main()`.)
 
-### Test 3 : Comparer avec les Résultats Pellet
+### Test 3 : Ontologie Plus Grande
 
 ```bash
-# Comparer la réalisation
-python3 compare_instances.py res_realisation resultats_pellet_OWL2RL-11.txt
-
-# Comparer la classification (nécessite d'activer classification() dans main())
-python3 compare_classification.py res_classification classification_pellet_OWL2RL-11.txt
-```
-
----
-
-## Dépannage
-
-### Problème 1 : CMake ne trouve pas CHR++
-
-**Erreur** :
-```
-CMake Error: Could not find chrppc compiler
-```
-
-**Solution** :
-1. Vérifier que CHR++ est bien installé et noter son chemin :
-   ```bash
-   find / -name chrppc -type f 2>/dev/null
-   ```
-
-2. Reconfigurer avec le bon chemin via variable cmake :
-   ```bash
-   cd build
-   rm -rf *
-   cmake -DCHRPP_ROOT=/chemin/vers/votre/chrpp ..
-   ```
-
-3. Ou via variable d'environnement :
-   ```bash
-   export CHRPP_ROOT=/chemin/vers/votre/chrpp
-   cd build && rm -rf * && cmake ..
-   ```
-
-### Problème 2 : Erreur "C++17 required"
-
-**Erreur** :
-```
-error: #error This file requires compiler and library support for the ISO C++ 2017 standard
-```
-
-**Solution** :
-1. Vérifier la version de GCC :
-   ```bash
-   g++ --version
-   ```
-   
-2. Si version < 9.0, installer une version plus récente :
-   ```bash
-   # Ubuntu
-   sudo apt install g++-11
-   
-   # Puis forcer l'utilisation de g++-11
-   export CXX=g++-11
-   export CC=gcc-11
-   ```
-
-### Problème 3 : Sous-module COWL vide
-
-**Erreur** :
-```
-fatal error: cowl.h: No such file or directory
-```
-
-**Solution** :
-```bash
-# Depuis la racine du projet
-git submodule update --init --recursive
-
-# Vérifier :
-ls lib/cowl/include/
-# Doit contenir des fichiers .h
-```
-
-### Problème 4 : Erreur de Linking avec uLib
-### Problème 5 : Plantage à l'exécution - assertion dans `logical_var.hpp`
-
-Symptôme : l'exécutable se termine avec une assertion du type :
-
-```
-ParserProject: /.../chrpp/runtime/logical_var.hpp:201: const chr::Logical_var_imp<T>& chr::Logical_var_imp<T>::ra() const [with T = int]: Assertion '_backtrack_depth < Back' failed.
-Aborted (core dumped)
-```
-
-Causes possibles et solutions :
-
-1. Incohérence de versions entre les fichiers générés par `chrppc` et la bibliothèque runtime :
-    - Si `owl.cpp` a été généré avec une version différente de CHR++ que la bibliothèque `runtime` utilisée lors de la compilation, des incompatibilités (notamment au niveau de `Logical_var<T>`) peuvent provoquer des assertions.
-    - Solution : régénérer `owl.cpp` avec le même compilateur `chrppc` que celui présent dans `CHRPP_ROOT` avant de recompiler le projet.
-
-    Exemple :
-
-    ```bash
-    # Supprimer l'ancien owl.cpp généré
-    rm -f build/owl.cpp
-
-    # Regénérer depuis la racine du projet en utilisant chrppc du CHRPP_ROOT
-    ${CHRPP_ROOT}/chrppc/chrppc owlFunctional.chrpp -t -sout > build/owl.cpp
-
-    # Reconfigurer et reconstruire
-    cmake -DCHRPP_ROOT=${CHRPP_ROOT} -S . -B build
-    cmake --build build -- -j$(nproc)
-    ```
-
-2. Mismatch de paramètres de template (`Logical_var<int>` vs `Logical_var<bool>`)
-    - Si vous avez modifié manuellement le code source (par ex. migration de `Logical_var<int>` vers `Logical_var<bool>`), assurez-vous que tous les fichiers sources et en-têtes (y compris le code généré `owl.cpp`) sont cohérents.
-    - Solution : refaire la migration *et* régénérer `owl.cpp` puis recompiler.
-
-3. Corruption d'état de backtracking pendant l'exécution
-    - Peut venir d'un bug dans une règle CHR++ ou d'une utilisation incorrecte des variables logiques dans les règles.
-    - Solution : exécuter en debug (build non optimisé) et activer les logs/résultats minima pour isoler la règle fautive.
-
-4. Si rien ne fonctionne
-    - Essayez de compiler et exécuter l'exemple minimal fourni par CHR++ pour vérifier que `chrppc` et la runtime fonctionnent correctement ensemble.
-    - Comparez les versions (hash git) de CHR++ utilisées pour générer et compiler.
-
-
-**Erreur** :
-```
-undefined reference to `ulib_*`
-```
-
-**Solution** :
-```bash
-# Reconstruire COWL complètement
-cd lib/cowl
-rm -rf build
-mkdir build && cd build
-cmake ..
-make
-cd ../../..
-
-# Reconstruire le projet
-cd build
-rm -rf *
-cmake ..
-make
-```
-
-### Problème 5 : Permission Denied
-
-**Erreur** :
-```
-bash: ./build/ParserProject: Permission denied
-```
-
-**Solution** :
-```bash
-# Donner les permissions d'exécution
-chmod +x build/ParserProject
-
-# Puis réessayer
-./build/ParserProject
-```
-
-### Problème 6 : Out of Memory pendant la Compilation
-
-**Erreur** :
-```
-c++: fatal error: Killed signal terminated program
-```
-
-**Solution** :
-```bash
-# Compiler avec moins de threads parallèles
-make -j2
-# ou sans parallélisme
-make
+./build/ParserProject results/OWL2RL-10.ofn
 ```
 
 ---
@@ -555,83 +214,128 @@ make
 # 1. Éditer owlFunctional.chrpp
 nano owlFunctional.chrpp
 
-# 2. Recompiler (régénère automatiquement owl.cpp)
-make
+# 2. Recompiler (owl.cpp régénéré automatiquement si chrppc est disponible)
+cd build && make
 
 # 3. Tester
-./build/ParserProject
+cd ..
+./build/ParserProject results/OWL2RL-1.ofn
 ```
 
 ### Nettoyage Complet
 
 ```bash
-# Nettoyer les fichiers de build
-cd build
-make clean
-
-# Ou nettoyage total :
-cd ..
 rm -rf build
-mkdir build && cd build
-cmake ..
+cmake -S . -B build
+cd build && make
+```
+
+---
+
+## Dépannage
+
+### Problème 1 : `chrppc non trouvé`
+
+```
+-- chrppc non trouvé - utilisation de owl.cpp pré-généré (lecture seule)
+```
+
+Cela signifie que `chrppc` n'est pas trouvé. Le projet compilera quand même avec `owl.cpp` pré-généré, mais les modifications de `owlFunctional.chrpp` n'auront aucun effet.
+
+**Solutions** :
+```bash
+# Vérifier que chrppc existe
+ls $CHRPP_ROOT/chrppc/chrppc
+
+# Si absent, recompiler chrpp en in-source
+cd /chemin/vers/chrpp
+cmake .
 make
+
+# Puis reconfigurer
+cmake -DCHRPP_ROOT=/chemin/vers/chrpp -S . -B build
+cd build && make
+```
+
+### Problème 2 : Erreur "C++17 required"
+
+```bash
+sudo apt install g++-11
+export CXX=g++-11 CC=gcc-11
+```
+
+### Problème 3 : Sous-module COWL vide
+
+```
+fatal error: cowl.h: No such file or directory
+```
+
+```bash
+git submodule update --init --recursive
+```
+
+### Problème 4 : Plantage à l'exécution
+
+```
+Assertion `_backtrack_depth <= Backtrack::depth()' failed.
+```
+
+Cause probable : version de CHR++ trop ancienne (antérieure au commit `a9ebc45`).
+
+```bash
+cd /chemin/vers/chrpp
+git log --oneline | grep "a9ebc45"
+# Si absent, mettre à jour chrpp :
+git pull
+cmake .
+make
+
+# Régénérer owl.cpp et recompiler
+cd /chemin/vers/owlChrpp/build
+make
+```
+
+### Problème 5 : Sous-module COWL — erreur de linking uLib
+
+```
+undefined reference to `ulib_*`
+```
+
+```bash
+cd lib/cowl && rm -rf build && mkdir build && cd build
+cmake .. && make
+cd ../../..
+rm -rf build && cmake -S . -B build && cd build && make
+```
+
+### Problème 6 : Out of Memory pendant la Compilation
+
+```bash
+make -j2   # Réduire le parallélisme
 ```
 
 ---
 
 ## Arborescence Finale
 
-Après installation complète, votre arborescence devrait ressembler à :
-
 ```
 <dossier-parent>/
-    chrpp/                    # CHR++ (externe, configurable via CHRPP_ROOT)
+    chrpp/                    # CHR++ (v1.7.0-44 ou plus récent, build in-source)
         chrppc/
-            chrppc            # Exécutable du compilateur
-        runtime/              # Runtime CHR++
+            chrppc            # Compilateur CHR++
+        runtime/              # Headers runtime CHR++
 
-    owlChrpp/                 # Ce projet (owl2chr)
+    owlChrpp/                 # Ce projet
         owlFunctional.chrpp   # Règles CHR++ (source principale)
+        owl.cpp               # Généré par chrppc depuis owlFunctional.chrpp
         parsercowl.h          # Parser COWL
         CMakeLists.txt
         lib/
             cowl/             # Sous-module Git COWL
-                include/
-                src/
         build/                # Répertoire de build (généré)
-            owl.cpp           # Généré par chrppc
             ParserProject     # Exécutable final
         results/              # Ontologies de test OWL2Bench
 ```
-
----
-
-## Installation Terminée !
-
-Vous êtes maintenant prêt à utiliser owl2chr. Consultez le [README.md](README.md) pour les instructions d'utilisation.
-
-### Commandes Utiles
-
-```bash
-# Exécuter le projet
-./build/ParserProject [fichier.ofn]
-
-# Voir tous les tests
-./build/ParserProject 2>&1 | grep "TEST"
-
-# Recompiler après modifications
-make
-
-# Nettoyer
-make clean
-```
-
-### Prochaines Étapes
-
-1.  Tester avec vos propres ontologies OWL 2
-2.  Modifier les règles CHR++ selon vos besoins
-3.  Ajouter de nouvelles requêtes
-4.  Contribuer au projet !
 
 ---
 

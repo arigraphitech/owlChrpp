@@ -47,77 +47,61 @@ Voir [INSTALL.md](INSTALL.md) pour les instructions détaillées d'installation.
 - **GCC/G++** avec support C++17
 - **Git**
 - **COWL** (bibliothèque OWL 2 - incluse en sous-module)
-- **CHR++ Runtime** (headers) - **REQUIS** pour compiler `owl.cpp`
-  - Les headers CHR++ (`chrpp.hh`, `logical_var.hpp`, etc.) sont **obligatoires**
-  - Le fichier `owl.cpp` est pré-généré mais nécessite les headers pour compiler
-- **CHR++ Compiler (chrppc)** *(optionnel)* : uniquement pour modifier `owlFunctional.chrpp`
-  - Le compilateur `chrppc` est optionnel (seulement pour régénérer `owl.cpp`)
+- **CHR++** ≥ commit `a9ebc45` (2 février 2026) — version `v1.7.0-44` ou plus récente
+  - Dépôt : https://gitlab.com/vynce/chrpp
+  - **Doit être compilé en in-source** (voir ci-dessous)
+
+> **Note de version CHR++** : les versions antérieures au commit `a9ebc45` génèrent des gardes incorrectes dans `owl.cpp` et produisent des résultats d'inférence erronés. Si une nouvelle version de CHR++ est publiée, vérifier qu'elle inclut ce commit avant de l'utiliser.
 
 ### Installation Rapide
 
-**Important** : CHR++ runtime (headers) est **requis** pour compiler le projet.
-
 ```bash
-# 1. Cloner CHR++ (runtime requis pour les headers)
-cd ~/projets  # ou votre répertoire de travail
+# 1. Cloner et compiler CHR++ en in-source (IMPORTANT : pas de sous-dossier build/)
+cd ~/projets
 git clone https://gitlab.com/vynce/chrpp.git
 cd chrpp
-
-# 2. Compiler CHR++ avec CMake (génère chrpp.hh)
-mkdir -p build && cd build
-cmake ..
+cmake .          # in-source : chrppc sera dans chrpp/chrppc/chrppc
 make
-cd ../..
+cd ..
 
-# 3. Cloner owlChrpp avec les sous-modules
+# 2. Cloner owlChrpp avec les sous-modules
 git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
 cd owlChrpp
 
-# Si les sous-modules n'ont pas été récupérés, exécutez :
+# Si les sous-modules ne sont pas initialisés :
 git submodule sync --recursive
 git submodule update --init --recursive
 
-# 4. Construire owlChrpp (owl.cpp pré-généré, mais headers CHR++ requis)
-export CHRPP_ROOT=~/projets/chrpp
-cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
-cmake --build build -- -j$(nproc)
+# 3. Construire (Release -O3 par défaut, owl.cpp régénéré automatiquement)
+cmake -S . -B build
+cd build && make -j$(nproc)
 
-# 5. Exécuter
-./build/ParserProject results/OWL2RL-11.ofn
+# 4. Exécuter (depuis la racine du projet)
+cd ..
+./build/ParserProject results/OWL2RL-1.ofn
+```
+
+Si CHR++ n'est pas dans `../chrpp` (dossier voisin), spécifier le chemin :
+```bash
+cmake -DCHRPP_ROOT=/chemin/absolu/vers/chrpp -S . -B build
 ```
 
 **Note sur les messages CMake** :
-- `CHR++ runtime trouvé: .../chrpp/runtime ` → Parfait, vous pouvez compiler
-- `CHR++ compiler non trouvé (chrppc)` → Normal si vous ne modifiez pas `.chrpp`
-- `CHR++ runtime non trouvé` → **Erreur fatale**, installer CHR++ (voir ci-dessous)
+- `CHR++ trouvé: .../chrppc/chrppc (régénération de owl.cpp possible)` → Parfait
+- `chrppc non trouvé - utilisation de owl.cpp pré-généré` → CHR++ non trouvé, voir [INSTALL.md](INSTALL.md)
 
 ### Installation avec CHR++ (Développeurs)
 
 Si vous voulez **modifier les règles** dans `owlFunctional.chrpp` :
 
 ```bash
-# 1. Cloner et compiler CHR++ (voir INSTALL.md pour les détails)
-cd ~/projets
-git clone https://gitlab.com/vynce/chrpp.git
-cd chrpp
-mkdir -p build && cd build
-cmake ..
-make
-cd ../..
-
-# 2. Cloner owlChrpp
-cd ~/projets
-git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
-cd owlChrpp
-
-# 3. Construire avec CHR++
-export CHRPP_ROOT=~/projets/chrpp
-cmake -DCHRPP_ROOT=$CHRPP_ROOT -S . -B build
-cmake --build build -- -j$(nproc)
-
-# Exécuter
-./build/ParserProject results/OWL2RL-11.ofn
+# Après modification de owlFunctional.chrpp, recompiler depuis build/ :
+cd build && make    # owl.cpp régénéré automatiquement, puis recompilé
+cd ..
+./build/ParserProject results/OWL2RL-1.ofn
 ```
+
+Voir [INSTALL.md](INSTALL.md) pour l'installation complète de CHR++.
 
 ## Utilisation
 
