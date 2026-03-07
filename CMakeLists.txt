@@ -28,10 +28,16 @@ endif()
 #add_compile_definitions(TRACE_ON)
 
 # === Partie CHRPP ===
-# Si chrppc est disponible, owl.cpp est régénéré automatiquement dans le répertoire
-# de build à chaque modification de owlFunctional.chrpp (garantit la cohérence des versions).
-# Sinon, owl.cpp pré-généré depuis le dépôt est utilisé en fallback.
+# owl.cpp est pré-généré et commité dans le dépôt.
+# IMPORTANT: Les headers CHR++ (runtime) sont TOUJOURS nécessaires pour compiler owl.cpp
+# Le compilateur chrppc est optionnel : nécessaire uniquement si owlFunctional.chrpp est modifié.
+#
+# Pour régénérer owl.cpp après modification de owlFunctional.chrpp :
+#   cmake -DCHRPP_ROOT=/chemin/vers/chrpp ..
+#   make generate_owl_cpp
+# Ou via variable d'environnement : export CHRPP_ROOT=/chemin/vers/chrpp
 
+set(OWL_CPP ${CMAKE_SOURCE_DIR}/owl.cpp)
 set(CHR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/owlFunctional.chrpp)
 
 if(NOT DEFINED CHRPP_ROOT)
@@ -54,7 +60,7 @@ set(CHRPP_BUILD_RUNTIME ${CHRPP_ROOT}/build/runtime)
 
 # Vérifier que le runtime CHR++ existe (OBLIGATOIRE)
 if(NOT EXISTS ${CHRPP_RUNTIME})
-    message(FATAL_ERROR
+    message(FATAL_ERROR 
         "CHR++ runtime non trouvé à ${CHRPP_RUNTIME}\n"
         "Le runtime CHR++ est REQUIS pour compiler owl.cpp (même pré-généré).\n"
         "Solution:\n"
@@ -67,7 +73,7 @@ endif()
 
 # Vérifier que chrpp.hh a été généré (dans build/runtime/)
 if(NOT EXISTS ${CHRPP_BUILD_RUNTIME}/chrpp.hh)
-    message(FATAL_ERROR
+    message(FATAL_ERROR 
         "chrpp.hh non trouvé dans ${CHRPP_BUILD_RUNTIME}\n"
         "CHR++ doit être compilé pour générer chrpp.hh depuis chrpp.in.hh.\n"
         "Solution:\n"
@@ -86,20 +92,18 @@ if(EXISTS ${CHRPP_COMPILER})
     message(STATUS "CHR++ complet trouvé: ${CHRPP_COMPILER}")
     message(STATUS "  - Runtime: ${CHRPP_RUNTIME} ✓")
     message(STATUS "  - Compiler: ${CHRPP_COMPILER} ✓")
-    message(STATUS "  → owl.cpp sera régénéré automatiquement depuis owlFunctional.chrpp")
-    # Générer owl.cpp dans le répertoire de build (évite de polluer les sources)
-    set(OWL_CPP ${CMAKE_BINARY_DIR}/owl.cpp)
-    add_custom_command(
-        OUTPUT ${OWL_CPP}
+    message(STATUS "  → Régénération de owl.cpp possible via 'make generate_owl_cpp'")
+    # Cible explicite pour régénérer owl.cpp dans la racine du projet
+    add_custom_target(generate_owl_cpp
         COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -t -sout > ${OWL_CPP}
         DEPENDS ${CHR_FILE}
-        COMMENT "Génération de owl.cpp depuis owlFunctional.chrpp"
+        COMMENT "Régénération de owl.cpp depuis owlFunctional.chrpp"
     )
 else()
     message(STATUS "CHR++ runtime trouvé: ${CHRPP_RUNTIME} ✓")
     message(STATUS "CHR++ compiler non trouvé (chrppc)")
-    message(STATUS "  → Utilisation de owl.cpp pré-généré (depuis le dépôt)")
-    set(OWL_CPP ${CMAKE_SOURCE_DIR}/owl.cpp)
+    message(STATUS "  → Utilisation de owl.cpp pré-généré (lecture seule)")
+    message(STATUS "  → Pour modifier owlFunctional.chrpp, installer chrppc complet")
 endif()
 
 # Ajoute COWL comme sous-module (inclut aussi uLib)
