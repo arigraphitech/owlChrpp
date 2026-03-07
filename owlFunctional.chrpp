@@ -349,8 +349,8 @@ bool equalIncrement(int j,int i){
             owlOneOfLoop(?int,+LogicalVarSetIterator,+LogicalVarSetIterator),
             owlObjectPropertyChain(?int,?int,+int,+int),
             constructPropertyChain(?int,+int,?int,?int,+int) ,
-            owlHasKey(?int,+LogicalVarSet),
-            owlHasKeyLoop(?int,?int,+LogicalVarSetIterator,+LogicalVarSetIterator),
+            owlHasKey(?int,?int,+int,+int),
+            owlHasKeyCheck(?int,?int,?int,+int,+int),
             querySuperClassOfUri(+std::string),
             querySubClassOfUri(+std::string),
             querySuperClassOf(?int),
@@ -702,8 +702,7 @@ r8b @ owlIntersectionClass(C,V,I), owlSubclassOf(A,V), intersectionSubclassCheck
 
 // Terminé: quand intersectionSubclassCheck(C,A,N) existe et que l'intersection a N composants
 // (vérifié par owlIntersectionOfLoop(C,ITEND,ITEND,N))
-r8c @ owlIntersectionOfLoop(C,ITEND,ITEND,N) \ intersectionSubclassCheck(C,A,N)
-<=> owlSubclassOf(A,C) ;;
+r8c @ owlIntersectionOfLoop(C,ITEND,ITEND,N) \ intersectionSubclassCheck(C,A,N)<=> owlSubclassOf(A,C) ;;
 
 
 //ComplementOf: initialize all named individuals as potentially not in the complement class
@@ -806,10 +805,12 @@ chainStep @ owlObjectPropertyAssertion(Y,P,Z), owlObjectPropertyChain(PC,P,J,N),
 finalChain @ constructPropertyChain(PC,N,X,Y,N) <=> owlObjectPropertyAssertion(X,PC,Y) ;;
 
 //owlHasKey
- owlHasKey(C,P),owlClassAssertion(X,C,true),owlClassAssertion(Y,C,true) ==> !(X==Y) | owlHasKeyLoop(X,Y, (*P).begin(), (*P).end()) ;;
- owlHasKeyLoop(X,Y,ITEND,ITEND) <=> owlSameIndividual(X,Y) ;;
- owlObjectPropertyAssertion(X,P,V1), owlObjectPropertyAssertion(Y,P,V1) \ owlHasKeyLoop(X,Y,IT,ITEND) <=> (P == **IT) | owlHasKeyLoop(X,Y,std::next(*IT),ITEND) ;;
- owlDataPropertyAssertion(X,P,V1), owlDataPropertyAssertion(Y,P,V1) \ owlHasKeyLoop(X,Y,IT,ITEND)  <=> (P == **IT) | owlHasKeyLoop(X,Y,std::next(*IT),ITEND) ;;
+owlHasKey(C,P,I,N) #passive \ owlHasKey(C,P,I,N) <=> true ;;
+owlHasKeyCheck(C,X,Y,I,N) #passive \ owlHasKeyCheck(C,X,Y,I,N) <=> true ;;
+owlHasKey(C,P,0,N), owlClassAssertion(X,C,true), owlClassAssertion(Y,C,true) ==> !(X==Y) | owlHasKeyCheck(C,X,Y,0,N) ;;
+owlObjectPropertyAssertion(X,P,V), owlObjectPropertyAssertion(Y,P,V), owlHasKey(C,P,I,N) \ owlHasKeyCheck(C,X,Y,I,N) <=> owlHasKeyCheck(C,X,Y,I+1,N) ;;
+owlDataPropertyAssertion(X,P,V), owlDataPropertyAssertion(Y,P,V), owlHasKey(C,P,I,N) \ owlHasKeyCheck(C,X,Y,I,N) <=> owlHasKeyCheck(C,X,Y,I+1,N) ;;
+owlHasKeyCheck(C,X,Y,N,N) <=> owlSameIndividual(X,Y) ;;
 
 
 
@@ -865,7 +866,7 @@ realisationPunning @ realisation(), owlClassAssertion(X,X,true), logicalName(URI
 owlEquivalentClass(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive \ resultClassification(URIX,URIY) <=> true ;;
 resultClassification(URIX,URIY) ==> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | stockerClassification(URIX,URIY);;
 
-classification(), owlSubclassOf(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive  ==> !(URIX==owlNothing) | resultClassification(URIX,URIY);;
+classification(), owlSubclassOf(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive ,  logicalName(owlNothing, OwlNothingVar) #passive ==> !(URIX==owlNothing) | resultClassification(URIX,URIY);;
 classification(), owlSubclassOf(X,X) , logicalName(URIX,X) #passive  ==> resultClassification(URIX,URIX) ;;
 
 //translate sparql querries (OWLBENCH)
@@ -978,13 +979,11 @@ int main(int argc, char* argv[])
         filename = argv[1];
     }
 
-    //std::cout << "=== DÉMARRAGE ===" << std::endl << std::flush;
-auto start =std::chrono::steady_clock::now();
+    auto start =std::chrono::steady_clock::now();
     auto space = OWL2::create();
-chr::Logical_var<int> owlThingLogicalVar;
-chr::Logical_var<int> owlNothingLogicalVar;
  CHR_RUN(
-    
+    chr::Logical_var<int> owlThingLogicalVar;
+    chr::Logical_var<int> owlNothingLogicalVar;
     space->logicalName(owlThing, owlThingLogicalVar);
     space->logicalName(owlNothing, owlNothingLogicalVar);
     ParserCowl<OWL2> parser(filename, *space);
@@ -993,15 +992,15 @@ chr::Logical_var<int> owlNothingLogicalVar;
 
 
     space->realisation();
-   // space->classification();
-   /* space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf"));
+    space->classification();
+    space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf"));
     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isPartOf"));
     space->queryDataAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasAge"));
     space->queryInstancesURI(std::string("https://kracr.iiitd.edu.in/OWL2Bench#T20CricketFan"));
     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasAlumnus"));
     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isAffiliatedOrganizationOf"));
     space->queryObjAssertionSubjectUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasCollegeDiscipline"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#NonScience"));
-   space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasCollaborationWith"));
+    space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasCollaborationWith"));
     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isAdvisedBy"));
     space->queryInstancesURI(std::string("https://kracr.iiitd.edu.in/OWL2Bench#Person"));
     space->queryInstancesURI(std::string("https://kracr.iiitd.edu.in/OWL2Bench#WomanCollege"));
@@ -1009,22 +1008,15 @@ chr::Logical_var<int> owlNothingLogicalVar;
     space->querySubjectByObjectUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isHeadOf"));
     space->querySubjectByObjectUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasHead"));
     space->queryInstancesURI(std::string("https://kracr.iiitd.edu.in/OWL2Bench#Faculty"));
-     space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasSameHomeTownWith"));
+    space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasSameHomeTownWith"));
     space->queryEngineeringStudentsUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#Student"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#isStudentOf"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#isPartOf"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasCollegeDiscipline"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#Engineering"));
     space->queryComplexStudentsUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#Student"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#Organization"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#hasDean"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#teachesCourse"),std::string("https://kracr.iiitd.edu.in/OWL2Bench#takesCourse"));
-    */
+    
 
-    /* STATISTIQUES APRÈS INFÉRENCE - Compte total via itérateur */
-    /*
-    int totalConstraints = 0;
-    auto it = space->chr_store_begin();
-    while (!it.at_end()) { ++totalConstraints; ++it; }
-    std::cout << "   STATISTIQUES APRÈS INFÉRENCE : " << totalConstraints << std::endl;
-    */
  )
- auto end = std::chrono::steady_clock::now();
-     std::chrono::duration<double> elapsed = end - start;
- std::cout<<"temps "<<  elapsed.count()  <<std::endl;
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout<<"temps "<<  elapsed.count()  <<std::endl;
    //print(*space);
     //chr::Statistics::print(std::cout);
 

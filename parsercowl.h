@@ -2603,40 +2603,31 @@ void ParserCowl<T>:: iterateHasKey(ParserCowl<T>* parser, CowlAny *axiom){
     
     PARSER_LOG(stream, " avec les clés: ");
     
-    LogicalVarSet keyProperties;
-    
-    // Ajouter les propriétés objets
     ulib_uint obj_count = cowl_vector_count(obj_props);
+    ulib_uint data_count = cowl_vector_count(data_props);
+    int total = (int)(obj_count + data_count);
+
+    // Ajouter les propriétés objets
     for (ulib_uint i = 0; i < obj_count; ++i) {
         CowlObjProp *prop = (CowlObjProp*)cowl_vector_get_item(obj_props, i);
         std::string propUri = getFullIRI(cowl_obj_prop_get_iri(prop));
         chr::Logical_var<int>& propVar = parser->getOrCreateLogicalVar(propUri);
-        keyProperties.insert(propVar);
-        
         PARSER_LOG_STRING(stream, cowl_iri_get_rem(cowl_obj_prop_get_iri(prop)));
-        if (i < obj_count - 1 || cowl_vector_count(data_props) > 0) {
-            PARSER_LOG(stream, ", ");
-        }
+        if (i < obj_count - 1 || data_count > 0) PARSER_LOG(stream, ", ");
+        parser->space->owlHasKey(classVar, propVar, (int)i, total);
     }
-    
+
     // Ajouter les propriétés de données
-    ulib_uint data_count = cowl_vector_count(data_props);
     for (ulib_uint i = 0; i < data_count; ++i) {
         CowlDataProp *prop = (CowlDataProp*)cowl_vector_get_item(data_props, i);
         std::string propUri = getFullIRI(cowl_data_prop_get_iri(prop));
         chr::Logical_var<int>& propVar = parser->getOrCreateLogicalVar(propUri);
-        keyProperties.insert(propVar);
-        
         PARSER_LOG_STRING(stream, cowl_iri_get_rem(cowl_data_prop_get_iri(prop)));
-        if (i < data_count - 1) {
-            PARSER_LOG(stream, ", ");
-        }
+        if (i < data_count - 1) PARSER_LOG(stream, ", ");
+        parser->space->owlHasKey(classVar, propVar, (int)(obj_count + i), total);
     }
-    
+
     PARSER_LOG(stream, "\n");
-    
-    // Ajouter la contrainte CHR
-    parser->space->owlHasKey(classVar, keyProperties);
 }
 
 
