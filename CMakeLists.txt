@@ -36,7 +36,7 @@ endif()
 #   make generate_owl_cpp
 # Ou via variable d'environnement : export CHRPP_ROOT=/chemin/vers/chrpp
 
-set(OWL_CPP ${CMAKE_SOURCE_DIR}/owl.cpp)
+set(OWL_CPP ${CMAKE_CURRENT_BINARY_DIR}/owl.cpp)
 set(CHR_FILE ${CMAKE_CURRENT_SOURCE_DIR}/owlFunctional.chrpp)
 
 if(NOT DEFINED CHRPP_ROOT)
@@ -54,7 +54,8 @@ if(EXISTS ${CHRPP_COMPILER})
     # Inclut le runtime CHR++ (nécessaire pour compiler owl.cpp)
     include_directories(${CHRPP_RUNTIME})
     # Cible explicite pour régénérer owl.cpp dans la racine du projet
-    add_custom_target(generate_owl_cpp
+    add_custom_command(
+        OUTPUT ${OWL_CPP}
         COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -t -sout > ${OWL_CPP}
         DEPENDS ${CHR_FILE}
         COMMENT "Régénération de owl.cpp depuis owlFunctional.chrpp"
@@ -89,3 +90,4 @@ target_link_libraries(ParserProject PRIVATE cowl ulib)
 target_include_directories(ParserProject PRIVATE lib/cowl/include)
 # Inclut les headers du projet (Parser.h, parsercowl.h)
 target_include_directories(ParserProject PRIVATE ${CMAKE_SOURCE_DIR})
+
