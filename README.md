@@ -1,6 +1,6 @@
-# owl2chr — OWL 2 RL Declarative Reasoner based on CHR++
+#  OWL 2 RL Declarative Reasoner based on CHR++
 
-owl2chr is a declarative inference engine for OWL 2 RL ontologies, built on top of **CHR++** (Constraint Handling Rules) and the **COWL** C library for OWL 2 parsing.
+Our tool is a declarative inference engine for OWL 2 RL ontologies, built on top of **CHR++** (Constraint Handling Rules) and the **COWL** C library for OWL 2 parsing.
 
 ## Description
 
