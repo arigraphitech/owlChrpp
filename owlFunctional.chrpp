@@ -148,7 +148,7 @@ void afficher(std::string x,std::string y){
     std::cout<<x<<"    "<<y<<std::endl;
 }
 
-void stockerRealisation(std::string x,std::string y){
+void storeRealisation(std::string x,std::string y){
  std::ofstream out(output_file_Real, std::ios::app);  
     if (!out) {
         std::cerr << "Impossible d'ouvrir output.txt\n";
@@ -158,7 +158,7 @@ void stockerRealisation(std::string x,std::string y){
     out.close()  ; 
 }
 
-void stockerClassification(std::string x,std::string y){
+void storeClassification(std::string x,std::string y){
  std::ofstream out(output_file_Classif, std::ios::app);  
     if (!out) {
         std::cerr << "Impossible d'ouvrir  output_file_Classif\n";
@@ -168,7 +168,7 @@ void stockerClassification(std::string x,std::string y){
     out.close()  ; 
 }
 
-void stockerQueries(const StringSet& s, int id){
+void storeQueries(const StringSet& s, int id){
     std::ofstream out(output_file_Queries, std::ios::app);  
     if (!out) {
         std::cerr << "Impossible d'ouvrir  output_file_Queries\n";
@@ -521,7 +521,7 @@ owlClassAssertion(X,C,true) ==> owlClass(C) , owlNamedIndividual(X) ;;
 
 //SubClassOf: every class is a subclass of itself (reflexivity)
 //owlClass(A) ==> owlSubclassOf(A,A);;
-owlSubclassOf(A,B), owlSubclassOf(B,C) ==> different(A,B,C) | owlSubclassOf(A,C);;
+subTrans @ owlSubclassOf(A,B), owlSubclassOf(B,C) ==> different(A,B,C) | owlSubclassOf(A,C);;
 
 //Equivalent classes: every class is equivalent to itself (reflexivity)
 owlClass(C) ==>   owlEquivalentClass(C,C);;
@@ -582,7 +582,7 @@ DataPropertyRange @ owlDataPropertyRange(P,DR) , owlDataPropertyAssertion(_,P,Y)
 
 //owlClassAssertion(X,A,true) is true if X is an instance of A
 //owlSubclassOf(A,B) is true if A is a subclass of B
-subclass @ owlSubclassOf(A,B) ,owlClassAssertion(X,A,true) ==> !(A==B) |  owlClassAssertion(X,B,true) ;;
+subInherit @ owlSubclassOf(A,B) ,owlClassAssertion(X,A,true) ==> !(A==B) |  owlClassAssertion(X,B,true) ;;
 
 //owlEquivalentClass(A,B) is true if the class A is equivalent with the class B
 equivalentClass @ owlEquivalentClass(A,B),owlClassAssertion(X,A,true) ==> !(A==B) |owlClassAssertion(X,B,true);;
@@ -853,7 +853,7 @@ rule3 @ queryInstance(X,C)<=> afficher("false");;
 
 
 //teste realisation : CR owlBENCH
-resultRealisation(URIX,URIY) ==> ! prefixIntern(URIY)| stockerRealisation(URIX,URIY);;
+resultRealisation(URIX,URIY) ==> ! prefixIntern(URIY)| storeRealisation(URIX,URIY);;
 //cas general x et c sont differents
 realisation @ realisation(), owlClassAssertion(X,C,true), logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive ==>  resultRealisation(URIX,URIC);;
 // Cas spécial : X et C sont la même variable (punning)
@@ -862,14 +862,14 @@ realisationPunning @ realisation(), owlClassAssertion(X,X,true), logicalName(URI
 //teste classification : CT owlBENCH
 //regle pour n'avoir en sortie que les subclassof stricte pas bidirectionnel(equivalent) comme pelet
 owlEquivalentClass(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive \ resultClassification(URIX,URIY) <=> true ;;
-resultClassification(URIX,URIY) ==> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | stockerClassification(URIX,URIY);;
+resultClassification(URIX,URIY) ==> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | storeClassification(URIX,URIY);;
 
 classification(), owlSubclassOf(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive ,  logicalName(owlNothing, OwlNothingVar) #passive ==> !(URIX==owlNothing) | resultClassification(URIX,URIY);;
 classification(), owlSubclassOf(X,X) , logicalName(URIX,X) #passive  ==> resultClassification(URIX,URIX) ;;
 
 //translate sparql querries (OWLBENCH)
 //ResultVec(S,ID) ==> afficherResultatSet(S,ID);;
-ResultVec(S,ID) ==> stockerQueries(S,ID);;
+ResultVec(S,ID) ==> storeQueries(S,ID);;
 
 //query 1, 2, 5, 6, 8, 9, 16 : SELECT  DISTINCT  ?x  ?y  WHERE { ?x  :isMemberOf  ?y  }
 // Step 1: Immediately assign ID when query is received
@@ -991,6 +991,7 @@ int main(int argc, char* argv[])
 
 
     space->realisation();
+   /*
     space->classification();
     space->queryObjAssertionUri(std::string("<https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf>"));
     space->queryObjAssertionUri(std::string("<https://kracr.iiitd.edu.in/OWL2Bench#isPartOf>"));
@@ -1010,7 +1011,7 @@ int main(int argc, char* argv[])
     space->queryObjAssertionUri(std::string("<https://kracr.iiitd.edu.in/OWL2Bench#hasSameHomeTownWith>"));
     space->queryEngineeringStudentsUri(std::string("<https://kracr.iiitd.edu.in/OWL2Bench#Student>"),std::string("<https://kracr.iiitd.edu.in/OWL2Bench#isStudentOf>"),std::string("<https://kracr.iiitd.edu.in/OWL2Bench#isPartOf>"),std::string("<https://kracr.iiitd.edu.in/OWL2Bench#hasCollegeDiscipline>"),std::string("<https://kracr.iiitd.edu.in/OWL2Bench#Engineering>"));
     space->queryComplexStudentsUri(std::string("<https://kracr.iiitd.edu.in/OWL2Bench#Student>"),std::string("<https://kracr.iiitd.edu.in/OWL2Bench#Organization>"),std::string("<https://kracr.iiitd.edu.in/OWL2Bench#hasDean>"),std::string("<https://kracr.iiitd.edu.in/OWL2Bench#teachesCourse>"),std::string("<<https://kracr.iiitd.edu.in/OWL2Bench#takesCourse>"));
-
+    */
  )
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end - start;
