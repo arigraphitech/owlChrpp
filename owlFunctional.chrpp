@@ -28,14 +28,14 @@ int get_next_id() {
 
 namespace chr {
 
-// Opérateur de comparaison pour Logical_var<std::string> pour permettre l'utilisation dans std::set
+// Comparison operator for Logical_var<std::string>, enabling its use in std::set
 template<typename T>
 bool operator<(const Logical_var<T>& a, const Logical_var<T>& b) {
-    // Comparaison basée sur l'adresse mémoire (identité) ou la valeur si ground
+    // Compare by memory address (identity) or by value when ground
     if (a.ground() && b.ground()) {
         return *a < *b;
     }
-    // Comparaison par adresse pour les variables non-ground
+    // Compare by address for non-ground variables
     return &a < &b;
 }
 
@@ -57,7 +57,7 @@ struct Type_instruction_wrapper<std::shared_ptr<AnySimpleType>, false> {
 };
 }
 
-// XXHash pour std::shared_ptr<AnySimpleType>
+// XXHash for std::shared_ptr<AnySimpleType>
 template <>
 struct chr::XXHash<std::shared_ptr<AnySimpleType>>
 {
@@ -114,7 +114,7 @@ template<>
 template<>
   struct Type_instruction_wrapper<LogicalVarSetIterator, false> {
       static std::string to_string(const LogicalVarSetIterator& it) {
-          // Ne pas déréférencer l'itérateur, renvoyer une représentation générique
+          // Avoid dereferencing the iterator; return a generic representation
           return "LogicalVarSetIterator";
       }
       static void update_hash(const LogicalVarSetIterator&) {}
@@ -126,13 +126,13 @@ template<>
 
 }
 
-// XXHash pour LogicalVarSetIterator  
+// XXHash for LogicalVarSetIterator
 template <>
 struct chr::XXHash<LogicalVarSetIterator>
 {
     static void update(const LogicalVarSetIterator& it)
     {
-        // Hash basé sur l'adresse de l'itérateur
+        // Hash based on the iterator's address
         chr::XXHash<size_t>::update(reinterpret_cast<size_t>(&(*it)));
     }
 };
@@ -140,18 +140,18 @@ bool different(const chr::Logical_var<int>&  A, const chr::Logical_var<int>&  B,
     return A != B && B != C && A != C;
 }
 
-void afficher(std::string x){
+void display(std::string x){
     std::cout<<x<<std::endl;
 }
 
-void afficher(std::string x,std::string y){
+void display(std::string x,std::string y){
     std::cout<<x<<"    "<<y<<std::endl;
 }
 
 void storeRealisation(std::string x,std::string y){
  std::ofstream out(output_file_Real, std::ios::app);  
     if (!out) {
-        std::cerr << "Impossible d'ouvrir output.txt\n";
+        std::cerr << "Unable to open output.txt\n";
         return ;
     }
     out << x<<" "<<y<<"\n";
@@ -161,7 +161,7 @@ void storeRealisation(std::string x,std::string y){
 void storeClassification(std::string x,std::string y){
  std::ofstream out(output_file_Classif, std::ios::app);  
     if (!out) {
-        std::cerr << "Impossible d'ouvrir  output_file_Classif\n";
+        std::cerr << "Unable to open output_file_Classif\n";
         return ;
     }
     out << x<<" "<<y<<"\n";
@@ -171,7 +171,7 @@ void storeClassification(std::string x,std::string y){
 void storeQueries(const StringSet& s, int id){
     std::ofstream out(output_file_Queries, std::ios::app);  
     if (!out) {
-        std::cerr << "Impossible d'ouvrir  output_file_Queries\n";
+        std::cerr << "Unable to open output_file_Queries\n";
         return ;
     }
     out << id << " : ";
@@ -207,7 +207,7 @@ StringSet makeVec(const std::string & a, const std::string & b){
     return s;
 }
 
-void afficherResultatSet(const StringSet& s, int id){
+void displaySetResult(const StringSet& s, int id){
      std::cout << id << " : ";
     for(const std::string& res : s){
        std::cout<< res <<"  ";
@@ -261,18 +261,18 @@ std::string constructFullUri(const std::string& prefix,
 
 bool sameDataType(const std::shared_ptr<AnySimpleType> dr1, const std::shared_ptr<AnySimpleType> dr2){
     if (!dr1 || !dr2) {
-        return false;  // Considère que les types null ne sont pas égaux
+        return false;  // Null types are not considered equal
     }
     return dr1->getId() == dr2->getId();
 }
 bool invalidType(const std::shared_ptr<AnySimpleType> dr, const Value & v){
-    // Vérification de la hiérarchie de types XSD
+    // Check the XSD type hierarchy
     // dr est le type attendu (range), v.typeVal est le type de la valeur
     if (!dr || !v.typeVal) {
-        return true;  // Type invalide si l'un des types est null
+        return true;  // A type is invalid if either type is null
     }
     bool isValid = v.typeVal->verify(dr.get());    
-    return !isValid;  // Retourne true si le type est invalide
+    return !isValid;  // Return true when the type is invalid
 }
 
 Value createValue(const std::string& val, const std::shared_ptr<AnySimpleType> typeVal) {
@@ -531,7 +531,7 @@ owlSubclassOf(A,B), owlSubclassOf(B,A) ==> !(A==B) | owlEquivalentClass(A,B);;
 
 
 //owl:Thing and owl:Nothing: every class is a subclass of owl:Thing
-// Note: owlThingLogicalVar doit être passé depuis le main()
+// Note: owlThingLogicalVar must be passed from main()
 owlClass(C) , logicalName(URIC,C), logicalName(owlThing, OwlThingVar) #passive  ==> !(URIC=="http://www.w3.org/2002/07/owl#Thing")| owlSubclassOf(C,OwlThingVar);;
 
 //owl:Nothing is a subclass of every class
@@ -620,7 +620,7 @@ owlInverseObjectProperty(P1,P2) ==> owlInverseObjectProperty(P2,P1)  ;;
 symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> owlObjectPropertyAssertion(Y,P,X) ;;
 
 //owlAsymmetricObjectProperty(P) is true if P is an asymmetric object property
-// Si P(X,Y) existe et P est asymétrique, alors ¬P(Y,X) doit être vrai
+// If P(X,Y) exists and P is asymmetric, then ¬P(Y,X) must hold
 AsymmetricProperty1 @ owlAsymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> owlNegativeObjectAssertion(Y,P,X) ;;
 
 //owlreflexiveProperty(P) is true if P is a reflexive object property
@@ -630,8 +630,8 @@ reflexiveProperty @ owlReflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P
 functionalObjProperty @ owlFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Z) ==> !(Y==Z) | owlSameIndividual(Y,Z);;
 
 //owlFunctionalDataProperty(P) is true if P is a functional data property
-//Note: Pour les data properties, Y et Z sont de type Value, pas des individus
-//On vérifie simplement qu'ils sont égaux, sinon échec
+// Note: For data properties, Y and Z are Values, not individuals
+// Simply check whether they are equal; otherwise, fail
 functionalDataProperty @ owlFunctionalDataProperty(P),owlDataPropertyAssertion(X,P,Y),owlDataPropertyAssertion(X,P,Z) <=> !(Y==Z) | failure();;
 
 //owlInverseFunctionalObjectProperty(P) is true if P is an inverse functional object property
@@ -657,7 +657,7 @@ owlUnionOfLoop(C,IT,ITEND) <=> owlUnionClass(C,**IT),owlUnionOfLoop(C,std::next(
 //UnionOf inference: if X is instance of one class V in the union, then X is instance of the union class C
 owlClassAssertion(X,V,true) \ owlUnionClass(C,V) <=> owlClassAssertion(X,C,true);;
 
-//UnionOf subclass: si A est sous-classe d'un composant V de l'union C, alors A ⊆ C
+//UnionOf subclass: if A is a subclass of a component V of union C, then A ⊆ C
 owlUnionClass(C, V), owlSubclassOf(A, V) ==> !(C==A) | owlSubclassOf(A, C) ;;
 
 //Avoid recomputing the same union: if two classes have the same union set, they are equivalent
@@ -685,21 +685,21 @@ r6 @ owlIntersectionClass(C,C1,_),owlClassAssertion(X,C,true) ==> owlClassAssert
 //IntersectionOf subclass inference: if C2 is subclass of intersection C1, then C2 is also subclass of each component of the intersection
 r7 @owlIntersectionClass(C1,Component,_), owlSubclassOf(C2,C1) ==> !(C1==C2) | owlSubclassOf(C2,Component) ;;
 
-//IntersectionOf subclass reverse (version générique pour N composants):
-// Si A est sous-classe de TOUS les composants d'une intersection I, alors A ⊆ I
-// Utilise une vérification itérative: on parcourt chaque composant et vérifie si A en est sous-classe
+//IntersectionOf subclass reverse (generic version for N components):
+// If A is a subclass of ALL components of intersection I, then A ⊆ I
+// Iteratively check whether A is a subclass of each component
 
-// Règle passive pour éviter les duplicatas
+// Passive rule to prevent duplicates
 intersectionSubclassCheck(C,A,I) #passive \ intersectionSubclassCheck(C,A,I) <=> true ;;
 
-// Démarrer la vérification quand A est sous-classe du composant à l'index 0
+// Start checking when A is a subclass of the component at index 0
 r8a @ owlSubclassOf(A,V), owlIntersectionClass(C,V,0) ==> intersectionSubclassCheck(C,A,1) ;;
 
-// Continuer: si A est sous-classe du composant à l'index I, passer à I+1
+// Continue: if A is a subclass of the component at index I, advance to I+1
 r8b @ owlIntersectionClass(C,V,I), owlSubclassOf(A,V), intersectionSubclassCheck(C,A,I) ==> I > 0 | intersectionSubclassCheck(C,A,I+1) ;;
 
-// Terminé: quand intersectionSubclassCheck(C,A,N) existe et que l'intersection a N composants
-// (vérifié par owlIntersectionOfLoop(C,ITEND,ITEND,N))
+// Done: when intersectionSubclassCheck(C,A,N) exists and the intersection has N components
+// (verified by owlIntersectionOfLoop(C,ITEND,ITEND,N))
 r8c @ owlIntersectionOfLoop(C,ITEND,ITEND,N) \ intersectionSubclassCheck(C,A,N)<=> owlSubclassOf(A,C) ;;
 
 
@@ -713,7 +713,7 @@ owlClassAssertion(X,NOTA,true) \ owlClassAssertion(X,NOTA,false) <=> true ;;
 //ComplementOf: remove false assertion if individual is in the original class A (thus not in complement)
 owlComplementOf(A,NOTA),owlClassAssertion(X,A,true) \ owlClassAssertion(X,NOTA,false) <=> true ;;
 
-//ObjectSomeValuesFrom: si deux SomeValuesFrom ont la même propriété et classe, ils sont équivalents
+//ObjectSomeValuesFrom: two SomeValuesFrom restrictions with the same property and class are equivalent
 owlObjectSomeValuesFrom(C1, P, Y), owlObjectSomeValuesFrom(C2, P, Y) ==> !(C1==C2) | owlEquivalentClass(C1, C2) ;;
 
 //ObjectSomeValuesFrom: if U has property P to V and V is instance of Y, then U is instance of ∃P.Y
@@ -753,15 +753,15 @@ owlHasValueObject(C,P,Y),owlObjectProperty(P),owlClassAssertion(U,C,true) ==> ow
 //HasValue (object) reverse: if U has property P to Y, then U is instance of ∃P.{Y}
 owlHasValueObject(C,P,Y),owlObjectPropertyAssertion(U,P,Y) ==> owlClassAssertion(U,C,true) ;;
 
-//HasValue subsumption: si C ≡ HasValue(P, A) et A est instance de Y, et qu'il existe SV ≡ SomeValuesFrom(P, Y),
-//alors C est sous-classe de SV (les mêmes variables P et Y sont utilisées car getOrCreateLogicalVar
-//garantit que la même URI produit la même variable logique)
+//HasValue subsumption: if C ≡ HasValue(P, A), A is an instance of Y, and SV ≡ SomeValuesFrom(P, Y),
+//then C is a subclass of SV (the same P and Y variables are used because getOrCreateLogicalVar
+//ensures that the same URI produces the same logical variable)
 hasValueSubsumption @ owlHasValueObject(C, P, A),
                       owlClassAssertion(A, Y, true),
                       owlObjectSomeValuesFrom(SV, P, Y)
 ==> owlSubclassOf(C, SV) ;;
 
-//HasValue subsumption avec hiérarchie de classes: si C ≡ HasValue(P, A) et A:Y1 et Y1 ⊆ Y2,
+//HasValue subsumption with a class hierarchy: if C ≡ HasValue(P, A), A:Y1, and Y1 ⊆ Y2,
 //et SV ≡ SomeValuesFrom(P, Y2), alors C ⊆ SV
 hasValueSubsumptionClass @ owlHasValueObject(C, P, A),
                            owlClassAssertion(A, Y1, true),
@@ -769,7 +769,7 @@ hasValueSubsumptionClass @ owlHasValueObject(C, P, A),
                            owlObjectSomeValuesFrom(SV, P, Y2)
 ==> owlSubclassOf(C, SV) ;;
 
-//HasValue subsumption avec hiérarchie de propriétés: si C ≡ HasValue(P1, A) et P1 ⊆ P2 et A:Y,
+//HasValue subsumption with a property hierarchy: if C ≡ HasValue(P1, A), P1 ⊆ P2, and A:Y,
 //et SV ≡ SomeValuesFrom(P2, Y), alors C ⊆ SV
 hasValueSubsumptionProp @ owlHasValueObject(C, P1, A),
                           owlSubObjectPropertyOf(P1, P2),
@@ -777,7 +777,7 @@ hasValueSubsumptionProp @ owlHasValueObject(C, P1, A),
                           owlObjectSomeValuesFrom(SV, P2, Y)
 ==> owlSubclassOf(C, SV) ;;
 
-//HasValue subsumption avec hiérarchie de propriétés ET de classes: si C ≡ HasValue(P1, A) et P1 ⊆ P2,
+//HasValue subsumption with property AND class hierarchies: if C ≡ HasValue(P1, A) and P1 ⊆ P2,
 //et A:Y1 et Y1 ⊆ Y2, et SV ≡ SomeValuesFrom(P2, Y2), alors C ⊆ SV
 hasValueSubsumptionPropClass @ owlHasValueObject(C, P1, A),
                                owlSubObjectPropertyOf(P1, P2),
@@ -813,7 +813,7 @@ owlHasKeyCheck(C,X,Y,N,N) <=> owlSameIndividual(X,Y) ;;
 
 
 //Display result: convert logical name to URI and display
-res(URIC) ==> afficher(URIC);;
+res(URIC) ==> display(URIC);;
 
 //querySuperClassOfUri: query to retrieve all superclasses of a class given its URI  
 querySuperClassOfUri(URIC) , logicalName(URIC,X) #passive ==> querySuperClassOf(X), res(std::string("owl:Thing")) ;;
@@ -847,20 +847,20 @@ r_queryClassification1 @ queryClassification(X), owlClassAssertion(X,C,true), lo
 
 //queryInstance(X,C) return true if X is instance of class C
 rule1 @ logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive \ queryInstanceURI(URIX,URIC) <=> queryInstance(X,C) ;;
-rule2 @ owlClassAssertion(X,C,true) \ queryInstance(X,C)<=> afficher("true");;
-rule3 @ queryInstance(X,C)<=> afficher("false");;
+rule2 @ owlClassAssertion(X,C,true) \ queryInstance(X,C)<=> display("true");;
+rule3 @ queryInstance(X,C)<=> display("false");;
 
 
 
 //teste realisation : CR owlBENCH
 resultRealisation(URIX,URIY) ==> ! prefixIntern(URIY)| storeRealisation(URIX,URIY);;
-//cas general x et c sont differents
+//General case: X and C are different
 realisation @ realisation(), owlClassAssertion(X,C,true), logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive ==>  resultRealisation(URIX,URIC);;
-// Cas spécial : X et C sont la même variable (punning)
+// Special case: X and C are the same variable (punning)
 realisationPunning @ realisation(), owlClassAssertion(X,X,true), logicalName(URI,X) #passive ==> resultRealisation(URI,URI);;
 
 //teste classification : CT owlBENCH
-//regle pour n'avoir en sortie que les subclassof stricte pas bidirectionnel(equivalent) comme pelet
+//Emit only strict, non-bidirectional subclass relationships, as in Pellet
 owlEquivalentClass(X,Y) , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive \ resultClassification(URIX,URIY) <=> true ;;
 resultClassification(URIX,URIY) ==> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | storeClassification(URIX,URIY);;
 
@@ -868,14 +868,14 @@ classification(), owlSubclassOf(X,Y) , logicalName(URIX,X) #passive , logicalNam
 classification(), owlSubclassOf(X,X) , logicalName(URIX,X) #passive  ==> resultClassification(URIX,URIX) ;;
 
 //translate sparql querries (OWLBENCH)
-//ResultVec(S,ID) ==> afficherResultatSet(S,ID);;
+//ResultVec(S,ID) ==> displaySetResult(S,ID);;
 ResultVec(S,ID) ==> storeQueries(S,ID);;
 
 //query 1, 2, 5, 6, 8, 9, 16 : SELECT  DISTINCT  ?x  ?y  WHERE { ?x  :isMemberOf  ?y  }
 // Step 1: Immediately assign ID when query is received
 queryObjAssertionUri(URIP) <=> queryObjAssertionWithId(URIP, get_next_id()) ;;
 // Step 2: If logicalName exists, process the query
-logicalName(URIP,P) \ queryObjAssertionWithId(URIP, ID) <=> afficher(URIP), queryObjAssertion(P, ID) ;;
+logicalName(URIP,P) \ queryObjAssertionWithId(URIP, ID) <=> display(URIP), queryObjAssertion(P, ID) ;;
 // Step 3: Fallback if no logicalName (consume the query without results)
 queryObjAssertionWithId(URIP, ID) <=> success() ;;
 //cas general
@@ -971,8 +971,8 @@ int main(int argc, char* argv[])
      std::ofstream fileClassif(output_file_Classif);
      std::ofstream fileQuery(output_file_Queries);
      
-   // Déterminer le fichier à utiliser
-    std::string filename = "results/OWL2RL-1.ofn"; // Valeur par défaut
+    // Determine which file to use
+     std::string filename = "results/OWL2RL-1.ofn"; // Default value
 
     if (argc > 1) {
         filename = argv[1];
@@ -1015,7 +1015,7 @@ int main(int argc, char* argv[])
  )
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout<<"temps "<<  elapsed.count()  <<std::endl;
+    std::cout<<"elapsed time "<<  elapsed.count()  <<std::endl;
    //print(*space);
     //chr::Statistics::print(std::cout);
 
