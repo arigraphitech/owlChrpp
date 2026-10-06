@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 # Options de compilation
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -20,12 +20,13 @@ endif()
 
 # === PROFILAGE GPROF ===
 # Décommenter pour activer gprof (ralentit beaucoup l'exécution)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
 # Active les traces CHR++ (définit la macro TRACE_ON)
 # DÉSACTIVÉ pour la performance
 #add_compile_definitions(TRACE_ON)
+
 
 # === Partie CHRPP ===
 # owl.cpp est pré-généré et commité dans le dépôt.
@@ -56,7 +57,7 @@ if(EXISTS ${CHRPP_COMPILER})
     # Cible explicite pour régénérer owl.cpp dans la racine du projet
     add_custom_command(
         OUTPUT ${OWL_CPP}
-        COMMAND ${CHRPP_COMPILER} ${CHR_FILE} -t -sout > ${OWL_CPP}
+        COMMAND ${CHRPP_COMPILER} ${CHR_FILE}  -sout > ${OWL_CPP}
         DEPENDS ${CHR_FILE}
         COMMENT "Régénération de owl.cpp depuis owlFunctional.chrpp"
     )
@@ -91,3 +92,30 @@ target_include_directories(ParserProject PRIVATE lib/cowl/include)
 # Inclut les headers du projet (Parser.h, parsercowl.h)
 target_include_directories(ParserProject PRIVATE ${CMAKE_SOURCE_DIR})
 
+# === CIBLE: extract_space_calls ===
+# Extrait space_calls.txt uniquement (sans CHR++ realisation/classification)
+# Compile owlExtractSpaceCalls.chrpp via CHR++ compiler
+set(EXTRACT_SPACE_CALLS_CHR ${CMAKE_CURRENT_SOURCE_DIR}/owlExtractSpaceCalls.chrpp)
+set(EXTRACT_SPACE_CALLS_CPP ${CMAKE_CURRENT_BINARY_DIR}/owlExtractSpaceCalls.cpp)
+
+if(EXISTS ${CHRPP_COMPILER})
+    add_custom_command(
+        OUTPUT ${EXTRACT_SPACE_CALLS_CPP}
+        COMMAND ${CHRPP_COMPILER} ${EXTRACT_SPACE_CALLS_CHR} -sout > ${EXTRACT_SPACE_CALLS_CPP}
+        DEPENDS ${EXTRACT_SPACE_CALLS_CHR}
+        COMMENT "Compilation de owlExtractSpaceCalls.chrpp via CHR++"
+    )
+else()
+    message(WARNING "CHR++ compiler not found - extract_space_calls target will not be built")
+endif()
+
+add_executable(extract_space_calls
+    ${EXTRACT_SPACE_CALLS_CPP}
+    parsercowl_spacecalls.h
+    Parser.h
+    AnySimpleType.h
+)
+
+target_link_libraries(extract_space_calls PRIVATE cowl ulib)
+target_include_directories(extract_space_calls PRIVATE lib/cowl/include)
+target_include_directories(extract_space_calls PRIVATE ${CMAKE_SOURCE_DIR})
