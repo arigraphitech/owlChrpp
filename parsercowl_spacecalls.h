@@ -304,7 +304,9 @@ private:
 
     std::string formatSpaceArg(const std::shared_ptr<AnySimpleType>& value) const {
         if (!value) return "nullptr";
-        return "std::make_shared<" + value->toString() + ">()";
+        // For space_calls.txt trace file, just return the type name
+        // This is a readable representation, not compilable C++
+        return value->toString();
     }
 
     std::string formatSpaceArg(const LogicalVarSet& values) const {
