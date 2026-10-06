@@ -303,7 +303,8 @@ private:
     }
 
     std::string formatSpaceArg(const std::shared_ptr<AnySimpleType>& value) const {
-        return value ? value->toString() : "nullptr";
+        if (!value) return "nullptr";
+        return "std::make_shared<" + value->toString() + ">()";
     }
 
     std::string formatSpaceArg(const LogicalVarSet& values) const {
