@@ -229,6 +229,7 @@ private:
     // Cache pour stocker les variables logiques et éviter les doublons
     std::unordered_map<std::string, chr::Logical_var<int>> logicalVarCache;
     std::unordered_map<const void*, std::string> logicalVarNames;
+    std::unordered_map<uintptr_t, std::string> sharedPtrTypeVarNames; // Maps shared_ptr addr -> variable name
     std::ofstream spaceCallLog;
     bool spaceCallLogFailed = false;
     std::size_t spaceCallCount = 0;
@@ -304,9 +305,28 @@ private:
 
     std::string formatSpaceArg(const std::shared_ptr<AnySimpleType>& value) const {
         if (!value) return "nullptr";
-        // For space_calls.txt trace file, just return the type name
-        // This is a readable representation, not compilable C++
-        return value->toString();
+        // Generate inline declaration for shared_ptr with proper type
+        return "std::make_shared<" + value->toString() + ">()";
+    }
+    
+    // Helper to declare type variables before use in constraints
+    void declareTypeVariable(const std::shared_ptr<AnySimpleType>& value) {
+        if (!value) return;
+        
+        uintptr_t addr = reinterpret_cast<uintptr_t>(value.get());
+        auto it = sharedPtrTypeVarNames.find(addr);
+        
+        if (it != sharedPtrTypeVarNames.end()) {
+            // Already declared
+            return;
+        }
+        
+        std::string typeVar = "typeVal_" + std::to_string(addr);
+        sharedPtrTypeVarNames[addr] = typeVar;
+        
+        // Write the variable declaration
+        spaceCallLog << "std::shared_ptr<AnySimpleType> " << typeVar 
+                     << " = std::make_shared<" << value->toString() << ">();\n";
     }
 
     std::string formatSpaceArg(const LogicalVarSet& values) const {
@@ -357,6 +377,34 @@ private:
             spaceCallLog << "space->" << method << '(';
             writeSpaceCallArgs(method, std::index_sequence_for<Args...>{}, args...);
             spaceCallLog << ");\n";
+            if (++spaceCallCount % 256 == 0) spaceCallLog.flush();
+            if (!spaceCallLog) {
+                spaceCallLogFailed = true;
+                std::cerr << "Erreur : impossible d'ecrire dans space_calls.txt.\n";
+            }
+        }
+        call();
+    }
+    
+    // Specialized wrapper for constraints with std::shared_ptr<AnySimpleType> arguments
+    template <typename Call>
+    void recordSpaceCallWithTypeVar(const char* method, Call&& call, 
+                                    const chr::Logical_var<int>& arg1,
+                                    const std::shared_ptr<AnySimpleType>& arg2) {
+        if (!spaceCallLogFailed) {
+            // First, declare the type variable if needed
+            declareTypeVariable(arg2);
+            
+            // Then write the constraint call
+            spaceCallLog << "space->" << method << '(' 
+                         << formatSpaceArg(arg1) << ", ";
+            if (arg2) {
+                spaceCallLog << "std::move(" << formatSpaceArg(arg2) << ")";
+            } else {
+                spaceCallLog << "nullptr";
+            }
+            spaceCallLog << ");\n";
+            
             if (++spaceCallCount % 256 == 0) spaceCallLog.flush();
             if (!spaceCallLog) {
                 spaceCallLogFailed = true;
