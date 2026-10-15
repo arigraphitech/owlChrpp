@@ -1,0 +1,6 @@
+<http://benchmark/OWL2Bench#U0C1> <http://benchmark/OWL2Bench#U0>
+<http://benchmark/OWL2Bench#U0C3> <http://benchmark/OWL2Bench#U0>
+<http://benchmark/OWL2Bench#U0C4> <http://benchmark/OWL2Bench#U0>
+<http://benchmark/OWL2Bench#U0C0> <http://benchmark/OWL2Bench#U0>
+<http://benchmark/OWL2Bench#U0C2> <http://benchmark/OWL2Bench#U0>
+<http://benchmark/OWL2Bench#U0WC0> <http://benchmark/OWL2Bench#U0>

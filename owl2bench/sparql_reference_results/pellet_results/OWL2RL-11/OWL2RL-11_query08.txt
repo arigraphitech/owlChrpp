@@ -1,0 +1,2 @@
+<https://kracr.iiitd.edu.in/OWL2Bench#U0C0> <https://kracr.iiitd.edu.in/OWL2Bench#U0>
+<https://kracr.iiitd.edu.in/OWL2Bench#U0WC0> <https://kracr.iiitd.edu.in/OWL2Bench#U0>
