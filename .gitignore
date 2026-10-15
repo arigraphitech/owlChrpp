@@ -23,5 +23,8 @@ res_*
 sortie.txt
 *.log
 
+# Large generated ontology (exceeds the remote file-size limit)
+/owl2bench/OWL2Bench/OWL2RL-20.owl
+
 # Mac
 .DS_Store
