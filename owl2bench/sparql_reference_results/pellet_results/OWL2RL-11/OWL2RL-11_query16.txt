@@ -1,0 +1,5 @@
+<https://kracr.iiitd.edu.in/OWL2Bench#U0C0D0> <https://kracr.iiitd.edu.in/OWL2Bench#U0C0D0FP0>
+<https://kracr.iiitd.edu.in/OWL2Bench#U0C0D2> <https://kracr.iiitd.edu.in/OWL2Bench#U0C0D2FP1>
+<https://kracr.iiitd.edu.in/OWL2Bench#U0WC0D0> <https://kracr.iiitd.edu.in/OWL2Bench#U0WC0D0FP0>
+<https://kracr.iiitd.edu.in/OWL2Bench#U0WC0D1> <https://kracr.iiitd.edu.in/OWL2Bench#U0WC0D1FP1>
+<https://kracr.iiitd.edu.in/OWL2Bench#U0C0D1> <https://kracr.iiitd.edu.in/OWL2Bench#U0C0D1FP0>
