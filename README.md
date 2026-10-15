@@ -1,6 +1,6 @@
-# owl2chr — OWL 2 RL Declarative Reasoner based on CHR++
+# OWL 2 RL Declarative Reasoner based on CHR++
 
-owl2chr is a declarative inference engine for OWL 2 RL ontologies, built on top of **CHR++** (Constraint Handling Rules) and the **COWL** C library for OWL 2 parsing.
+This project is a declarative inference engine for OWL 2 RL ontologies, built on top of **CHR++** (Constraint Handling Rules) and the **COWL** C library for OWL 2 parsing.
 
 ## Description
 
@@ -47,11 +47,11 @@ See [INSTALL.md](INSTALL.md) for full installation instructions.
 - **GCC/G++** with C++17 support
 - **Git**
 - **COWL** (OWL 2 library — included as a submodule)
-- **CHR++** ≥ commit `a9ebc45` (February 2, 2026) — version `v1.7.0-44` or newer
+- **CHR++** compiler (`chrppc`) and runtime
   - Repository: https://gitlab.com/vynce/chrpp
   - Must be compiled **in-source** (see below)
 
-> **CHR++ version note**: versions older than commit `a9ebc45` generate incorrect guard expressions in `owl.cpp`, leading to wrong inference results or crashes. If a new CHR++ version is released, verify it includes this commit before upgrading.
+> **CHR++ guards**: the compiler can reorder guards before some partner lookups. Guards must not modify program state. In particular, adding a deferred consequence to a queue belongs in the rule body, after all premises have matched.
 
 ### Quick Install
 
@@ -64,16 +64,15 @@ cmake .      # in-source build — chrppc will be at chrpp/chrppc/chrppc
 make
 cd ..
 
-# 2. Clone owlChrpp with submodules
-git clone --recurse-submodules https://github.com/arigraphitech/owlChrpp.git
-cd owlChrpp
+# 2. Clone the repository with submodules
+git clone --recurse-submodules "<repository-url>" reasoner
+cd reasoner
 
-# 3. Build (Release -O3 by default, owl.cpp auto-generated)
-cmake -S . -B build
-cd build && make -j$(nproc)
+# 3. Build (Release: -O3 -DNDEBUG; LTO when supported)
+cmake -S . -B build -DCHRPP_ROOT="$(pwd -P)/../chrpp"
+cmake --build build --target ParserProject -j2
 
 # 4. Run (from the project root)
-cd ..
 ./build/ParserProject results/OWL2RL-10.ofn
 ```
 
@@ -82,9 +81,10 @@ If CHR++ is not in `../chrpp` (sibling directory), specify the path:
 cmake -DCHRPP_ROOT=/absolute/path/to/chrpp -S . -B build
 ```
 
-**CMake output messages**:
-- `CHR++ found: .../chrppc/chrppc (owl.cpp auto-regeneration enabled)` → ready
-- `chrppc not found — using pre-generated owl.cpp` → CHR++ not found, see [INSTALL.md](INSTALL.md)
+The build generates `build/owl.cpp` from `owlFunctional.chrpp`, then compiles
+`build/ParserProject`. A fresh build requires `chrppc`; if CMake reports that it
+cannot find it, correct `CHRPP_ROOT` and configure again. An existing generated
+file does not incorporate subsequent changes to the CHR++ source.
 
 ---
 
@@ -150,7 +150,76 @@ Supported input formats: `owl` (RDF/XML), `ttl` (Turtle), `omn` (Manchester), `o
 ./build/ParserProject [ontology_file.ofn]
 ```
 
-If no file is specified, `results/OWL2RL-10.ofn` is used by default.
+If no file is specified, `results/OWL2RL-1.ofn` is used by default, relative to
+the current working directory. Pass an explicit input path for small tests.
+
+### Large Ontologies: Increase the Stack Limit
+
+**Before running large ontologies such as `OWL2RL-1.ofn` or `OWL2RL-2.ofn`, run
+`ulimit -s unlimited` in the same terminal.** This is especially important with
+immediate transitivity, whose rule calls can use a deep C++ stack.
+
+```bash
+# From the project root, in the terminal that will run the reasoner:
+ulimit -s unlimited
+ulimit -s                 # should display: unlimited
+time ./build/ParserProject results/OWL2RL-1.ofn
+```
+
+The setting applies to the current shell and its child processes. Repeat it
+when opening another terminal; running it in a different shell does not change
+the stack limit of the reasoner launched here.
+
+### Rule Variants
+
+The current source files contain:
+
+| Source | Object-property symmetry | Object-property transitivity |
+|---|---|---|
+| `owlFunctional.chrpp` | Standard CHR rule. | Immediate: consequences are posted in the rule body. |
+| `owlFunctional_v0.chrpp` | Uses `firstSymmetricDerivation` to process each unordered pair once per property. | Deferred: consequences are queued in the rule body and saturated after parsing, before queries. |
+
+The deferred variant also includes the inverse-cycle rule for the two self-pairs.
+Both variants include the union subclass rule, corrected query IRIs, buffered
+result files, and the execution clock. The reasoning computes a complete
+saturation before answering queries.
+
+CMake currently selects `owlFunctional.chrpp` through `CHR_FILE`. Editing
+`owlFunctional_v0.chrpp` alone therefore does not change `build/ParserProject`.
+To build that variant, select it in `CHR_FILE` in `CMakeLists.txt`, then configure
+and compile in a separate build directory. Always check which transitivity
+rule is present in the selected source when switching variants.
+
+### Result Files and Timing
+
+Each execution creates or replaces these files **in the current working
+directory**:
+
+| File | Contents |
+|---|---|
+| `res_realisation` | Individual/class pairs. |
+| `res_classification` | Strict subclass pairs, with equivalent-class pairs filtered out. |
+| `res_queries` | Query results in the form `ID : value1 value2`. |
+
+The three output streams are opened once at startup, used throughout the run,
+and closed automatically when the process exits. Results are not printed to
+the console. The console retains `temps <seconds>` for the timed parsing,
+saturation, classification, realisation and query phases. Parser debug output
+and CHR++ traces are disabled in the normal performance configuration.
+
+### Comparing Generated Text Files
+
+Use `validation/compare_text_files.py` to identify content exclusive to each file and
+their common occurrences:
+
+```bash
+python3 validation/compare_text_files.py file1.txt file2.txt
+```
+
+The comparison ignores `//` comments (including trailing comments) and URI
+namespaces for HTTP(S) IRIs with a fragment. For example,
+`http://benchmark/OWL2Bench#BasketBall` and
+`https://kracr.iiitd.edu.in/OWL2Bench#BasketBall` are treated as identical.
 
 ### Test Ontologies (OWL2Bench)
 
@@ -167,18 +236,21 @@ The project includes OWL2Bench benchmark ontologies in `results/`:
 
 ### Query Examples
 
-```cpp
-// In owlFunctional.chrpp main()
-auto space = OWL2::create();
-ParserCowl<OWL2> parser("results/OWL2RL-10.ofn", *space);
-parser.load();
+The benchmark queries, realisation and classification are already called in
+`main()`. Query IRIs are built with `queryUri`, using the namespace found by
+`parser.getQueryNamespace()` in the parsed ontology (`isMemberOf`). This supports
+the different namespaces used by the included benchmark files.
 
-// Uncomment the desired queries:
-space->querySuperClassOfUri("https://kracr.iiitd.edu.in/OWL2Bench#Student");
-space->queryInstancesURI("https://kracr.iiitd.edu.in/OWL2Bench#Faculty");
+```cpp
+// Inside the existing main(), after saturation and definition of queryUri:
+space->queryObjAssertionUri(queryUri("isMemberOf"));
+space->queryInstancesURI(queryUri("Faculty"));
 space->realisation();
 space->classification();
 ```
+
+When constructing an IRI manually, preserve its surrounding `<...>` because
+that is the form stored in the parser's `logicalName` constraints.
 
 ---
 
@@ -187,16 +259,17 @@ space->classification();
 ### Project Structure
 
 ```
-owlChrpp/
+reasoner/
 ├── owlFunctional.chrpp    # CHR++ rules (main source file)
-├── owl.cpp                # Generated by chrppc from owlFunctional.chrpp
+├── owlFunctional_v0.chrpp # Alternative rules (see Rule Variants)
 ├── parsercowl.h           # COWL parser for OWL 2
 ├── Parser.h               # Generic parsing interface
 ├── AnySimpleType.h        # XSD data types
 ├── CMakeLists.txt         # Build configuration
 ├── results/               # OWL2Bench test ontologies
+├── validation/            # Comparison scripts and Pellet validation guide
 ├── lib/cowl/              # COWL (Git submodule)
-└── build/                 # Build directory (generated)
+└── build/                 # Generated owl.cpp, ParserProject and build files
 ```
 
 ### Build Workflow
@@ -204,8 +277,8 @@ owlChrpp/
 ```
 owlFunctional.chrpp
        ↓  (chrppc — auto-triggered by make when .chrpp changes)
-   owl.cpp
-       ↓  (g++ -std=c++17 -O3)
+ build/owl.cpp
+       ↓  (g++ -std=c++17 -O3 -DNDEBUG, with LTO when supported)
  build/ParserProject
 ```
 
@@ -213,9 +286,23 @@ owlFunctional.chrpp
 
 ## Tests and Benchmarks
 
+### Comparer deux fichiers texte
+
+Le script ignore les lignes vides ainsi que les lignes dont le premier contenu est
+`//`. Les lignes restantes sont comparées comme des occurrences : une même ligne
+répétée est donc comptée autant de fois dans le résumé et les différences.
+
+```bash
+python3 validation/compare_text_files.py file1.txt file2.txt
+```
+
+Le code de sortie vaut `0` si les fichiers sont identiques après filtrage, `1`
+s'ils diffèrent et `2` en cas d'erreur de lecture ou d'argument.
+
 ### Running CHR++ Tests
 
-Tests are configured in the `main()` function of `owlFunctional.chrpp`. Uncomment the desired task:
+Reasoning tasks are configured in `main()` of the selected CHR++ source.
+Classification, realisation and the benchmark queries are currently enabled:
 
 #### Classification (CT) — Class Hierarchy
 
@@ -223,7 +310,7 @@ Tests are configured in the `main()` function of `owlFunctional.chrpp`. Uncommen
 space->classification();
 ```
 
-Generates `res_classification` with all inferred SubClassOf pairs.
+Writes strict SubClassOf pairs to `res_classification`, filtering equivalent-class pairs.
 
 #### Realisation (CR) — Individual Types
 
@@ -231,23 +318,22 @@ Generates `res_classification` with all inferred SubClassOf pairs.
 space->realisation();
 ```
 
-Generates inferred types for each individual.
+Writes inferred individual/class pairs to `res_realisation`.
 
 #### SPARQL Queries
 
 ```cpp
-space->queryObjAssertionUri(std::string("https://kracr.iiitd.edu.in/OWL2Bench#isMemberOf"));
-space->queryInstancesURI(std::string("https://kracr.iiitd.edu.in/OWL2Bench#T20CricketFan"));
+space->queryObjAssertionUri(queryUri("isMemberOf"));
+space->queryInstancesURI(queryUri("T20CricketFan"));
 // ... etc.
 ```
 
-Results are written to `sortie.txt`.
+Results are written to `res_queries`.
 
 ### Recompile and Run
 
 ```bash
-cd build && make
-cd ..
+cmake --build build --target ParserProject -j2
 ./build/ParserProject results/OWL2RL-10.ofn
 ```
 
@@ -255,59 +341,96 @@ cd ..
 
 ## Reference Results (Pellet + Jena)
 
+For the complete procedure, see [Validation with OWL2Bench and Pellet](validation/README.md):
+generate realisation, classification and SPARQL references from the same input,
+then compare them with the three scripts provided in this repository. The guide
+uses the integrated `owl2bench/` directory and keeps each validation run under
+`build/validation/`.
+
 Reference results were generated with **Pellet** (OWL reasoner) and **Apache Jena** (SPARQL queries).
 
 ### Classification — Pellet
 
 ```bash
 cd owl2bench/
-java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-10.owl classification > classification_pellet.txt
+java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-10.owl classification > classification_pellet10.txt
 ```
 
 ### Realisation — Pellet
 
 ```bash
-java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-10.owl realisation > realisation_pellet.txt
+java -jar "Experiments/java runnable jar files/pellet.jar" OWL2RL-10.owl realisation > realisation_pellet10.txt
 ```
 
 ### SPARQL Queries — Apache Jena + Pellet
 
-Reference results: `owl2bench/sparql_reference_results/pellet_results/OWL2RL-10/`
+Reference directories are stored under
+`owl2bench/sparql_reference_results/pellet_results/`. Use the directory for
+the exact ontology being compared. The checked-in directories currently include
+`OWL2RL-1` and `OWL2RL-11`; generate references for `OWL2RL-10` when needed.
+The comparison directory must be named after the dataset (for example,
+`OWL2RL-11`) and contain its `OWL2RL-11_queryNN.txt` files.
 
 ---
 
 ## Comparing Results
 
+Run the following commands from the project root and compare
+outputs generated from the same ontology.
+
 ### Classification — compare_classification.py
 
 ```bash
-python3 compare_classification.py <chrpp_output> <pellet_reference>
+python3 validation/compare_classification.py res_classification owl2bench/classification_pellet10.txt
 ```
+
+Le comparateur accepte les paires `SubClass SuperClass` ainsi que les lignes
+`<SubClass> SubClassOf <SuperClass>` (avec ou sans chevrons autour de `owl:Thing`).
 
 ### Realisation — compare_instances.py
 
 ```bash
-python3 compare_instances.py <chrpp_output> <gold_file>
+python3 validation/compare_instances.py <chrpp_output> <gold_file>
 ```
 
 ### SPARQL Queries — compare_query_results.py
 
 ```bash
-python3 compare_query_results.py <chrpp_sortie_file> <pellet_results_dir>
+python3 validation/compare_query_results.py <chrpp_queries_file> <pellet_results_dir>
 
-# Example:
-python3 compare_query_results.py sortie.txt ../../../owl2bench/sparql_reference_results/pellet_results/OWL2RL-10
+# Example using the small ontology and its corresponding references:
+./build/ParserProject results/OWL2RL-11.ofn
+python3 validation/compare_query_results.py res_queries owl2bench/sparql_reference_results/pellet_results/OWL2RL-11
 ```
 
 ---
 
 ## Development
 
+### Parser Output and CHR++ Traces
+
+The normal executable accepts an input path and an optional second path for
+`axiomLog`:
+
+```bash
+./build/ParserProject results/OWL2RL-11.ofn owl2rl11-axioms.log
+```
+
+Parser logging is disabled by default (`PARSER_DEBUG` is commented out in
+`parsercowl.h`), so this optional file can remain empty. It does not enable CHR++
+tracing. The current `main()` has no third argument for a CHR++ trace file.
+
+To investigate CHR++ activity, enable trace generation (`--trace` for `chrppc`),
+register the desired `chr::Log` flags in `main()` and select an output stream.
+Remove this diagnostic configuration and rebuild before measuring performance.
+Keep side effects such as inserting or queuing assertions in rule bodies,
+not in guards.
+
 ### Modifying CHR++ Rules
 
 1. Edit `owlFunctional.chrpp`
-2. Recompile — `owl.cpp` is auto-regenerated: `cd build && make`
-3. Commit the updated `owl.cpp` if sharing your changes
+2. Recompile: `cmake --build build --target ParserProject -j2`
+3. CMake regenerates `build/owl.cpp`; share the edited CHR++ source, not the build directory.
 
 ### Adding a New Query
 
