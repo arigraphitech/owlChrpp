@@ -23,8 +23,10 @@ res_*
 sortie.txt
 *.log
 
-# Large generated ontology (exceeds the remote file-size limit)
+# Large generated ontologies and query results
+/owl2bench/OWL2Bench/OWL2RL-10.owl
 /owl2bench/OWL2Bench/OWL2RL-20.owl
+/owl2bench/sparql_reference_results/pellet_results/OWL2RL-1/OWL2RL-1_query20.txt
 
 # Mac
 .DS_Store
