@@ -1,0 +1,21 @@
+# OWL2RL SPARQL Queries (18 queries)
+# Format: [Query Number]|[SPARQL Query]
+
+2|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :isMemberOf ?y }
+3|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :isPartOf ?y }
+4|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :hasAge ?y }
+5|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x WHERE { ?x a :T20CricketFan }
+7|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :hasAlumnus ?y }
+8|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :isAffiliatedOrganizationOf ?y }
+9|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x WHERE { ?x :hasCollegeDiscipline :NonScience }
+10|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :hasCollaborationWith ?y }
+11|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :isAdvisedBy ?y }
+12|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x WHERE { ?x a :Person }
+13|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x WHERE { ?x a :WomanCollege }
+14|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x WHERE { ?x a :LeisureStudent }
+15|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :isHeadOf ?y }
+16|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :hasHead ?y }
+19|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x WHERE { ?x a :Faculty }
+20|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x :hasSameHomeTownWith ?y }
+21|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?x ?y WHERE { ?x a :Student . ?x :isStudentOf ?y . ?y :isPartOf ?z . ?z :hasCollegeDiscipline :Engineering }
+22|PREFIX : <https://kracr.iiitd.edu.in/OWL2Bench#> SELECT DISTINCT ?s ?c WHERE { ?s a :Student . ?x a :Organization . ?x :hasDean ?z . ?z :teachesCourse ?c . ?s :takesCourse ?c }

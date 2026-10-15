@@ -153,6 +153,23 @@ inline std::string cowlStringToStdString(CowlString* cowlStr) {
     return ustring_to_string(cowl_string_get_raw(cowlStr));
 }
 
+inline std::string cowlFunctionalToStdString(CowlAny* object) {
+    CowlWriter writer = cowl_writer_functional();
+    UOStream stream;
+    UStrBuf buffer = ustrbuf();
+    if (uostream_to_strbuf(&stream, &buffer) || writer.write(writer.ctx, &stream, object)) {
+        uostream_deinit(&stream);
+        ustrbuf_deinit(&buffer);
+        return "";
+    }
+
+    UString rendered = ustrbuf_to_ustring(&buffer);
+    uostream_deinit(&stream);
+    std::string result = ustring_to_string(&rendered);
+    ustring_deinit(&rendered);
+    return result;
+}
+
 // Fonction helper pour obtenir l'IRI complète (namespace + fragment)
 inline std::string getFullIRI(CowlIRI* iri) {
     if (!iri) return "";
@@ -219,6 +236,20 @@ public:
     // Méthode helper pour obtenir ou créer une variable logique avec cache
     chr::Logical_var<int>& getOrCreateLogicalVar(const std::string& uri);
 
+    // The benchmark files use different namespaces; derive query IRIs from
+    // the parsed named property rather than hardcoding one dataset's prefix.
+    std::string getQueryNamespace() const {
+        const std::string suffix = "isMemberOf>";
+        for (const auto& entry : logicalVarCache) {
+            const auto& uri = entry.first;
+            if (!uri.empty() && uri.front() == '<' && uri.size() > suffix.size() &&
+                uri.compare(uri.size() - suffix.size(), suffix.size(), suffix) == 0) {
+                return uri.substr(1, uri.size() - suffix.size() - 1);
+            }
+        }
+        return "http://benchmark/OWL2Bench#";
+    }
+
 private:
     // Cache pour stocker les variables logiques et éviter les doublons
     std::unordered_map<std::string, chr::Logical_var<int>> logicalVarCache;
@@ -229,6 +260,9 @@ private:
 public:
     // ===== COMPTEURS DE CONTRAINTES (PARSING) =====
     struct ParsingStats {
+        ulib_uint expectedAxioms = 0;
+        ulib_uint processedAxioms = 0;
+
         // Compteur des logical names
         int logicalNamesCreated = 0;
         int logicalNamesCacheHits = 0;
@@ -301,8 +335,12 @@ public:
     };
 
     static ParsingStats stats;
-    static void printStats();
+    static void printStats(std::ostream& output = std::cout);
     static void resetStats();
+    void setOutput(std::ostream& output) { outputStream = &output; }
+
+private:
+    std::ostream* outputStream = &std::cout;
 };
 
 // Initialisation du compteur statique
@@ -320,70 +358,72 @@ void ParserCowl<T>::resetStats() {
 }
 
 template <typename T>
-void ParserCowl<T>::printStats() {
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "   STATISTIQUES DE PARSING (CONTRAINTES)" << std::endl;
-    std::cout << "========================================\n" << std::endl;
+void ParserCowl<T>::printStats(std::ostream& output) {
+    output << "\n========================================" << std::endl;
+    output << "   STATISTIQUES DE PARSING (CONTRAINTES)" << std::endl;
+    output << "========================================\n" << std::endl;
 
-    std::cout << "--- LOGICAL NAMES (URI -> Variable) ---" << std::endl;
-    std::cout << "  Logical names créés:     " << stats.logicalNamesCreated << std::endl;
-    std::cout << "  Cache hits:              " << stats.logicalNamesCacheHits << std::endl;
-    std::cout << "  Total appels:            " << (stats.logicalNamesCreated + stats.logicalNamesCacheHits) << std::endl;
+    output << "--- LOGICAL NAMES (URI -> Variable) ---" << std::endl;
+    output << "  Logical names créés:     " << stats.logicalNamesCreated << std::endl;
+    output << "  Cache hits:              " << stats.logicalNamesCacheHits << std::endl;
+    output << "  Total appels:            " << (stats.logicalNamesCreated + stats.logicalNamesCacheHits) << std::endl;
 
-    std::cout << "\n--- AXIOMES PARSÉS ---" << std::endl;
-    std::cout << "  Declarations:            " << stats.declarations << std::endl;
-    std::cout << "  SubClassOf:              " << stats.subClassOf << std::endl;
-    std::cout << "  EquivalentClass:         " << stats.equivalentClass << std::endl;
-    std::cout << "  DisjointClass:           " << stats.disjointClass << std::endl;
-    std::cout << "  ClassAssertion:          " << stats.classAssertion << std::endl;
-    std::cout << "  ObjectPropertyAssertion: " << stats.objPropAssertion << std::endl;
-    std::cout << "  NegObjPropAssertion:     " << stats.negObjPropAssertion << std::endl;
-    std::cout << "  SubObjectProperty:       " << stats.subObjProp << std::endl;
-    std::cout << "  ObjectPropertyDomain:    " << stats.objPropDomain << std::endl;
-    std::cout << "  ObjectPropertyRange:     " << stats.objPropRange << std::endl;
-    std::cout << "  DifferentIndividuals:    " << stats.diffIndividual << std::endl;
-    std::cout << "  SameIndividual:          " << stats.sameIndividual << std::endl;
-    std::cout << "  DataPropertyAssertion:   " << stats.dataPropAssertion << std::endl;
-    std::cout << "  NegDataPropAssertion:    " << stats.negDataPropAssertion << std::endl;
-    std::cout << "  DataPropertyDomain:      " << stats.dataPropDomain << std::endl;
-    std::cout << "  DataPropertyRange:       " << stats.dataPropRange << std::endl;
-    std::cout << "  SubDataProperty:         " << stats.subDataProp << std::endl;
-    std::cout << "  EquivObjProperty:        " << stats.equivObjProp << std::endl;
-    std::cout << "  EquivDataProperty:       " << stats.equivDataProp << std::endl;
-    std::cout << "  DisjointObjProperty:     " << stats.disjObjProp << std::endl;
-    std::cout << "  DisjointDataProperty:    " << stats.disjDataProp << std::endl;
-    std::cout << "  FunctionalObjProperty:   " << stats.funcObjProp << std::endl;
-    std::cout << "  FunctionalDataProperty:  " << stats.funcDataProp << std::endl;
-    std::cout << "  InverseObjProperty:      " << stats.invObjProp << std::endl;
-    std::cout << "  SymmetricObjProperty:    " << stats.symmObjProp << std::endl;
-    std::cout << "  InvFunctionalObjProp:    " << stats.invFuncObjProp << std::endl;
-    std::cout << "  AsymmetricObjProperty:   " << stats.asymmObjProp << std::endl;
-    std::cout << "  TransitiveObjProperty:   " << stats.transObjProp << std::endl;
-    std::cout << "  ReflexiveObjProperty:    " << stats.reflObjProp << std::endl;
-    std::cout << "  IrreflexiveObjProperty:  " << stats.irreflObjProp << std::endl;
-    std::cout << "  HasKey:                  " << stats.hasKey << std::endl;
-    std::cout << "  Annotation (ignorée):    " << stats.annotationSkipped << std::endl;
-    std::cout << "  Axiomes inconnus:        " << stats.unknownAxiom << std::endl;
+    output << "\n--- AXIOMES PARSÉS ---" << std::endl;
+    output << "  Progression:              " << stats.processedAxioms << " / "
+              << stats.expectedAxioms << std::endl;
+    output << "  Declarations:            " << stats.declarations << std::endl;
+    output << "  SubClassOf:              " << stats.subClassOf << std::endl;
+    output << "  EquivalentClass:         " << stats.equivalentClass << std::endl;
+    output << "  DisjointClass:           " << stats.disjointClass << std::endl;
+    output << "  ClassAssertion:          " << stats.classAssertion << std::endl;
+    output << "  ObjectPropertyAssertion: " << stats.objPropAssertion << std::endl;
+    output << "  NegObjPropAssertion:     " << stats.negObjPropAssertion << std::endl;
+    output << "  SubObjectProperty:       " << stats.subObjProp << std::endl;
+    output << "  ObjectPropertyDomain:    " << stats.objPropDomain << std::endl;
+    output << "  ObjectPropertyRange:     " << stats.objPropRange << std::endl;
+    output << "  DifferentIndividuals:    " << stats.diffIndividual << std::endl;
+    output << "  SameIndividual:          " << stats.sameIndividual << std::endl;
+    output << "  DataPropertyAssertion:   " << stats.dataPropAssertion << std::endl;
+    output << "  NegDataPropAssertion:    " << stats.negDataPropAssertion << std::endl;
+    output << "  DataPropertyDomain:      " << stats.dataPropDomain << std::endl;
+    output << "  DataPropertyRange:       " << stats.dataPropRange << std::endl;
+    output << "  SubDataProperty:         " << stats.subDataProp << std::endl;
+    output << "  EquivObjProperty:        " << stats.equivObjProp << std::endl;
+    output << "  EquivDataProperty:       " << stats.equivDataProp << std::endl;
+    output << "  DisjointObjProperty:     " << stats.disjObjProp << std::endl;
+    output << "  DisjointDataProperty:    " << stats.disjDataProp << std::endl;
+    output << "  FunctionalObjProperty:   " << stats.funcObjProp << std::endl;
+    output << "  FunctionalDataProperty:  " << stats.funcDataProp << std::endl;
+    output << "  InverseObjProperty:      " << stats.invObjProp << std::endl;
+    output << "  SymmetricObjProperty:    " << stats.symmObjProp << std::endl;
+    output << "  InvFunctionalObjProp:    " << stats.invFuncObjProp << std::endl;
+    output << "  AsymmetricObjProperty:   " << stats.asymmObjProp << std::endl;
+    output << "  TransitiveObjProperty:   " << stats.transObjProp << std::endl;
+    output << "  ReflexiveObjProperty:    " << stats.reflObjProp << std::endl;
+    output << "  IrreflexiveObjProperty:  " << stats.irreflObjProp << std::endl;
+    output << "  HasKey:                  " << stats.hasKey << std::endl;
+    output << "  Annotation (ignorée):    " << stats.annotationSkipped << std::endl;
+    output << "  Axiomes inconnus:        " << stats.unknownAxiom << std::endl;
 
-    std::cout << "\n--- CLASSES COMPLEXES GÉNÉRÉES ---" << std::endl;
-    std::cout << "  UnionOf:                 " << stats.unionOf << std::endl;
-    std::cout << "  IntersectionOf:          " << stats.intersectionOf << std::endl;
-    std::cout << "  ObjectSomeValuesFrom:    " << stats.objectSomeValuesFrom << std::endl;
-    std::cout << "  ObjectAllValuesFrom:     " << stats.objectAllValuesFrom << std::endl;
-    std::cout << "  ObjectHasValue:          " << stats.objectHasValue << std::endl;
-    std::cout << "  ObjectOneOf:             " << stats.objectOneOf << std::endl;
-    std::cout << "  DataSomeValuesFrom:      " << stats.dataSomeValuesFrom << std::endl;
-    std::cout << "  DataAllValuesFrom:       " << stats.dataAllValuesFrom << std::endl;
-    std::cout << "  MaxCardinality:          " << stats.maxCardinality << std::endl;
-    std::cout << "  ObjectComplementOf:      " << stats.objectComplementOf << std::endl;
+    output << "\n--- CLASSES COMPLEXES GÉNÉRÉES ---" << std::endl;
+    output << "  UnionOf:                 " << stats.unionOf << std::endl;
+    output << "  IntersectionOf:          " << stats.intersectionOf << std::endl;
+    output << "  ObjectSomeValuesFrom:    " << stats.objectSomeValuesFrom << std::endl;
+    output << "  ObjectAllValuesFrom:     " << stats.objectAllValuesFrom << std::endl;
+    output << "  ObjectHasValue:          " << stats.objectHasValue << std::endl;
+    output << "  ObjectOneOf:             " << stats.objectOneOf << std::endl;
+    output << "  DataSomeValuesFrom:      " << stats.dataSomeValuesFrom << std::endl;
+    output << "  DataAllValuesFrom:       " << stats.dataAllValuesFrom << std::endl;
+    output << "  MaxCardinality:          " << stats.maxCardinality << std::endl;
+    output << "  ObjectComplementOf:      " << stats.objectComplementOf << std::endl;
 
-    std::cout << "\n--- TOTAUX ---" << std::endl;
-    std::cout << "  Total axiomes parsés:    " << stats.totalAxioms() << std::endl;
-    std::cout << "  Total classes complexes: " << stats.totalComplexClasses() << std::endl;
-    std::cout << "  Total logical names:     " << stats.logicalNamesCreated << std::endl;
-    std::cout << "  TOTAL CONTRAINTES:       " << (stats.totalAxioms() + stats.totalComplexClasses() + stats.logicalNamesCreated) << std::endl;
+    output << "\n--- TOTAUX ---" << std::endl;
+    output << "  Total axiomes parsés:    " << stats.totalAxioms() << std::endl;
+    output << "  Total classes complexes: " << stats.totalComplexClasses() << std::endl;
+    output << "  Total logical names:     " << stats.logicalNamesCreated << std::endl;
+    output << "  TOTAL CONTRAINTES:       " << (stats.totalAxioms() + stats.totalComplexClasses() + stats.logicalNamesCreated) << std::endl;
 
-    std::cout << "========================================\n" << std::endl;
+    output << "========================================\n" << std::endl;
 }
 
 template <typename T>
@@ -456,7 +496,7 @@ void ParserCowl<T>::printPrefixes(ParserCowl<T>* parser, CowlOntology *ontology)
         // Convertir en std::string en utilisant cowl_string_get_cstring pour un affichage correct
         const char* prefixCStr = cowl_string_get_cstring(prefix);
         const char* nsCStr = cowl_string_get_cstring(ns);
-        
+
         std::string prefixStr = (prefixCStr != nullptr) ? std::string(prefixCStr) : "";
         std::string nsStr = (nsCStr != nullptr) ? std::string(nsCStr) : "";
         
@@ -471,11 +511,11 @@ void ParserCowl<T>::printPrefixes(ParserCowl<T>* parser, CowlOntology *ontology)
         PARSER_LOG_CSTRING(stream, ">\n");
         
         // Créer des variables logiques et instancier la contrainte owlPrefix
-        if (parser != nullptr) {
-            chr::Logical_var<int>& prefixVar = parser->getOrCreateLogicalVar(prefixStr);
-            chr::Logical_var<int>& nsVar = parser->getOrCreateLogicalVar(nsStr);
-            parser->space->owlPrefix(prefixVar, nsVar);
-        }
+//        if (parser != nullptr) {
+//            chr::Logical_var<int>& prefixVar = parser->getOrCreateLogicalVar(prefixStr);
+//            chr::Logical_var<int>& nsVar = parser->getOrCreateLogicalVar(nsStr);
+//            parser->space->owlPrefix(prefixVar, nsVar);
+//        }
     }
     
     // Afficher le nombre de préfixes trouvés
@@ -2781,6 +2821,17 @@ void ParserCowl<T>:: iterateDisjObjProp(ParserCowl<T>* parser, CowlAny *axiom){
 template <typename T>
 bool ParserCowl<T>::for_each(void *stream, CowlAny *axiom) {
     ParserCowl<T>* parser = static_cast<ParserCowl<T>*>(stream);
+    ++stats.processedAxioms;
+#ifdef PARSER_DEBUG
+    std::string axiomString = cowlFunctionalToStdString(axiom);
+    if (!axiomString.empty()) {
+        *parser->outputStream << "Axiome " << stats.processedAxioms << " / "
+                              << stats.expectedAxioms << " : " << axiomString << std::endl;
+    } else {
+        std::cerr << "Impossible d'afficher l'axiome " << stats.processedAxioms
+                  << " pendant le parsing." << std::endl;
+    }
+#endif
     CowlAxiomType axiomType = cowl_axiom_get_type(axiom);
     switch (axiomType)
     {
@@ -3003,6 +3054,8 @@ bool ParserCowl<T>::for_each(void *stream, CowlAny *axiom) {
 template <typename T>
 bool ParserCowl<T>::load()
 {
+    resetStats();
+
     //test d'insertion dans l'espace CHR++
 
     std::ifstream f("example2.ofn");
@@ -3029,6 +3082,7 @@ bool ParserCowl<T>::load()
             cowl_release(manager);
             return EXIT_FAILURE;
         }
+        stats.expectedAxioms = cowl_ontology_axiom_count(onto, true);
 
         // Charger les préfixes et les instancier dans CHR++
         printPrefixes(this, onto);
@@ -3042,8 +3096,9 @@ bool ParserCowl<T>::load()
 
         cowl_release(onto);
 
-        // Afficher les statistiques de parsing
-        //printStats();
+#ifdef PARSER_DEBUG
+        printStats(*outputStream);
+#endif
 
         return EXIT_SUCCESS;
 
