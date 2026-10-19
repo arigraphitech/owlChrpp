@@ -62,7 +62,7 @@ cmake --build "$PROJECT_DIR/build" --target ParserProject -j2 &&
 ```
 
 **Pour les grosses ontologies, exécuter `ulimit -s unlimited` dans le terminal
-qui lance le programme**, notamment avec la transitivité immédiate.
+qui lance le programme**.
 
 L'enchaînement avec `&&` empêche d'exécuter un ancien binaire si la compilation
 échoue. L'exécution doit se terminer normalement et produire :
