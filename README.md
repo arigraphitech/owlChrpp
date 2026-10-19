@@ -180,13 +180,17 @@ The current source files contain:
 | `owlFunctional_v0.chrpp` | Uses `firstSymmetricDerivation` to process each unordered pair once per property. | Deferred: consequences are queued in the rule body and saturated after parsing, before queries. |
 
 The deferred variant also includes the inverse-cycle rule for the two self-pairs.
+Its transitivity guards check a hash set of queued consequences before CHR++
+records propagation history. These checks are read-only; queue insertion remains
+in the rule body, after all partners have matched. This avoids retaining a
+history entry for every alternative path to an already queued consequence.
 Both variants include the union subclass rule, corrected query IRIs, buffered
 result files, and the execution clock. The reasoning computes a complete
 saturation before answering queries.
 
-CMake currently selects `owlFunctional.chrpp` through `CHR_FILE`. Editing
-`owlFunctional_v0.chrpp` alone therefore does not change `build/ParserProject`.
-To build that variant, select it in `CHR_FILE` in `CMakeLists.txt`, then configure
+CMake selects the source through `CHR_FILE` in `CMakeLists.txt`. Check its value
+before building: editing the other variant does not change `build/ParserProject`.
+To switch variants, select the desired file in `CHR_FILE`, then configure
 and compile in a separate build directory. Always check which transitivity
 rule is present in the selected source when switching variants.
 

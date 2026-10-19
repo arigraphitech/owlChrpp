@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <cstdint>
+#include <tuple>
+#include <unordered_set>
 #include <set>
 #include <algorithm>
 #include <chrpp.hh>
@@ -20,6 +23,23 @@ const std::string output_file_Queries = "res_queries";
 static std::ofstream realisationOutput;
 static std::ofstream classificationOutput;
 static std::ofstream queryOutput;
+
+using TransitiveAssertion = std::tuple<chr::Logical_var<int>,
+                                       chr::Logical_var<int>,
+                                       chr::Logical_var<int>>;
+static std::vector<TransitiveAssertion> pendingTransitiveAssertions;
+using TransitiveKey = std::tuple<std::uintptr_t, std::uintptr_t, std::uintptr_t>;
+struct TransitiveKeyHash {
+    std::size_t operator()(const TransitiveKey& key) const noexcept {
+        std::size_t seed = 0;
+        for (auto value : {std::get<0>(key), std::get<1>(key), std::get<2>(key)}) {
+            seed ^= std::hash<std::uintptr_t>{}(value) + 0x9e3779b9u
+                    + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
+static std::unordered_set<TransitiveKey, TransitiveKeyHash> queuedTransitiveAssertions;
 
 /**
  * Hash data structure needed for std::string
@@ -138,6 +158,42 @@ struct chr::XXHash<LogicalVarSetIterator>
 };
 bool different(const chr::Logical_var<int>&  A, const chr::Logical_var<int>&  B, const chr::Logical_var<int>&  C) {
     return A != B && B != C && A != C;
+}
+
+// Queue each transitive consequence once; posting it immediately here would
+// recursively re-enter owlObjectPropertyAssertion and grow the C++ stack.
+bool isTransitiveDerivationQueued(const chr::Logical_var<int>& X,
+                                 const chr::Logical_var<int>& P,
+                                 const chr::Logical_var<int>& Z) {
+    return queuedTransitiveAssertions.find(TransitiveKey{
+        reinterpret_cast<std::uintptr_t>(X.address()),
+        reinterpret_cast<std::uintptr_t>(P.address()),
+        reinterpret_cast<std::uintptr_t>(Z.address())}) != queuedTransitiveAssertions.end();
+}
+
+void queueTransitiveDerivation(const chr::Logical_var<int>& X,
+                               const chr::Logical_var<int>& P,
+                               const chr::Logical_var<int>& Z) {
+    const auto inserted = queuedTransitiveAssertions.emplace(reinterpret_cast<std::uintptr_t>(X.address()),
+                                        reinterpret_cast<std::uintptr_t>(P.address()),
+                                        reinterpret_cast<std::uintptr_t>(Z.address())).second;
+    if (inserted) {
+        pendingTransitiveAssertions.emplace_back(X, P, Z);
+    }
+}
+
+// Une règle de symétrie ne doit traiter qu'une fois la paire non ordonnée
+// {X,Y}; sinon l'assertion inverse réactive immédiatement la règle en boucle.
+bool firstSymmetricDerivation(const chr::Logical_var<int>& X,
+                              const chr::Logical_var<int>& P,
+                              const chr::Logical_var<int>& Y) {
+    using Key = std::tuple<std::uintptr_t, std::uintptr_t, std::uintptr_t>;
+    auto x = reinterpret_cast<std::uintptr_t>(X.address());
+    auto p = reinterpret_cast<std::uintptr_t>(P.address());
+    auto y = reinterpret_cast<std::uintptr_t>(Y.address());
+    if (y < x) std::swap(x, y);
+    static std::set<Key> seen;
+    return seen.emplace(p, x, y).second;
 }
 
 void display(std::string x){
@@ -604,21 +660,20 @@ objectPropertyCoDomain @ owlObjectPropertyRange(P,DP) , owlObjectPropertyAsserti
 
 //owlSameIndividual(X,Y) is true if X and Y refer to (denote) the same individual
 sameIndividual1 @ owlSameIndividual(X,Y) ==> X!=Y |  owlSameIndividual(Y,X)  ;;
-sameIndividual2 @ owlSameIndividual(X,Y) ,  owlSameIndividual(Y,Z) ==> X!=Y && Y!=Z && X!=Z  | owlSameIndividual(X,Z) ;;
-sameIndividual3 @ owlSameIndividual(X,Y), owlObjectPropertyAssertion(X,P,O)  ==>  owlObjectPropertyAssertion(Y,P,O);;
-sameIndividual4 @ owlSameIndividual(X,Y), owlDataPropertyAssertion(X,P,O) ==>  owlDataPropertyAssertion(Y,P,O);; 
-sameIndividual6 @ owlSameIndividual(X,Y), owlClassAssertion(X,C,true) ==>  owlClassAssertion(Y,C,true);;
+sameIndividual2 @ owlSameIndividual(X,Y) ,  owlSameIndividual(Y,Z) ==> X!=Y && X!=Z && Y!=Z   | owlSameIndividual(X,Z) ;;
+sameIndividual3 @ owlSameIndividual(X,Y), owlObjectPropertyAssertion(X,P,O)  ==>  X!=Y | owlObjectPropertyAssertion(Y,P,O);;
+sameIndividual4 @ owlSameIndividual(X,Y), owlDataPropertyAssertion(X,P,O) ==>  X!=Y |  owlDataPropertyAssertion(Y,P,O);;
+sameIndividual6 @ owlSameIndividual(X,Y), owlClassAssertion(X,C,true) ==>  X!=Y | owlClassAssertion(Y,C,true);;
 
 //owlDifferentIndividual(X,Y) is true if it's excluded that X and Y are the same individual
 DifferentIndividual @ owlDifferentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  failure();;
-//inverseFunctional
 
 //owlInverseObjectProperty( P1,P2 ) is true if P1 is the inverse object property of P2
 inverseProperty @ owlInverseObjectProperty(P1,P2) , owlObjectPropertyAssertion(X,P1,Y) ==> owlObjectPropertyAssertion(Y,P2,X);;
 owlInverseObjectProperty(P1,P2) ==> owlInverseObjectProperty(P2,P1)  ;;
 
 //owlSymmetricObjectProperty(P) is true if P is a symmetric object property
-symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> X!=Y | owlObjectPropertyAssertion(Y,P,X) ;;
+symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> X!=Y && firstSymmetricDerivation(X,P,Y) | owlObjectPropertyAssertion(Y,P,X) ;;
 
 //owlAsymmetricObjectProperty(P) is true if P is an asymmetric object property
 // If P(X,Y) exists and P is asymmetric, then ¬P(Y,X) must hold
@@ -707,18 +762,10 @@ r8c @ owlIntersectionOfLoop(C,ITEND,ITEND,N) \ intersectionSubclassCheck(C,A,N)<
 //ComplementOf: initialize all named individuals as potentially not in the complement class
 owlComplementOf(A,NOTA),owlNamedIndividual(X) ==> owlClassAssertion(X,NOTA,false) ;;
 
-//4->0.8
-//ObjectSomeValuesFrom: if U is instance of ∃P.Y, then U must have property P to some V that is instance of Y (witness creation)
-//owlObjectSomeValuesFrom(C,P,Y), owlClassAssertion(U,C,true) ==>    owlObjectPropertyAssertion(U,P,V),logicalName(emptyString,V),owlClassAssertion(V,Y,true);;
 
 //4->0.7
 //ObjectSomeValuesFrom: if U has property P to V and V is instance of Y, then U is instance of ∃P.Y
 owlObjectSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(V,Y,true) ==> owlClassAssertion(U,C,true) ;;
-
-//4->0.7
-//ObjectSomeValuesFrom cleanup: remove anonymous witness if a named individual already exists
-//owlObjectPropertyAssertion(U,P,W),logicalName(URI,W) #passive,owlClassAssertion(W,Y,true) \ owlObjectPropertyAssertion(U,P,V),logicalName(emptyString,V) ,owlClassAssertion(V,Y,true) <=> URI!=emptyString | success() ;;
-
 
 //ObjectSomeValuesFrom: si deux SomeValuesFrom ont la même propriété et classe, ils sont équivalents
 owlObjectSomeValuesFrom(C1, P, Y), owlObjectSomeValuesFrom(C2, P, Y) ==> owlEquivalentClass(C1, C2) ;;
@@ -726,15 +773,6 @@ owlObjectSomeValuesFrom(C1, P, Y), owlObjectSomeValuesFrom(C2, P, Y) ==> owlEqui
 
 //DataSomeValuesFrom: if U has data property P with value V of valid type, then U is instance of ∃P.DR
 owlDataSomeValuesFrom(C,P,DR) , owlDataPropertyAssertion(U,P,V) ==> ! invalidType(DR,V) | owlClassAssertion(U,C,true) ;;
-
-//DataSomeValuesFrom: if U is instance of ∃P.DR, then U must have data property P with some value of type DR (witness creation)
-owlDataSomeValuesFrom(C,P,DR), owlClassAssertion(U,C,true) ==> owlDataPropertyAssertion(U,P,createValue(emptyString,DR)),logicalName(emptyString,V);;
-
-//ObjectSomeValuesFrom: if U has property P to V and V is instance of Y, then U is instance of ∃P.Y
-owlObjectSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(V,Y,true) ==> owlClassAssertion(U,C,true) ;;
-
-//DataSomeValuesFrom cleanup: remove anonymous data value witness if a named value already exists
-owlDataPropertyAssertion(U,P,W),owlDataValue(W,ValW,TypeW)\owlDataValue(V,emptyString,TypeV), owlDataPropertyAssertion(U,P,V)<=> sameDataType(TypeV,TypeW) && ValW!=emptyString | success() ;;
 
 
 //ObjectMaxCardinality(0): if U is instance of ≤0 P, then U cannot have any property P assertion (failure)
@@ -814,11 +852,13 @@ owlHasKeyCheck(C,X,Y,N,N) <=> owlSameIndividual(X,Y) ;;
 
 
 //owlTransitiveObjectProperty(P) is true if P is a transitive object property
-transitiveObjectProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> X!=Y && Y!=Z && X!= Z | owlObjectPropertyAssertion(X,P,Z);;
+// The guard is read-only and rejects known consequences before CHR++ records
+// their partner combinations in propagation history. Enqueue only in the body.
+transitiveObjectProperty @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) ==> X!=Y && X!=Z && Y!=Z && !isTransitiveDerivationQueued(X,P,Z) | queueTransitiveDerivation(X,P,Z);;
 
-// L'historique CHR++ identifie la paire inverse sans tenir compte de son ordre :
-// produire les deux conséquences réflexives du cycle dans la même application.
-transitiveObjectPropertyCycle @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,X) ==> X!=Y | owlObjectPropertyAssertion(X,P,X),owlObjectPropertyAssertion(Y,P,Y);;
+// CHR++ sorts partner IDs in propagation history: emit both self pairs of a
+// cycle together, since reversing the two assertions shares the same history.
+transitiveObjectPropertyCycle @ owlTransitiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,X) ==> X!=Y && (!isTransitiveDerivationQueued(X,P,X) || !isTransitiveDerivationQueued(Y,P,Y)) | queueTransitiveDerivation(X,P,X),queueTransitiveDerivation(Y,P,Y);;
 
 
 //Display result: convert logical name to URI and display
@@ -1023,6 +1063,15 @@ int main(int argc, char* argv[])
     }
     parser.load();
 
+    // Saturate the queued transitive consequences iteratively, avoiding a
+    // nested C++ call for every edge in a transitive path.
+    for (std::size_t i = 0; i < pendingTransitiveAssertions.size(); ++i) {
+        const auto& assertion = pendingTransitiveAssertions[i];
+        space->owlObjectPropertyAssertion(std::get<0>(assertion),
+                                          std::get<1>(assertion),
+                                          std::get<2>(assertion));
+    }
+
     const std::string queryNamespace = parser.getQueryNamespace();
     const auto queryUri = [&queryNamespace](const char* name) {
         return "<" + queryNamespace + name + ">";
@@ -1054,5 +1103,6 @@ int main(int argc, char* argv[])
     const auto end = std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed = end - start;
     std::cout << "temps " << elapsed.count() << std::endl;
+    chr::Statistics::print(std::cout);
     return 0;
 }
