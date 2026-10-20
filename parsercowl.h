@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <iomanip>
 #include "AnySimpleType.h"
+#include "LogicalVarSet.h"
 
 // Macros de debug pour le parser
 // Décommenter la ligne suivante pour activer les messages de debug du parser
@@ -34,13 +35,6 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 }
-
-// Type pour les ensembles de variables logiques
-#include <set>
-namespace chr {
-    template<typename T> class Logical_var;
-}
-using LogicalVarSet = std::set<chr::Logical_var<int>>;
 
 enum class XSDType  {
     // Numériques
@@ -629,7 +623,8 @@ chr::Logical_var<int> ParserCowl<T>::iterateUnion(ParserCowl<T>* parser, CowlCls
     PARSER_LOG(stream, "   ID: ");
     PARSER_LOG_CSTRING(stream, unionId.c_str());
     PARSER_LOG(stream, "\n");
-    std::set<chr::Logical_var<int>> unionClasses;
+    LogicalVarSet unionClasses;
+    unionClasses.reserve(count);
 
     for (ulib_uint i = 0; i < count; ++i) {
         CowlClsExp* operand = (CowlClsExp*) cowl_vector_get_item(operands, i);
@@ -734,7 +729,8 @@ chr::Logical_var<int> ParserCowl<T>::iterateIntersection(ParserCowl<T>* parser, 
     PARSER_LOG(stream, buffer);
     
     // Créer un set pour stocker les opérandes
-    std::set<chr::Logical_var<int>> intersectionClasses;
+    LogicalVarSet intersectionClasses;
+    intersectionClasses.reserve(count);
     
     // Pour chaque opérande Ci de l'intersection, l'ajouter au set
     for(size_t i = 0; i < count; i++) {
@@ -902,7 +898,8 @@ chr::Logical_var<int> ParserCowl<T>::iterateObjectOneOf(ParserCowl<T>* parser, C
     CowlObjOneOf* oneOf = (CowlObjOneOf*)oneOfExp;
     CowlVector* individuals = cowl_obj_one_of_get_inds(oneOf);
     size_t count = cowl_vector_count(individuals);
-    std::set<chr::Logical_var<int>> oneOfIndividuals;
+    LogicalVarSet oneOfIndividuals;
+    oneOfIndividuals.reserve(count);
     
     // Créer un set d'URIs pour les individus et créer des assertions de classe
     for(size_t i = 0; i < count; i++) {
@@ -1615,6 +1612,7 @@ void ParserCowl<T>:: iterateObjPropAssert(ParserCowl<T>* parser, CowlAny *axiom)
 
     PARSER_LOG_STRING(stream, nameObjet);
 
+    // Assertion objet : (sujet, propriété, objet).
     parser->space->owlObjectPropertyAssertion(sujetVar, propVar, objetVar);
 
     PARSER_LOG(stream, "\n");

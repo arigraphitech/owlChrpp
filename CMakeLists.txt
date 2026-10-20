@@ -36,8 +36,9 @@ endif()
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
-# Traces CHR++ désactivées pour les mesures de performance : ne pas passer
-# --trace à chrppc et laisser ENABLE_TRACE commenté dans owlFunctional.chrpp.
+# Traces CHR++ désactivées pour les mesures de performance.
+# Pour les réactiver, ajouter --trace à chrppc et décommenter
+# ENABLE_TRACE dans owlFunctional.chrpp.
 
 
 # === Partie CHRPP ===
@@ -59,10 +60,14 @@ if(NOT DEFINED CHRPP_ROOT)
         set(CHRPP_ROOT "${CMAKE_SOURCE_DIR}/../chrpp")
     endif()
 endif()
-set(CHRPP_COMPILER ${CHRPP_ROOT}/chrppc/chrppc)
-set(CHRPP_RUNTIME ${CHRPP_ROOT}/runtime)
+# Les commandes de compilation sont exécutées depuis build/, donc résoudre
+# aussi les chemins fournis via -DCHRPP_ROOT relativement à la racine du projet.
+get_filename_component(CHRPP_ROOT "${CHRPP_ROOT}" ABSOLUTE
+    BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(CHRPP_COMPILER "${CHRPP_ROOT}/chrppc/chrppc")
+set(CHRPP_RUNTIME "${CHRPP_ROOT}/runtime")
 
-if(EXISTS ${CHRPP_COMPILER})
+if(EXISTS "${CHRPP_COMPILER}")
     message(STATUS "CHR++ trouvé: ${CHRPP_COMPILER} (régénération de owl.cpp possible)")
     # Inclut le runtime CHR++ (nécessaire pour compiler owl.cpp)
     include_directories(${CHRPP_RUNTIME})
@@ -91,6 +96,7 @@ add_executable(ParserProject
     parsercowl.h
     Parser.h
     AnySimpleType.h
+    LogicalVarSet.h
     ${OWL_CPP}
 )
 
