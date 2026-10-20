@@ -456,6 +456,7 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
             owlObjectPropertyChain(?int,?int,+int,+int),
             constructPropertyChain(?int,+int,?int,?int,+int) ,
             owlHasKey(?int,?int,+int,+int),
+            owlHasKeyCandidate(?int,?int,?int,+int,+int),
             owlHasKeyCheck(?int,?int,?int,+int,+int),
             querySuperClassOfUri(+std::string),
             querySubClassOfUri(+std::string),
@@ -732,8 +733,6 @@ DifferentIndividual @ owlDifferentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  f
 inverseProperty @ owlInverseObjectProperty(P1,P2) , owlObjectPropertyAssertion(X,P1,Y) ==> owlObjectPropertyAssertion(Y,P2,X);;
 owlInverseObjectProperty(P1,P2) ==> owlInverseObjectProperty(P2,P1)  ;;
 
-//owlSymmetricObjectProperty(P) is true if P is a symmetric object property
-symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> X!=Y | owlObjectPropertyAssertion(Y,P,X) ;;
 
 //owlAsymmetricObjectProperty(P) is true if P is an asymmetric object property
 // If P(X,Y) exists and P is asymmetric, then ¬P(Y,X) must hold
@@ -878,7 +877,6 @@ hasValueSubsumptionProp @ owlHasValueObject(C, P1, A),
                           owlSubObjectPropertyOf(P1, P2),
                           owlClassAssertion(A, Y, true),
                         owlObjectSomeValuesFrom(SV, P2, Y) 
-                        
 ==> P1!=P2 |  owlSubclassOf(C, SV) ;;
 
 
@@ -909,11 +907,34 @@ finalChain @ constructPropertyChain(PC,N,X,Y,N) <=> owlObjectPropertyAssertion(X
 
 //owlHasKey
 owlHasKeyCheck(C,X,Y,I,N) #passive \ owlHasKeyCheck(C,X,Y,I,N) <=> true ;;
-owlHasKey(C,P,0,N), owlClassAssertion(X,C,true), owlClassAssertion(Y,C,true) ==> !(X==Y) | owlHasKeyCheck(C,X,Y,0,N) ;;
+owlHasKeyCandidate(C,X,Y,I,N) #passive \ owlHasKeyCandidate(C,X,Y,I,N) <=> true ;;
+
+// Join on a shared value first, before testing class membership in a separate
+// rule. This prevents the compiler from enumerating all pairs of class members.
+hasKeyObjectStart @ owlHasKey(C,P,0,N),
+    owlObjectPropertyAssertion(X,P,V), owlObjectPropertyAssertion(Y,P,V)
+    ==> X!=Y | owlHasKeyCandidate(C,X,Y,0,N) ;;
+
+hasKeyDataStart @ owlHasKey(C,P,0,N),
+    owlDataPropertyAssertion(X,P,V), owlDataPropertyAssertion(Y,P,V)
+    ==> X!=Y | owlHasKeyCandidate(C,X,Y,0,N) ;;
+
+// Check memberships one at a time, using indexed lookups on each individual.
+// Every head remains active, so candidates can wait for later class assertions.
+hasKeyCandidateFirstClass @ owlClassAssertion(X,C,true)
+    \ owlHasKeyCandidate(C,X,Y,0,N) <=> owlHasKeyCandidate(C,X,Y,1,N) ;;
+
+// The first key property is already checked; continue with property index 1.
+hasKeyCandidateSecondClass @ owlClassAssertion(Y,C,true)
+    \ owlHasKeyCandidate(C,X,Y,1,N) <=> owlHasKeyCheck(C,X,Y,1,N) ;;
+
+// Check the remaining object/data properties using the existing key sequence.
 owlObjectPropertyAssertion(X,P,V), owlObjectPropertyAssertion(Y,P,V), owlHasKey(C,P,I,N) \ owlHasKeyCheck(C,X,Y,I,N) <=> owlHasKeyCheck(C,X,Y,I+1,N) ;;
 owlDataPropertyAssertion(X,P,V), owlDataPropertyAssertion(Y,P,V), owlHasKey(C,P,I,N) \ owlHasKeyCheck(C,X,Y,I,N) <=> owlHasKeyCheck(C,X,Y,I+1,N) ;;
 owlHasKeyCheck(C,X,Y,N,N) <=> owlSameIndividual(X,Y) ;;
 
+//owlSymmetricObjectProperty(P) is true if P is a symmetric object property
+symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> X!=Y | owlObjectPropertyAssertion(Y,P,X) ;;
 
 // Collect only assertions whose property is explicitly marked transitive.
 // This phase runs after normal CHR saturation and is repeated after each closure.
