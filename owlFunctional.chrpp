@@ -94,9 +94,7 @@ struct chr::XXHash<Value>
 
 using StringSet = std::vector<std::string>;
 
-bool different(const chr::Logical_var<int>&  A, const chr::Logical_var<int>&  B, const chr::Logical_var<int>&  C) {
-    return A != B && B != C && A != C;
-}
+
 
 
 
@@ -396,7 +394,7 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
 *
 *\ingroup Examples
 
-<CHR name="OWL2">
+<CHR name="OWL2" parameters="bool flag">
     // === Contraintes ===
     <chr_constraint>
             owlPrefix(?int,?int),
@@ -418,6 +416,9 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
             owlNegativeObjectAssertion(?int,?int,?int),
             // Positive object assertions: (subject, property, object).
             owlObjectPropertyAssertion(?int,?int,?int),
+            // Assertions selected for functional/inverse-functional joins.
+            functionalObjAssertion(?int,?int,?int),
+            inverseFunctionalObjAssertion(?int,?int,?int),
             owlSameIndividual(?int,?int),
             owlDifferentIndividual(?int,?int),
             owlInverseObjectProperty(?int,?int),
@@ -514,6 +515,8 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
 
 //suppression des doublons
 owlObjectPropertyAssertion(X,P,Y) #passive \ owlObjectPropertyAssertion(X,P,Y) <=>  true ;;
+functionalObjAssertion(X,P,Y) #passive \ functionalObjAssertion(X,P,Y) <=> true ;;
+inverseFunctionalObjAssertion(X,P,Y) #passive \ inverseFunctionalObjAssertion(X,P,Y) <=> true ;;
 owlClassAssertion(X,A,B) #passive \ owlClassAssertion(X,A,B) <=> true ;;
 owlPrefix(X,Y) #passive \ owlPrefix(X,Y) <=> true ;;
 owlClass(C) #passive \ owlClass(C) <=> true ;;
@@ -632,117 +635,118 @@ complementOf @ owlComplementOf(A,NOTA) , owlClassAssertion(X,A,true), owlClassAs
 
 //onto schema inference
 //If C1 is subclass of C2, then both C1 and C2 are classes
-owlSubclassOf(C1,C2) ==> owlClass(C1) , owlClass(C2) ;;
+owlSubclassOf(C1,C2) =>> owlClass(C1) , owlClass(C2) ;;
 
 //If X is an instance of class C, then C is a class and X is a named individual
-owlClassAssertion(X,C,true) ==> owlClass(C) , owlNamedIndividual(X) ;;
+owlClassAssertion(X,C,true) =>> owlClass(C) , owlNamedIndividual(X) ;;
 
 //SubClassOf: every class is a subclass of itself (reflexivity)
-//owlClass(A) ==> owlSubclassOf(A,A);;
-subTrans @ owlSubclassOf(A,B), owlSubclassOf(B,C) ==> A!=B && B!=C && A!=C | owlSubclassOf(A,C);;
+//owlClass(A) =>> owlSubclassOf(A,A);;
+subTrans @ owlSubclassOf(A,B), owlSubclassOf(B,C) =>> A!=B && B!=C && A!=C | owlSubclassOf(A,C);;
 
 //Equivalent classes: every class is equivalent to itself (reflexivity)
-owlClass(C) ==>   owlEquivalentClass(C,C);;
+owlClass(C) =>>   owlEquivalentClass(C,C);;
 
 //If A is subclass of B and B is subclass of A, then A and B are equivalent classes
-owlSubclassOf(A,B), owlSubclassOf(B,A) ==> A!=B | owlEquivalentClass(A,B);;
+owlSubclassOf(A,B), owlSubclassOf(B,A) =>> A!=B | owlEquivalentClass(A,B);;
 
-
-// every class is a subclass of owl:Thing, every individual is an instance of owl:Thing
-owlClass(T),logicalName(owlThing,T) #passive, owlClass(C) ==> C!=T | owlSubclassOf(C,T);;
-owlClass(T),logicalName(owlThing,T) #passive, owlNamedIndividual(X) ==> owlClassAssertion(X,T,true);;
 
 //owl:Nothing is a subclass of every class
-owlClass(C) , logicalName(URIC,C) #passive, logicalName(owlNothing, OwlNothingVar) #passive ==> owlSubclassOf(OwlNothingVar,C);;
+owlClass(C) , logicalName(URIC,C) #passive, logicalName(owlNothing, OwlNothingVar) #passive =>> owlSubclassOf(OwlNothingVar,C);;
 
 //Object property: every object property is a sub-property of itself and equivalent to itself
-owlObjectProperty(P) ==> owlSubObjectPropertyOf(P,P), owlEquivalentObjectProperty(P,P);;
+owlObjectProperty(P) =>> owlSubObjectPropertyOf(P,P), owlEquivalentObjectProperty(P,P);;
 
 //Data property: every data property is a sub-property of itself and equivalent to itself
-owlDataProperty(P) ==>  owlEquivalentDataProperty(P,P), owlSubDataPropertyOf(P,P) ;; 
+owlDataProperty(P) =>>  owlEquivalentDataProperty(P,P), owlSubDataPropertyOf(P,P) ;; 
 
 //Transitive sub-property: if A is sub-property of B and B is sub-property of C, then A is sub-property of C
-owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,C) ==> A!=B && B!=C && A!=C | owlSubObjectPropertyOf(A,C);;
-owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,C) ==> A!=B && B!=C && A!=C | owlSubDataPropertyOf(A,C);;
+owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,C) =>> A!=B && B!=C && A!=C | owlSubObjectPropertyOf(A,C);;
+owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,C) =>> A!=B && B!=C && A!=C | owlSubDataPropertyOf(A,C);;
 
 //Equivalent properties imply sub-property relationships in both directions
-owlEquivalentObjectProperty(A,B) ==> A!=B | owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,A);;
-owlEquivalentDataProperty(A,B) ==> A!=B | owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,A);;
+owlEquivalentObjectProperty(A,B) =>> A!=B | owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,A);;
+owlEquivalentDataProperty(A,B) =>> A!=B | owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,A);;
 
 //If A is sub-property of B and B is sub-property of A, then A and B are equivalent properties
-owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,A) ==> A!=B | owlEquivalentObjectProperty(A,B);;
-owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,A) ==> A!=B | owlEquivalentDataProperty(A,B);;
+owlSubObjectPropertyOf(A,B), owlSubObjectPropertyOf(B,A) =>> A!=B | owlEquivalentObjectProperty(A,B);;
+owlSubDataPropertyOf(A,B), owlSubDataPropertyOf(B,A) =>> A!=B | owlEquivalentDataProperty(A,B);;
 
 
 
 //Domain and range propagation
 //If property P has domain C1 and C1 is subclass of C2, then P also has domain C2
-owlObjectPropertyDomain(P,C1), owlSubclassOf(C1,C2) ==> C1!=C2 | owlObjectPropertyDomain(P,C2);;
+owlObjectPropertyDomain(P,C1), owlSubclassOf(C1,C2) =>> C1!=C2 | owlObjectPropertyDomain(P,C2);;
 
 //If property P1 is sub-property of P2 and P2 has domain C, then P1 also has domain C
-owlObjectPropertyDomain(P2,C), owlSubObjectPropertyOf(P1,P2) ==> P1!=P2 | owlObjectPropertyDomain(P1,C);;
+owlObjectPropertyDomain(P2,C), owlSubObjectPropertyOf(P1,P2) =>> P1!=P2 | owlObjectPropertyDomain(P1,C);;
 
 //If property P has range C1 and C1 is subclass of C2, then P also has range C2
-owlObjectPropertyRange(P,C1), owlSubclassOf(C1,C2) ==> C1!=C2 | owlObjectPropertyRange(P,C2);;
+owlObjectPropertyRange(P,C1), owlSubclassOf(C1,C2) =>> C1!=C2 | owlObjectPropertyRange(P,C2);;
 
 //If property P1 is sub-property of P2 and P2 has range C, then P1 also has range C
-owlObjectPropertyRange(P2,C), owlSubObjectPropertyOf(P1,P2) ==>  P1!=P2 | owlObjectPropertyRange(P1,C);;
+owlObjectPropertyRange(P2,C), owlSubObjectPropertyOf(P1,P2) =>>  P1!=P2 | owlObjectPropertyRange(P1,C);;
 
 //Domain propagation for data properties
-owlDataPropertyDomain(P2,C), owlSubDataPropertyOf(P1,P2) ==> P1!=P2 | owlDataPropertyDomain(P1,C);;
+owlDataPropertyDomain(P2,C), owlSubDataPropertyOf(P1,P2) =>> P1!=P2 | owlDataPropertyDomain(P1,C);;
 
 //Range propagation for data properties
-owlDataPropertyRange(P2,C), owlSubDataPropertyOf(P1,P2) ==>  P1!=P2 | owlDataPropertyRange(P1,C);;
+owlDataPropertyRange(P2,C), owlSubDataPropertyOf(P1,P2) =>>  P1!=P2 | owlDataPropertyRange(P1,C);;
 
 
 //owlDataPropertyDomain(P,DP) is true if the property P has the domain DP (an object)
 //owlDataPropertyRange(P,DP) is true if the property P has the range DP (a DataType)
-DataPropertyDomain @ owlDataPropertyDomain(P,DP) , owlDataPropertyAssertion(X,P,_) ==> owlClassAssertion(X,DP,true) ;;
+DataPropertyDomain @ owlDataPropertyDomain(P,DP) , owlDataPropertyAssertion(X,P,_) =>> owlClassAssertion(X,DP,true) ;;
 DataPropertyRange @ owlDataPropertyRange(P,DR) , owlDataPropertyAssertion(_,P,Y) <=> invalidType(DR,Y) | failure();;
 
 //owlClassAssertion(X,A,true) is true if X is an instance of A
 //owlSubclassOf(A,B) is true if A is a subclass of B
-subInherit @ owlSubclassOf(A,B) ,owlClassAssertion(X,A,true) ==> A!=B |  owlClassAssertion(X,B,true) ;;
+subInherit @ owlSubclassOf(A,B) ,owlClassAssertion(X,A,true) =>> A!=B |  owlClassAssertion(X,B,true) ;;
 
 //owlEquivalentClass(A,B) is true if the class A is equivalent with the class B
-equivalentClass @ owlEquivalentClass(A,B),owlClassAssertion(X,A,true) ==> A!=B |owlClassAssertion(X,B,true);;
+equivalentClass @ owlEquivalentClass(A,B),owlClassAssertion(X,A,true) =>> A!=B |owlClassAssertion(X,B,true);;
 
-owlEquivalentClass(A,B) ==> A!=B  | owlSubclassOf(A,B) , owlSubclassOf(B,A) ;;
+owlEquivalentClass(A,B) =>> A!=B  | owlSubclassOf(A,B) , owlSubclassOf(B,A) ;;
 
 //ObjectPropertyAssertion(X,P,Y) is true if the individual X has the property P with the value Y
 // owlSubPropertyOf(P2,P1)  is true if P2 is a subPropertyof the property P1
-subObjproperty @ owlSubObjectPropertyOf(P2,P1) , owlObjectPropertyAssertion(X,P2,Y) ==> P2!=P1 | owlObjectPropertyAssertion(X,P1,Y) ;;
-subDataProperty @ owlSubDataPropertyOf(P2,P1) , owlDataPropertyAssertion(X,P2,Y) ==> P2!=P1 | owlDataPropertyAssertion(X,P1,Y) ;;
+subObjproperty @ owlSubObjectPropertyOf(P2,P1) , owlObjectPropertyAssertion(X,P2,Y) =>> P2!=P1 | owlObjectPropertyAssertion(X,P1,Y) ;;
+subDataProperty @ owlSubDataPropertyOf(P2,P1) , owlDataPropertyAssertion(X,P2,Y) =>> P2!=P1 | owlDataPropertyAssertion(X,P1,Y) ;;
 
 //owlObjectPropertyDomain(P,DP) is true if the property P has the domain DP (an object)
 //owlObjectPropertyRange(P,DP) is true if the property P has the range DP (an object)
-objectPropertydomain @ owlObjectPropertyDomain(P,DP) , owlObjectPropertyAssertion(X,P,Y) ==> owlClassAssertion(X,DP,true) ;;
-objectPropertyCoDomain @ owlObjectPropertyRange(P,DP) , owlObjectPropertyAssertion(X,P,Y) ==> owlClassAssertion(Y,DP,true) ;;
+objectPropertydomain @ owlObjectPropertyDomain(P,DP) , owlObjectPropertyAssertion(X,P,Y) =>> owlClassAssertion(X,DP,true) ;;
+objectPropertyCoDomain @ owlObjectPropertyRange(P,DP) , owlObjectPropertyAssertion(X,P,Y) =>> owlClassAssertion(Y,DP,true) ;;
 
 //owlSameIndividual(X,Y) is true if X and Y refer to (denote) the same individual
-sameIndividual1 @ owlSameIndividual(X,Y) ==> X!=Y |  owlSameIndividual(Y,X)  ;;
-sameIndividual2 @ owlSameIndividual(X,Y) ,  owlSameIndividual(Y,Z) ==> X!=Y && X!=Z && Y!=Z   | owlSameIndividual(X,Z) ;;
-sameIndividual3 @ owlSameIndividual(X,Y), owlObjectPropertyAssertion(X,P,O)  ==>  X!=Y | owlObjectPropertyAssertion(Y,P,O);;
-sameIndividual4 @ owlSameIndividual(X,Y), owlDataPropertyAssertion(X,P,O) ==>  X!=Y |  owlDataPropertyAssertion(Y,P,O);;
-sameIndividual6 @ owlSameIndividual(X,Y), owlClassAssertion(X,C,true) ==>  X!=Y | owlClassAssertion(Y,C,true);;
+sameIndividual1 @ owlSameIndividual(X,Y) =>> X!=Y |  owlSameIndividual(Y,X)  ;;
+sameIndividual2 @ owlSameIndividual(X,Y) ,  owlSameIndividual(Y,Z) =>> X!=Y && X!=Z && Y!=Z   | owlSameIndividual(X,Z) ;;
+sameIndividual3 @ owlSameIndividual(X,Y), owlObjectPropertyAssertion(X,P,O)  =>>  X!=Y | owlObjectPropertyAssertion(Y,P,O);;
+sameIndividual4 @ owlSameIndividual(X,Y), owlDataPropertyAssertion(X,P,O) =>>  X!=Y |  owlDataPropertyAssertion(Y,P,O);;
+sameIndividual6 @ owlSameIndividual(X,Y), owlClassAssertion(X,C,true) =>>  X!=Y | owlClassAssertion(Y,C,true) ;;
 
 //owlDifferentIndividual(X,Y) is true if it's excluded that X and Y are the same individual
 DifferentIndividual @ owlDifferentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  failure();;
 
 //owlInverseObjectProperty( P1,P2 ) is true if P1 is the inverse object property of P2
-inverseProperty @ owlInverseObjectProperty(P1,P2) , owlObjectPropertyAssertion(X,P1,Y) ==> owlObjectPropertyAssertion(Y,P2,X);;
-owlInverseObjectProperty(P1,P2) ==> owlInverseObjectProperty(P2,P1)  ;;
+inverseProperty @ owlInverseObjectProperty(P1,P2) , owlObjectPropertyAssertion(X,P1,Y) =>> owlObjectPropertyAssertion(Y,P2,X);;
+owlInverseObjectProperty(P1,P2) =>> owlInverseObjectProperty(P2,P1)  ;;
 
 
 //owlAsymmetricObjectProperty(P) is true if P is an asymmetric object property
 // If P(X,Y) exists and P is asymmetric, then ¬P(Y,X) must hold
-AsymmetricProperty1 @ owlAsymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> owlNegativeObjectAssertion(Y,P,X) ;;
+AsymmetricProperty1 @ owlAsymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) =>> owlNegativeObjectAssertion(Y,P,X) ;;
 
 //owlreflexiveProperty(P) is true if P is a reflexive object property
-reflexiveProperty @ owlReflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> X!=Y | owlObjectPropertyAssertion(X,P,X),owlObjectPropertyAssertion(Y,P,Y);;
+reflexiveProperty @ owlReflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) =>> X!=Y | owlObjectPropertyAssertion(X,P,X),owlObjectPropertyAssertion(Y,P,Y);;
 
 //owlFunctionalObjectProperty(P) is true if P is a functional object property
-functionalObjProperty @ owlFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(X,P,Z) ==> Y!=Z  | owlSameIndividual(Y,Z);;
+// Filter by property before joining assertions. Both heads remain active so
+// a later functional-property declaration also selects existing assertions.
+selectFunctional @ owlFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
+    =>> functionalObjAssertion(X,P,Y) ;;
+functionalObjProperty @ functionalObjAssertion(X,P,Y),functionalObjAssertion(X,P,Z)
+    =>> Y!=Z | owlSameIndividual(Y,Z) ;;
 
 //owlFunctionalDataProperty(P) is true if P is a functional data property
 //Note: Pour les data properties, Y et Z sont de type Value, pas des individus
@@ -750,15 +754,18 @@ functionalObjProperty @ owlFunctionalObjectProperty(P),owlObjectPropertyAssertio
 functionalDataProperty @ owlFunctionalDataProperty(P),owlDataPropertyAssertion(X,P,Y),owlDataPropertyAssertion(X,P,Z) <=> differentValues(Y,Z) | failure();;
 
 //owlInverseFunctionalObjectProperty(P) is true if P is an inverse functional object property
-inverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Z),owlObjectPropertyAssertion(Y,P,Z) ==> X!=Y | owlSameIndividual(X,Y);;
+selectInverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
+    =>> inverseFunctionalObjAssertion(X,P,Y) ;;
+inverseFunctional @ inverseFunctionalObjAssertion(X,P,Z),inverseFunctionalObjAssertion(Y,P,Z)
+    =>> X!=Y | owlSameIndividual(X,Y) ;;
 
 
 
 //Extract data value information from data property assertions (needed for DataSomeValuesFrom)
-owlDataPropertyAssertion(X,P,Y) ==> owlDataValue(Y,(*Y).val,(*Y).typeVal) ;;
+owlDataPropertyAssertion(X,P,Y) =>> owlDataValue(Y,(*Y).val,(*Y).typeVal) ;;
 
 //UnionOf: initialize loop to iterate over all classes in the union set
-owlUnionOf(C, S) ==> owlUnionOfLoop(C, (*S).begin(), (*S).end()) ;;
+owlUnionOf(C, S) =>> owlUnionOfLoop(C, (*S).begin(), (*S).end()) ;;
 
 //UnionOf loop: base case - when iterator reaches the end, succeed
 owlUnionOfLoop(C,ITEND,ITEND) <=> success();;
@@ -770,34 +777,34 @@ owlUnionOfLoop(C,IT,ITEND) <=> owlUnionClass(C,**IT),owlUnionOfLoop(C,std::next(
 owlClassAssertion(X,V,true) \ owlUnionClass(C,V) <=> owlClassAssertion(X,C,true);;
 
 //UnionOf subclass: si A est sous-classe d'un composant V de l'union C, alors A ⊆ C
-owlUnionClass(C, V), owlSubclassOf(A, V) ==> C!=A | owlSubclassOf(A, C) ;;
+owlUnionClass(C, V), owlSubclassOf(A, V) =>> C!=A | owlSubclassOf(A, C) ;;
 
 //Avoid recomputing the same union: if two classes have the same union set, they are equivalent
-owlUnionOf(C1, S),owlUnionOf(C2, S) ==> owlEquivalentClass(C1,C2) ;; 
+owlUnionOf(C1, S),owlUnionOf(C2, S) =>> owlEquivalentClass(C1,C2) ;; 
 
 // Si une union est sous-classe de C, chacun de ses composants l’est aussi.
 unionSubclass @ owlUnionClass(U,V), owlSubclassOf(U,C)
-    ==> U!=V | owlSubclassOf(V,C) ;;
+    =>> U!=V | owlSubclassOf(V,C) ;;
 //IntersectionOf: initialize loop to iterate over all classes in the intersection set
-r0 @ owlIntersectionOf(C,S) ==> owlIntersectionOfLoop(C,(*S).begin(),(*S).end(),0) ;;
+r0 @ owlIntersectionOf(C,S) =>> owlIntersectionOfLoop(C,(*S).begin(),(*S).end(),0) ;;
 
 //IntersectionOf loop: recursive case - process each class in the intersection and continue with incremented index
 r1 @ owlIntersectionOfLoop(C,IT,ITEND,I) <=> IT!=ITEND | owlIntersectionClass(C,**IT,I),owlIntersectionOfLoop(C,std::next(*IT),ITEND,I+1);;
 
 //IntersectionOf first pass: add all individuals of the first class as candidates for the intersection
-r2 @ owlClassAssertion(X,V,true) , owlIntersectionClass(C,V,0) ==> owlCandidatsIntersection(X,C,0) ;;
+r2 @ owlClassAssertion(X,V,true) , owlIntersectionClass(C,V,0) =>> owlCandidatsIntersection(X,C,0) ;;
 
 //IntersectionOf filtering: if individual belongs to the new class and was a candidate, it remains a candidate for next round
-r3 @ owlIntersectionClass(C,V,I) , owlCandidatsIntersection(X,C,I) ,owlClassAssertion(X,V,true)  ==> owlCandidatsIntersection(X,C,I+1) ;;
+r3 @ owlIntersectionClass(C,V,I) , owlCandidatsIntersection(X,C,I) ,owlClassAssertion(X,V,true)  =>> owlCandidatsIntersection(X,C,I+1) ;;
 
 //IntersectionOf finalization: when a candidate reaches the final count (matching the loop index), assert it belongs to the intersection
-r5 @ owlCandidatsIntersection(X,C,I) , owlIntersectionOfLoop(C,ITEND,ITEND,I)  ==> owlClassAssertion(X,C,true)  ;;
+r5 @ owlCandidatsIntersection(X,C,I) , owlIntersectionOfLoop(C,ITEND,ITEND,I)  =>> owlClassAssertion(X,C,true)  ;;
 
 //IntersectionOf reverse inference: if X is instance of intersection class C, then X is instance of each class C1 in the intersection
-r6 @ owlIntersectionClass(C,C1,_),owlClassAssertion(X,C,true) ==> C!=C1 |owlClassAssertion(X,C1,true) ;;
+r6 @ owlIntersectionClass(C,C1,_),owlClassAssertion(X,C,true) =>> C!=C1 |owlClassAssertion(X,C1,true) ;;
 
 //IntersectionOf subclass inference: if C2 is subclass of intersection C1, then C2 is also subclass of each component of the intersection
-r7 @owlIntersectionClass(C1,Component,_), owlSubclassOf(C2,C1) ==> C1!=C2 | owlSubclassOf(C2,Component) ;;
+r7 @owlIntersectionClass(C1,Component,_), owlSubclassOf(C2,C1) =>> C1!=C2 | owlSubclassOf(C2,Component) ;;
 
 //IntersectionOf subclass reverse (generic version for N components):
 // If A is a subclass of ALL components of intersection I, then A ⊆ I
@@ -807,10 +814,10 @@ r7 @owlIntersectionClass(C1,Component,_), owlSubclassOf(C2,C1) ==> C1!=C2 | owlS
 intersectionSubclassCheck(C,A,I) #passive \ intersectionSubclassCheck(C,A,I) <=> true ;;
 
 // Start checking when A is a subclass of the component at index 0
-r8a @ owlSubclassOf(A,V), owlIntersectionClass(C,V,0) ==> intersectionSubclassCheck(C,A,1) ;;
+r8a @ owlSubclassOf(A,V), owlIntersectionClass(C,V,0) =>> intersectionSubclassCheck(C,A,1) ;;
 
 // Continue: if A is a subclass of the component at index I, advance to I+1
-r8b @ owlIntersectionClass(C,V,I), owlSubclassOf(A,V), intersectionSubclassCheck(C,A,I) ==> I > 0 | intersectionSubclassCheck(C,A,I+1) ;;
+r8b @ owlIntersectionClass(C,V,I), owlSubclassOf(A,V), intersectionSubclassCheck(C,A,I) =>> I > 0 | intersectionSubclassCheck(C,A,I+1) ;;
 
 // Done: when intersectionSubclassCheck(C,A,N) exists and the intersection has N components
 // (verified by owlIntersectionOfLoop(C,ITEND,ITEND,N))
@@ -818,19 +825,19 @@ r8c @ owlIntersectionOfLoop(C,ITEND,ITEND,N) \ intersectionSubclassCheck(C,A,N)<
 
 
 //ComplementOf: initialize all named individuals as potentially not in the complement class
-owlComplementOf(A,NOTA),owlNamedIndividual(X) ==> owlClassAssertion(X,NOTA,false) ;;
+owlComplementOf(A,NOTA),owlNamedIndividual(X) =>> owlClassAssertion(X,NOTA,false) ;;
 
 
-//4->0.7
+
 //ObjectSomeValuesFrom: if U has property P to V and V is instance of Y, then U is instance of ∃P.Y
-owlObjectSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(V,Y,true) ==> owlClassAssertion(U,C,true) ;;
+owlObjectSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(V,Y,true) =>> owlClassAssertion(U,C,true) ;;
 
 //ObjectSomeValuesFrom: si deux SomeValuesFrom ont la même propriété et classe, ils sont équivalents
-owlObjectSomeValuesFrom(C1, P, Y), owlObjectSomeValuesFrom(C2, P, Y) ==> owlEquivalentClass(C1, C2) ;;
+owlObjectSomeValuesFrom(C1, P, Y), owlObjectSomeValuesFrom(C2, P, Y) =>> owlEquivalentClass(C1, C2) ;;
 
 
 //DataSomeValuesFrom: if U has data property P with value V of valid type, then U is instance of ∃P.DR
-owlDataSomeValuesFrom(C,P,DR) , owlDataPropertyAssertion(U,P,V) ==> ! invalidType(DR,V) | owlClassAssertion(U,C,true) ;;
+owlDataSomeValuesFrom(C,P,DR) , owlDataPropertyAssertion(U,P,V) =>> ! invalidType(DR,V) | owlClassAssertion(U,C,true) ;;
 
 
 //ObjectMaxCardinality(0): if U is instance of ≤0 P, then U cannot have any property P assertion (failure)
@@ -849,10 +856,10 @@ owlDataMaxCardinality(C,P,1) , owlClassAssertion(U,C,true) , owlDataPropertyAsse
 
 
 //HasValue (object): if U is instance of ∃P.{Y}, then U has property P to the specific individual Y
-owlHasValueObject(C,P,Y),owlObjectProperty(P),owlClassAssertion(U,C,true) ==> owlObjectPropertyAssertion(U,P,Y) ;;
+owlHasValueObject(C,P,Y),owlObjectProperty(P),owlClassAssertion(U,C,true) =>> owlObjectPropertyAssertion(U,P,Y) ;;
 
 //HasValue (object) reverse: if U has property P to Y, then U is instance of ∃P.{Y}
-owlHasValueObject(C,P,Y),owlObjectPropertyAssertion(U,P,Y) ==> owlClassAssertion(U,C,true) ;;
+owlHasValueObject(C,P,Y),owlObjectPropertyAssertion(U,P,Y) =>> owlClassAssertion(U,C,true) ;;
 
 //HasValue subsumption: if C ≡ HasValue(P, A), A is an instance of Y, and SV ≡ SomeValuesFrom(P, Y),
 //then C is a subclass of SV (the same P and Y variables are used because getOrCreateLogicalVar
@@ -861,7 +868,7 @@ owlHasValueObject(C,P,Y),owlObjectPropertyAssertion(U,P,Y) ==> owlClassAssertion
 hasValueSubsumption @ owlHasValueObject(C, P, A),
                       owlClassAssertion(A, Y, true),
                       owlObjectSomeValuesFrom(SV, P, Y)
-==> owlSubclassOf(C, SV) ;;
+=>> owlSubclassOf(C, SV) ;;
 
 //HasValue subsumption with a class hierarchy: if C ≡ HasValue(P, A), A:Y1, and Y1 ⊆ Y2,
 //et SV ≡ SomeValuesFrom(P, Y2), alors C ⊆ SV
@@ -869,7 +876,7 @@ hasValueSubsumptionClass @ owlHasValueObject(C, P, A),
                            owlClassAssertion(A, Y1, true),
                            owlSubclassOf(Y1, Y2),
                            owlObjectSomeValuesFrom(SV, P, Y2)
-==>  Y1!=Y2 | owlSubclassOf(C, SV) ;;
+=>>  Y1!=Y2 | owlSubclassOf(C, SV) ;;
 
 //HasValue subsumption with a property hierarchy: if C ≡ HasValue(P1, A), P1 ⊆ P2, and A:Y,
 //et SV ≡ SomeValuesFrom(P2, Y), alors C ⊆ SV
@@ -877,7 +884,7 @@ hasValueSubsumptionProp @ owlHasValueObject(C, P1, A),
                           owlSubObjectPropertyOf(P1, P2),
                           owlClassAssertion(A, Y, true),
                         owlObjectSomeValuesFrom(SV, P2, Y) 
-==> P1!=P2 |  owlSubclassOf(C, SV) ;;
+=>> P1!=P2 |  owlSubclassOf(C, SV) ;;
 
 
 //HasValue subsumption with property AND class hierarchies: if C ≡ HasValue(P1, A) and P1 ⊆ P2,
@@ -887,10 +894,10 @@ hasValueSubsumptionPropClass @ owlHasValueObject(C, P1, A),
                                owlClassAssertion(A, Y1, true),
                                owlSubclassOf(Y1, Y2),
                                owlObjectSomeValuesFrom(SV, P2, Y2)
-==> P1!=P2 && Y1!=Y2 | owlSubclassOf(C, SV) ;;
+=>> P1!=P2 && Y1!=Y2 | owlSubclassOf(C, SV) ;;
 
 //OneOf: initialize loop to iterate over all individuals in the enumeration set
-owlOneOf(C, S) ==> owlOneOfLoop(C, (*S).begin(), (*S).end()) ;;
+owlOneOf(C, S) =>> owlOneOfLoop(C, (*S).begin(), (*S).end()) ;;
 
 //OneOf loop: base case - when iterator reaches the end, succeed
 owlOneOfLoop(C,ITEND,ITEND) <=> success();;
@@ -901,8 +908,8 @@ owlOneOfLoop(C,IT,ITEND) <=> owlClassAssertion(**IT,C,true),owlOneOfLoop(C,std::
 // chain property
 // Passive rule to prevent duplicate constructPropertyChain constraints
 constructPropertyChain(PC,I,X,Y,N) #passive \ constructPropertyChain(PC,I,X,Y,N) <=> true ;;
-ObjectPropertyChain @ owlObjectPropertyChain(PC,P,0,N) , owlObjectPropertyAssertion(X,P,Y) ==> constructPropertyChain(PC,0,X,Y,N) ;;
-chainStep @ owlObjectPropertyAssertion(Y,P,Z), owlObjectPropertyChain(PC,P,J,N), constructPropertyChain(PC,I,X,Y,N) ==> I<N && equalIncrement(J,I) | constructPropertyChain(PC,I+1,X,Z,N) ;;
+ObjectPropertyChain @ owlObjectPropertyChain(PC,P,0,N) , owlObjectPropertyAssertion(X,P,Y) =>> constructPropertyChain(PC,0,X,Y,N) ;;
+chainStep @ owlObjectPropertyAssertion(Y,P,Z), owlObjectPropertyChain(PC,P,J,N), constructPropertyChain(PC,I,X,Y,N) =>> I<N && equalIncrement(J,I) | constructPropertyChain(PC,I+1,X,Z,N) ;;
 finalChain @ constructPropertyChain(PC,N,X,Y,N) <=> owlObjectPropertyAssertion(X,PC,Y) ;;
 
 //owlHasKey
@@ -913,11 +920,11 @@ owlHasKeyCandidate(C,X,Y,I,N) #passive \ owlHasKeyCandidate(C,X,Y,I,N) <=> true 
 // rule. This prevents the compiler from enumerating all pairs of class members.
 hasKeyObjectStart @ owlHasKey(C,P,0,N),
     owlObjectPropertyAssertion(X,P,V), owlObjectPropertyAssertion(Y,P,V)
-    ==> X!=Y | owlHasKeyCandidate(C,X,Y,0,N) ;;
+    =>> X!=Y | owlHasKeyCandidate(C,X,Y,0,N) ;;
 
 hasKeyDataStart @ owlHasKey(C,P,0,N),
     owlDataPropertyAssertion(X,P,V), owlDataPropertyAssertion(Y,P,V)
-    ==> X!=Y | owlHasKeyCandidate(C,X,Y,0,N) ;;
+    =>> X!=Y | owlHasKeyCandidate(C,X,Y,0,N) ;;
 
 // Check memberships one at a time, using indexed lookups on each individual.
 // Every head remains active, so candidates can wait for later class assertions.
@@ -934,7 +941,10 @@ owlDataPropertyAssertion(X,P,V), owlDataPropertyAssertion(Y,P,V), owlHasKey(C,P,
 owlHasKeyCheck(C,X,Y,N,N) <=> owlSameIndividual(X,Y) ;;
 
 //owlSymmetricObjectProperty(P) is true if P is a symmetric object property
-symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) ==> X!=Y | owlObjectPropertyAssertion(Y,P,X) ;;
+symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)=>> flag && X!=Y  |
+        std::exchange(flag, false),
+        owlObjectPropertyAssertion(Y,P,X),
+        std::exchange(flag, true) ;;
 
 // Collect only assertions whose property is explicitly marked transitive.
 // This phase runs after normal CHR saturation and is repeated after each closure.
@@ -948,41 +958,45 @@ collect_transitive_pairs() <=> success() ;;
 
 // A single trigger computes the global fixed point, including effects of
 // inverse properties, subproperties, property chains and the other OWL rules.
-do_closure() <=> post_all_trans_closures(*this) ;;
+do_closure() <=> post_all_trans_closures(*this)  ;;
 
 
 
 
+
+// every class is a subclass of owl:Thing, every individual is an instance of owl:Thing
+owlClass(T),logicalName(owlThing,T) #passive, owlClass(C) =>> C!=T | owlSubclassOf(C,T);;
+owlClass(T),logicalName(owlThing,T) #passive, owlNamedIndividual(X) =>> owlClassAssertion(X,T,true);;
 
 //Display result: convert logical name to URI and display
-res(URIC) ==> display(URIC);;
+res(URIC) =>> display(URIC);;
 
 //querySuperClassOfUri: query to retrieve all superclasses of a class given its URI  
-querySuperClassOfUri(URIC) , logicalName(URIC,X) #passive ==> querySuperClassOf(X), res(std::string("owl:Thing")) ;;
+querySuperClassOfUri(URIC) , logicalName(URIC,X) #passive =>> querySuperClassOf(X), res(std::string("owl:Thing")) ;;
 
 //querySuperClassOf: add current class to results first
-querySuperClassOf(X) , logicalName(URIC,X) #passive==> res(URIC) ;;
+querySuperClassOf(X) , logicalName(URIC,X) #passive=>> res(URIC) ;;
 
 //querySuperClassOf: recursively follow subclass relationships to find all superclasses up to the root
-querySuperClassOf(X) , owlSubclassOf(X,Y)  #passive ==> X!=Y | querySuperClassOf(Y) , queryEquivalentClass(X) ;;
+querySuperClassOf(X) , owlSubclassOf(X,Y)  #passive =>> X!=Y | querySuperClassOf(Y) , queryEquivalentClass(X) ;;
 
 //retrieve the equivalent classes of a class X
-queryEquivalentClass(X) ,  owlEquivalentClass(X,Y)  #passive, logicalName(URIY,Y)#passive ==> X!=Y | res(URIY) ;;
+queryEquivalentClass(X) ,  owlEquivalentClass(X,Y)  #passive, logicalName(URIY,Y)#passive =>> X!=Y | res(URIY) ;;
 
 //querySubClassOf: query to retrieve all subclasses of a class
-querySubClassOfUri(URIC) , logicalName(URIC,X) #passive ==> querySubClassOf(X) , res(URIC) ;;
+querySubClassOfUri(URIC) , logicalName(URIC,X) #passive =>> querySubClassOf(X) , res(URIC) ;;
 
 //querySubClassOf: recursively follow subclass relationships to find all subclasses  
-r_querySubClassOf1 @ querySubClassOf(X), owlSubclassOf(Y,X) #passive, logicalName(URIY,Y) #passive ==> 
+r_querySubClassOf1 @ querySubClassOf(X), owlSubclassOf(Y,X) #passive, logicalName(URIY,Y) #passive =>> 
     X!=Y | querySubClassOf(Y),queryEquivalentClass(X), res(URIY) ;;
 
 
 
 //queryClassification: query to retrieve all classes that an individual is instance of (with true classification)
-queryClassificationUri(URIX), logicalName(URIX,X) #passive ==> queryClassification(X) ;;
+queryClassificationUri(URIX), logicalName(URIX,X) #passive =>> queryClassification(X) ;;
 
 //queryClassification: add all direct class assertions to results AND recursively get superclasses
-r_queryClassification1 @ queryClassification(X), owlClassAssertion(X,C,true) #passive, logicalName(URIC,C) #passive ==> 
+r_queryClassification1 @ queryClassification(X), owlClassAssertion(X,C,true) #passive, logicalName(URIC,C) #passive =>> 
     res(URIC), querySuperClassOf(C) , queryEquivalentClass(C);;
 
 
@@ -995,23 +1009,23 @@ rule3 @ queryInstance(X,C)<=> display("false");;
 
 
 //teste realisation : CR owlBENCH
-resultRealisation(URIX,URIY) ==> ! prefixIntern(URIY)| storeRealisation(URIX,URIY);;
+resultRealisation(URIX,URIY) =>> ! prefixIntern(URIY)| storeRealisation(URIX,URIY);;
 //cas general x et c sont differents
-realisation @ realisation(), owlClassAssertion(X,C,true) #passive, logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive ==> URIX!=emptyString | resultRealisation(URIX,URIC);;
+realisation @ realisation(), owlClassAssertion(X,C,true) #passive, logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive =>> URIX!=emptyString | resultRealisation(URIX,URIC);;
 // Cas spécial : X et C sont la même variable (punning)
-realisationPunning @ realisation(), owlClassAssertion(X,X,true) #passive, logicalName(URI,X) #passive ==> resultRealisation(URI,URI);;
+realisationPunning @ realisation(), owlClassAssertion(X,X,true) #passive, logicalName(URI,X) #passive =>> resultRealisation(URI,URI);;
 
 //teste classification : CT owlBENCH
 //regle pour n'avoir en sortie que les subclassof stricte pas bidirectionnel(equivalent) comme pelet
 owlEquivalentClass(X,Y)  #passive , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive \ resultClassification(URIX,URIY) <=> true ;;
-resultClassification(URIX,URIY) ==> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | storeClassification(URIX,URIY);;
+resultClassification(URIX,URIY) =>> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | storeClassification(URIX,URIY);;
 
-classification(), owlSubclassOf(X,Y)  #passive, logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive ,  logicalName(owlNothing, OwlNothingVar) #passive ==> URIX!=owlNothing | resultClassification(URIX,URIY);;
-classification(), owlSubclassOf(X,X) #passive , logicalName(URIX,X) #passive  ==> resultClassification(URIX,URIX) ;;
+classification(), owlSubclassOf(X,Y)  #passive, logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive ,  logicalName(owlNothing, OwlNothingVar) #passive =>> URIX!=owlNothing | resultClassification(URIX,URIY);;
+classification(), owlSubclassOf(X,X) #passive , logicalName(URIX,X) #passive  =>> resultClassification(URIX,URIX) ;;
 
 //translate sparql querries (OWLBENCH)
-//ResultVec(S,ID) ==> displaySetResult(S,ID);;
-ResultVec(S,ID) ==> storeQueries(S,ID);;
+//ResultVec(S,ID) =>> displaySetResult(S,ID);;
+ResultVec(S,ID) =>> storeQueries(S,ID);;
 
 //query 1, 2, 5, 6, 8, 9, 16 : SELECT  DISTINCT  ?x  ?y  WHERE { ?x  :isMemberOf  ?y  }
 // Step 1: Immediately assign ID when query is received
@@ -1021,37 +1035,37 @@ logicalName(URIP,P) #passive\ queryObjAssertionWithId(URIP, ID) <=> queryObjAsse
 // Step 3: Fallback if no logicalName (consume the query without results)
 queryObjAssertionWithId(URIP, ID) <=> success() ;;
 //cas general
-queryObjAssertion(P,ID) , owlObjectPropertyAssertion(X,P,Y)  #passive, logicalName(URIX,X) #passive ,logicalName(URIY,Y) #passive==> ResultVec(makeVec(URIX,URIY),ID);;
+queryObjAssertion(P,ID) , owlObjectPropertyAssertion(X,P,Y)  #passive, logicalName(URIX,X) #passive ,logicalName(URIY,Y) #passive=>> ResultVec(makeVec(URIX,URIY),ID);;
 //cas specian X==Y 
-queryObjAssertion(P,ID) , owlObjectPropertyAssertion(X,P,X)  #passive, logicalName(URIX,X) #passive ==> ResultVec(makeVec(URIX,URIX),ID);;
+queryObjAssertion(P,ID) , owlObjectPropertyAssertion(X,P,X)  #passive, logicalName(URIX,X) #passive =>> ResultVec(makeVec(URIX,URIX),ID);;
 queryObjAssertion(P,ID) <=> success();;
 
 //query 3 : SELECT  DISTINCT  ?x  ?y  WHERE { ?x  :hasAge  ?y  }
 queryDataAssertionUri(URIP) <=> queryDataAssertionWithId(URIP, get_next_id()) ;;
 logicalName(URIP,P) #passive\ queryDataAssertionWithId(URIP, ID) <=> queryDataAssertion(P, ID) ;;
 queryDataAssertionWithId(URIP, ID) <=> success() ;;
-queryDataAssertion(P,ID) , owlDataPropertyAssertion(X,P,Y) #passive , logicalName(URIX,X) #passive  ==> ResultVec(makeVec(URIX,valueToString(Y)),ID);;
+queryDataAssertion(P,ID) , owlDataPropertyAssertion(X,P,Y) #passive , logicalName(URIX,X) #passive  =>> ResultVec(makeVec(URIX,valueToString(Y)),ID);;
 queryDataAssertion(P,ID) <=> success();;
 
 //query 4, 10, 11, 12, 15 : SELECT  DISTINCT  ?x  WHERE { ?x  rdf:type  :T20CricketFan  }
 queryInstancesURI(URIC) <=> queryInstancesWithId(URIC, get_next_id()) ;;
 logicalName(URIC,C) #passive \ queryInstancesWithId(URIC, ID) <=> queryInstances(C, ID) ;;
 queryInstancesWithId(URIC, ID) <=> success() ;;
-queryInstances(C,ID) , owlClassAssertion(X,C,true) #passive , logicalName(URIX,X) #passive ==> ResultVec(makeVec(URIX,emptyString),ID);;
+queryInstances(C,ID) , owlClassAssertion(X,C,true) #passive , logicalName(URIX,X) #passive =>> ResultVec(makeVec(URIX,emptyString),ID);;
 queryInstances(C,ID) <=> success() ;;
 
 //query 7 : SELECT DISTINCT ?x WHERE { ?x :hasCollegeDiscipline :NonScience }
 queryObjAssertionSubjectUri(URIP,URIO) <=> queryObjAssertionSubjectWithId(URIP, URIO, get_next_id()) ;;
 logicalName(URIP,P) #passive, logicalName(URIO,O) #passive \ queryObjAssertionSubjectWithId(URIP, URIO, ID) <=> queryObjAssertionSubject(P,O, ID) ;;
 queryObjAssertionSubjectWithId(URIP, URIO, ID) <=> success() ;;
-queryObjAssertionSubject(P,O,ID) , owlObjectPropertyAssertion(X,P,O)  #passive, logicalName(URIX,X) #passive  ==> ResultVec(makeVec(URIX,emptyString),ID);;
+queryObjAssertionSubject(P,O,ID) , owlObjectPropertyAssertion(X,P,O)  #passive, logicalName(URIX,X) #passive  =>> ResultVec(makeVec(URIX,emptyString),ID);;
 queryObjAssertionSubject(P,O,ID) <=> success();;
 
 //query 13, 14 : SELECT  DISTINCT  ?x ?y WHERE {?x  :isHeadOf  ?y}
 querySubjectByObjectUri(URIP) <=> querySubjectByObjectWithId(URIP, get_next_id()) ;;
 logicalName(URIP,P) #passive \ querySubjectByObjectWithId(URIP, ID) <=> querySubjectByObject(P, ID) ;;
 querySubjectByObjectWithId(URIP, ID) <=> success() ;;
-querySubjectByObject(P,ID) , owlObjectPropertyAssertion(X,P,Y)  #passive, logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive ==> ResultVec(makeVec(URIX,URIY),ID);;
+querySubjectByObject(P,ID) , owlObjectPropertyAssertion(X,P,Y)  #passive, logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive =>> ResultVec(makeVec(URIX,URIY),ID);;
 querySubjectByObject(P,ID) <=> success() ;;
 
 //query 17 : SELECT DISTINCT ?x ?y WHERE {?x rdf:type :Student. ?x :isStudentOf ?y. ?y :isPartOf ?z . ?z :hasCollegeDiscipline :Engineering}
@@ -1059,7 +1073,7 @@ queryEngineeringStudentsUri(URIE, URIF, URIG, URIH, URIK) <=> queryEngineeringSt
 logicalName(URIE, E) #passive, logicalName(URIF, F) #passive, logicalName(URIG, G) #passive, logicalName(URIH, H) #passive, logicalName(URIK, K) #passive \
   queryEngineeringStudentsWithId(URIE, URIF, URIG, URIH, URIK, ID) <=> queryEngineeringStudents(E, F, G, H, K, ID) ;;
 queryEngineeringStudentsWithId(URIE, URIF, URIG, URIH, URIK, ID) <=> success() ;;
-queryEngineeringStudents(E,F,G,H,K,ID) , owlClassAssertion(X,E,true) #passive, owlObjectPropertyAssertion(X,F,Y) #passive , owlObjectPropertyAssertion(Y,G,Z)  #passive, owlObjectPropertyAssertion(Z,H,K)  #passive, logicalName(URIX,X) #passive,logicalName(URIY,Y) #passive ==> ResultVec(makeVec(URIX,URIY),ID);;
+queryEngineeringStudents(E,F,G,H,K,ID) , owlClassAssertion(X,E,true) #passive, owlObjectPropertyAssertion(X,F,Y) #passive , owlObjectPropertyAssertion(Y,G,Z)  #passive, owlObjectPropertyAssertion(Z,H,K)  #passive, logicalName(URIX,X) #passive,logicalName(URIY,Y) #passive =>> ResultVec(makeVec(URIX,URIY),ID);;
 queryEngineeringStudents(E,F,G,H,K,ID)  <=> success();;
 
 //query 18 : SELECT  DISTINCT  ?s  ?c  WHERE  {?s  rdf:type  :Student.  ?x rdf:type  :Organization.  ?x  :hasDean  ?z.  ?z  :teachesCourse  ?c.  ?s :takesCourse  ?c  }
@@ -1067,7 +1081,7 @@ queryComplexStudentsUri(URIE, URIF, URIG, URIH, URIK) <=> queryComplexStudentsWi
 logicalName(URIE, E) #passive, logicalName(URIF, F) #passive, logicalName(URIG, G) #passive, logicalName(URIH, H) #passive, logicalName(URIK, K) #passive \
   queryComplexStudentsWithId(URIE, URIF, URIG, URIH, URIK, ID) <=> queryComplexStudents(E, F, G, H, K, ID) ;;
 queryComplexStudentsWithId(URIE, URIF, URIG, URIH, URIK, ID) <=> success() ;;
-queryComplexStudents(E, F, G, H,K, ID), owlClassAssertion(S,E,true) #passive,  owlClassAssertion(X,F,true)  #passive, owlObjectPropertyAssertion(X,G,Z) #passive, owlObjectPropertyAssertion(Z,H,C)  #passive, owlObjectPropertyAssertion(S,K,C) #passive , logicalName(URIS,S) #passive, logicalName(URIC,C) #passive==> ResultVec(makeVec(URIS,URIC),ID);;
+queryComplexStudents(E, F, G, H,K, ID), owlClassAssertion(S,E,true) #passive,  owlClassAssertion(X,F,true)  #passive, owlObjectPropertyAssertion(X,G,Z) #passive, owlObjectPropertyAssertion(Z,H,C)  #passive, owlObjectPropertyAssertion(S,K,C) #passive , logicalName(URIS,S) #passive, logicalName(URIC,C) #passive=>> ResultVec(makeVec(URIS,URIC),ID);;
 queryComplexStudents(E, F, G, H,K,ID)<=> success();;
 
 </CHR>
@@ -1153,7 +1167,7 @@ int main(int argc, char* argv[])
     }
 
     const auto start = std::chrono::steady_clock::now();
-    auto space = OWL2::create();
+    auto space = OWL2::create(true);
     bool closureSucceeded = false;
     CHR_RUN(
     
