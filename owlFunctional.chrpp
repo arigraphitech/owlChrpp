@@ -828,7 +828,7 @@ r8c @ owlIntersectionOfLoop(C,ITEND,ITEND,N) \ intersectionSubclassCheck(C,A,N)<
 owlComplementOf(A,NOTA),owlNamedIndividual(X) =>> owlClassAssertion(X,NOTA,false) ;;
 
 
-//4->0.7
+
 //ObjectSomeValuesFrom: if U has property P to V and V is instance of Y, then U is instance of ∃P.Y
 owlObjectSomeValuesFrom(C,P,Y) , owlObjectPropertyAssertion(U,P,V) , owlClassAssertion(V,Y,true) =>> owlClassAssertion(U,C,true) ;;
 
