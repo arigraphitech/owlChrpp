@@ -125,7 +125,7 @@ void storeClassification(std::string x,std::string y){
 }
 
 void storeQueries(const StringSet& s, int id){
-    if (!queryOutput.is_open()) {
+   if (!queryOutput.is_open()) {
         std::cerr << "Impossible d'ouvrir  output_file_Queries\n";
         return ;
     }
@@ -428,9 +428,9 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
             owlDisjointDataProperty(?int,?int),
             owlReflexiveObjectProperty(?int),
             owlIrreflexiveObjectProperty(?int),
-            owlFunctionalObjectProperty(?int),
-            owlFunctionalDataProperty(?int),
-            owlInverseFunctionalObjectProperty(?int),
+            owlFunctionalObjectProperty(?int,+int),
+            owlFunctionalDataProperty(?int,+int),
+            owlInverseFunctionalObjectProperty(?int,+int),
             owlTransitiveObjectProperty(?int),
             owlDataPropertyAssertion(?int,?int,+Value),
             owlNegativeDataAssertion(?int,?int,+Value),
@@ -543,9 +543,9 @@ owlDisjointObjectProperty(A,B) #passive \ owlDisjointObjectProperty(A,B) <=> tru
 owlDisjointDataProperty(A,B) #passive \ owlDisjointDataProperty(A,B) <=> true ;;
 owlReflexiveObjectProperty(P) #passive \ owlReflexiveObjectProperty(P) <=> true ;;
 owlIrreflexiveObjectProperty(P) #passive \ owlIrreflexiveObjectProperty(P) <=> true ;;
-owlFunctionalObjectProperty(P) #passive \ owlFunctionalObjectProperty(P) <=> true ;;
-owlFunctionalDataProperty(P) #passive \ owlFunctionalDataProperty(P) <=> true ;;
-owlInverseFunctionalObjectProperty(P) #passive \ owlInverseFunctionalObjectProperty(P) <=> true ;;
+owlFunctionalObjectProperty(P,X) #passive \ owlFunctionalObjectProperty(P,X) <=> true ;;
+owlFunctionalDataProperty(P,X) #passive \ owlFunctionalDataProperty(P,X) <=> true ;;
+owlInverseFunctionalObjectProperty(P,X) #passive \ owlInverseFunctionalObjectProperty(P,X) <=> true ;;
 owlTransitiveObjectProperty(P) #passive \ owlTransitiveObjectProperty(P) <=> true ;;
 owlDataPropertyAssertion(X,P,Y) #passive \ owlDataPropertyAssertion(X,P,Y) <=> true ;;
 owlNegativeDataAssertion(X,P,Y) #passive \ owlNegativeDataAssertion(X,P,Y) <=> true ;;
@@ -740,27 +740,16 @@ AsymmetricProperty1 @ owlAsymmetricObjectProperty(P),owlObjectPropertyAssertion(
 //owlreflexiveProperty(P) is true if P is a reflexive object property
 reflexiveProperty @ owlReflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,Y) =>> X!=Y | owlObjectPropertyAssertion(X,P,X),owlObjectPropertyAssertion(Y,P,Y);;
 
-//owlFunctionalObjectProperty(P) is true if P is a functional object property
-// Filter by property before joining assertions. Both heads remain active so
-// a later functional-property declaration also selects existing assertions.
-selectFunctional @ owlFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
-    =>> functionalObjAssertion(X,P,Y) ;;
-functionalObjProperty @ functionalObjAssertion(X,P,Y),functionalObjAssertion(X,P,Z)
-    =>> Y!=Z | owlSameIndividual(Y,Z) ;;
 
-//owlFunctionalDataProperty(P) is true if P is a functional data property
+//owlFunctionalDataFuncProperty(P) is true if P is a functional data property
 //Note: Pour les data properties, Y et Z sont de type Value, pas des individus
 //On vérifie simplement qu'ils sont égaux, sinon échec
-functionalDataProperty @ owlFunctionalDataProperty(P),owlDataPropertyAssertion(X,P,Y),owlDataPropertyAssertion(X,P,Z) <=> differentValues(Y,Z) | failure();;
+functionalDataProperty @ owlFunctionalDataProperty(P,0),owlDataPropertyAssertion(X,P,Y),owlDataPropertyAssertion(X,P,Z) <=> differentValues(Y,Z) | failure();;
 
+owlFunctionalObjectProperty(P,0),owlObjectPropertyAssertion(X,P,Y) ,owlObjectPropertyAssertion(X,P,Z) =>> Y!=Z |  owlSameIndividual(Y,Z) ;;
 //owlInverseFunctionalObjectProperty(P) is true if P is an inverse functional object property
-selectInverseFunctional @ owlInverseFunctionalObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
-    =>> inverseFunctionalObjAssertion(X,P,Y) ;;
-inverseFunctional @ inverseFunctionalObjAssertion(X,P,Z),inverseFunctionalObjAssertion(Y,P,Z)
-    =>> X!=Y | owlSameIndividual(X,Y) ;;
-
-
-
+owlInverseFunctionalObjectProperty(P,0),owlObjectPropertyAssertion(X,P,Z) ,owlObjectPropertyAssertion(Y,P,Z) =>> Y!=X |  owlSameIndividual(X,Y) ;;
+    
 //Extract data value information from data property assertions (needed for DataSomeValuesFrom)
 owlDataPropertyAssertion(X,P,Y) =>> owlDataValue(Y,(*Y).val,(*Y).typeVal) ;;
 
@@ -1218,6 +1207,5 @@ int main(int argc, char* argv[])
     const auto end = std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed = end - start;
     std::cout << "temps " << elapsed.count() << std::endl;
-    chr::Statistics::print(std::cout);
-    return closureSucceeded ? 0 : 1;
+    exit (closureSucceeded ? 0 : 1);
 }

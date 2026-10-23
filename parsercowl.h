@@ -2606,7 +2606,7 @@ void ParserCowl<T>:: iterateFuncDataProp(ParserCowl<T>* parser, CowlAny *axiom){
     PARSER_LOG_CSTRING(stream, propUri.c_str());
     PARSER_LOG(stream, " est fonctionnelle");
 
-    parser->space->owlFunctionalDataProperty(propVar);
+    parser->space->owlFunctionalDataProperty(propVar,0);
     PARSER_LOG(stream, "\n");
     
 }
@@ -2708,7 +2708,7 @@ void ParserCowl<T>:: iterateFuncObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     PARSER_LOG_CSTRING(stream, propUri.c_str());
     PARSER_LOG(stream, " est fonctionnelle");
 
-    parser->space->owlFunctionalObjectProperty(propVar);
+    parser->space->owlFunctionalObjectProperty(propVar,0);
     PARSER_LOG(stream, "\n");
 }
 
@@ -2721,7 +2721,7 @@ void ParserCowl<T>:: iterateInvFuncObjProp(ParserCowl<T>* parser, CowlAny *axiom
     PARSER_LOG_CSTRING(stream, propUri.c_str());
     PARSER_LOG(stream, " est inverse fonctionnelle");
 
-    parser->space->owlInverseFunctionalObjectProperty(propVar);
+    parser->space->owlInverseFunctionalObjectProperty(propVar,0);
     PARSER_LOG(stream, "\n");
 }
 
