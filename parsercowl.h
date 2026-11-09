@@ -3054,6 +3054,9 @@ bool ParserCowl<T>::load()
 {
     resetStats();
 
+    // Initialize the incremental closure controller before reading the ontology.
+    this->space->transitivePhase(0,false);
+
     //test d'insertion dans l'espace CHR++
 
     std::ifstream f("example2.ofn");

@@ -1,6 +1,6 @@
 
-// Deferred transitive closure in CHR: persistent reach markers and phased control.
-//#define ENABLE_TRACE
+// Incremental transitive closure in CHR: persistent edges and reach markers, processed in batches.
+#define ENABLE_TRACE
 #include <iostream>
 #include <string>
 #include <vector>
@@ -279,8 +279,9 @@ bool equalIncrement(int j,int i){
             owlFunctionalDataProperty(?int,+int),
             owlInverseFunctionalObjectProperty(?int,+int),
             owlTransitiveObjectProperty(?int,+int),
-            do_closure(+int,+bool),
+            transitivePhase(+int,+bool),
             transitiveEdge(?int,?int,?int),
+            transitivePreparedEdge(?int,?int,?int),
             transitivePending(?int,?int,?int),
             transitiveReach(?int,?int,?int),
             owlDataPropertyAssertion(?int,?int,+Value),
@@ -356,11 +357,12 @@ bool equalIncrement(int j,int i){
             querySubjectByObjectWithId(+std::string,+int),
             queryObjAssertionSubjectWithId(+std::string,+std::string,+int),
             queryEngineeringStudentsWithId(+std::string,+std::string,+std::string,+std::string,+std::string,+int),
-            queryComplexStudentsWithId(+std::string,+std::string,+std::string,+std::string,+std::string,+int)
+            queryComplexStudentsWithId(+std::string,+std::string,+std::string,+std::string,+std::string,+int),
+            transitiveWakeup()
             
 
 
-//suppression des doublons
+//removal of duplicates
 owlObjectPropertyAssertion(X,P,Y) #passive \ owlObjectPropertyAssertion(X,P,Y) <=>  true ;;
 owlClassAssertion(X,A,B) #passive \ owlClassAssertion(X,A,B) <=> true ;;
 owlPrefix(X,Y) #passive \ owlPrefix(X,Y) <=> true ;;
@@ -447,6 +449,10 @@ owlOneOf(C,S) #passive \ owlOneOf(C,S) <=> true ;;
 owlOneOfLoop(C,IT,ITEND) #passive \ owlOneOfLoop(C,IT,ITEND) <=> true ;;
 classification() #passive \ classification()<=> true ;;
 owlHasKey(C,P,I,N) #passive \ owlHasKey(C,P,I,N) <=> true ;;
+transitivePending(P,X,Y) #passive \ transitivePending(P,X,Y) <=> true ;;
+transitiveReach(P,X,Y) #passive \ transitiveReach(P,X,Y) <=> true ;;
+transitiveEdge(P,X,Y) #passive \ transitiveEdge(P,X,Y) <=> true ;;
+
 
 //ComplementOf: remove false assertion if individual is actually in the complement class
 owlClassAssertion(X,NOTA,true) \ owlClassAssertion(X,NOTA,false) <=>  true ;;
@@ -777,49 +783,52 @@ owlHasKeyCheck(C,X,Y,N,N) <=> owlSameIndividual(X,Y) ;;
 
 
 //owlSymmetricObjectProperty(P) is true if P is a symmetric object property
+// Symmetry propagation with a global guard against nested applications.
 symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
     =>> flag && X!=Y |
           std::exchange(flag, false), owlObjectPropertyAssertion(Y,P,X) ,   std::exchange(flag, true);;
 
+// Alternative symmetry rule without the global guard (which is just an optimisaiton).
+// symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
+//     =>> X!=Y | owlObjectPropertyAssertion(Y,P,X) ;;
 
-//fermeture transitive : étape 1 = parcours, étape 2 = fusion puis nettoyage
-//le booléen indique si la fusion a ajouté une nouvelle arête à la base
 
-//supprime les candidats en double
-transitivePending(P,X,Y) #passive \ transitivePending(P,X,Y) <=> true ;;
-//supprime les liens déjà visités pour ne pas refaire le même parcours, même en cas de cycle
-transitiveReach(P,X,Y) #passive \ transitiveReach(P,X,Y) <=> true ;;
-//supprime un candidat si son arête est déjà dans la base
+// Classical transitivity can be used instead of the incremental closure rules below.
+// This version can be slower on ontologies with many assertions involving transitive properties.
+// transitiveObjectProperty @ owlTransitiveObjectProperty(P,0), owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) =>> owlObjectPropertyAssertion(X,P,Z) ;;
+
+// Incremental transitive closure: process new assertions in batches.
+// Discard a candidate whose edge is already in the base graph.
 transitiveEdge(P,X,Y) #passive \ transitivePending(P,X,Y) <=> true ;;
-//supprime un candidat si son lien est déjà atteint par le parcours
-//les deux contraintes sont actives car elles peuvent arriver dans n'importe quel ordre
+// Discard a candidate whose pair has already been reached.
 transitiveReach(P,X,Y) \ transitivePending(P,X,Y) <=> true ;;
 
-//collecte les assertions des propriétés transitives dans les candidats en attente
-owlTransitiveObjectProperty(P,0),owlObjectPropertyAssertion(X,P,Y)=>> transitivePending(P,X,Y) ;;
-//pour chaque arête de la base, démarre un parcours depuis X en passant par Y
-do_closure(1,_),transitiveEdge(P,X,Y) #passive =>> transitiveReach(P,X,Y) ;;
-//une fois les parcours terminés, passe à la fusion sans nouvelle arête ajoutée pour l'instant
-do_closure(1,_) <=> do_closure(2,false) ;;
+// Collect assertions of transitive properties and request processing.
+owlTransitiveObjectProperty(P,0),owlObjectPropertyAssertion(X,P,Y)=>> transitivePending(P,X,Y),transitiveWakeup() ;;
+// Start preparing a batch if the controller is idle.
+transitivePhase(0,_) #passive , transitiveWakeup() <=> transitivePhase(2,false) ;;
+// Ignore wakeups while processing; pending candidates will be picked up afterwards.
+transitiveWakeup()<=> true ;;
+// Prepare a new edge and remember that this batch contains work.
+transitivePending(P,X,Y) # passive,transitivePhase(2,_) <=>  transitivePreparedEdge(P,X,Y), transitivePhase(2,true);;
+// Consume each prepared edge so it is integrated and seeded only once.
+transitivePhase(1,_) \ transitivePreparedEdge(P,X,Y) #passive <=> transitiveEdge(P,X,Y), transitiveReach(P,X,Y) ;;
+// After integration, collect any candidates produced during propagation.
+transitivePhase(1,_) <=> transitivePhase(2,false) ;;
 
-//poste l'assertion objet correspondant au lien atteint
+// Publish the object property assertion corresponding to the reached pair.
 transitiveReach(P,X,Y) =>> owlObjectPropertyAssertion(X,P,Y) ;;
-//prolonge le parcours : lien transitive
-transitiveReach(P,X,Y),transitiveEdge(P,Y,Z) #passive =>> transitiveReach(P,X,Z) ;;
+// Extend paths when either a new reached pair or a new base edge arrives.
+transitiveReach(P,X,Y),transitiveEdge(P,Y,Z) =>> transitiveReach(P,X,Z) ;;
 
-//intègre un candidat à la base et signale qu'un nouveau tour sera nécessaire
-do_closure(2,_),transitivePending(P,X,Y) #passive <=> transitiveEdge(P,X,Y),do_closure(2,true) ;;
-//après la fusion, efface les marques de visite en conservant le booléen B
-do_closure(2,B)\ transitiveReach(_,_,_) #passive <=> true ;;
-//si la base a été enrichie, relance les parcours avec les nouvelles arêtes
-do_closure(2,true) <=> do_closure(1,false) ;;
-//sinon, termine la fermeture : le point fixe est atteint
-do_closure(2,false) <=> true ;;
-
+// Integrate and propagate the newly prepared edges.
+transitivePhase(2,true) <=> transitivePhase(1,false) ;;
+// No new edges are ready: return to the idle state until another assertion arrives.
+transitivePhase(2,false) <=> transitivePhase(0,false) ;;
 
 // every class is a subclass of owl:Thing, every individual is an instance of owl:Thing
-owlClass(T),logicalName(owlThing,T) #passive, owlClass(C) =>> C!=T | owlSubclassOf(C,T);;
-owlClass(T),logicalName(owlThing,T) #passive, owlNamedIndividual(X) =>> owlClassAssertion(X,T,true);;
+owlClass(T),logicalName(owlThing,T) #passive , owlClass(C) =>> C!=T | owlSubclassOf(C,T);;
+owlClass(T),logicalName(owlThing,T) #passive , owlNamedIndividual(X) =>> owlClassAssertion(X,T,true);;
 
 //Display result: convert logical name to URI and display
 res(URIC) =>> display(URIC);;
@@ -1022,29 +1031,21 @@ int main(int argc, char* argv[])
 
     const auto start = std::chrono::steady_clock::now();
     auto space = OWL2::create(true,true);
-    bool closureSucceeded = false;
 
     CHR_RUN(
 
-    chr::Logical_var<int> owlNothingLogicalVar;
-    space->logicalName(owlNothing, owlNothingLogicalVar);
+        chr::Logical_var<int> owlNothingLogicalVar;
+        space->logicalName(owlNothing, owlNothingLogicalVar);
 
 
 
-    ParserCowl<OWL2> parser(filename, *space);
+        ParserCowl<OWL2> parser(filename, *space);
 
-    if (axiomLog.is_open()) {
-        parser.setOutput(axiomLog);
-    }
-    parser.load();
-
-    // Ordinary rules have saturated. Finish transitivity before any output.
+        if (axiomLog.is_open()) {
+            parser.setOutput(axiomLog);
+        }
+        parser.load();  
     
-    closureSucceeded = space->do_closure(2,false) != chr::ES_CHR::FAILURE;
-    
-    if (!closureSucceeded) {
-        std::cerr << "Contradiction détectée pendant la fermeture transitive." << std::endl;
-    } else {
         const std::string queryNamespace = parser.getQueryNamespace();
         const auto queryUri = [&queryNamespace](const char* name) {
             return "<" + queryNamespace + name + ">";
@@ -1072,11 +1073,11 @@ int main(int argc, char* argv[])
         space->queryEngineeringStudentsUri(queryUri("Student"),queryUri("isStudentOf"),queryUri("isPartOf"),queryUri("hasCollegeDiscipline"),queryUri("Engineering"));
         space->queryComplexStudentsUri(queryUri("Student"),queryUri("Organization"),queryUri("hasDean"),queryUri("teachesCourse"),queryUri("takesCourse"));
     
-    }
+    
 
  )
     const auto end = std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed = end - start;
     std::cout << "temps " << elapsed.count() << std::endl;
-    exit (closureSucceeded ? 0 : 1);
+    exit (0);
 }
