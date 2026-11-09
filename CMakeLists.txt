@@ -36,8 +36,8 @@ endif()
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
-# Traces CHR++ désactivées pour les mesures de performance.
-# Pour les réactiver, ajouter --trace à chrppc et décommenter
+# Traces CHR++ activées pour analyser CALL, INSERT, COMMIT et FAIL.
+# Pour les désactiver, retirer --trace de chrppc et commenter
 # ENABLE_TRACE dans owlFunctional.chrpp.
 
 

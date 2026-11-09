@@ -1,4 +1,6 @@
-//#define ENABLE_TRACE
+
+// Incremental transitive closure in CHR: persistent edges and reach markers, processed in batches.
+#define ENABLE_TRACE
 #include <iostream>
 #include <string>
 #include <vector>
@@ -239,162 +241,11 @@ bool equalIncrement(int j,int i){
     return j==i+1;
 }
 
-using Pair = std::pair<LogicalVar, LogicalVar>;
-
-struct PairHash {
-    std::size_t operator()(const Pair& pair) const noexcept {
-        const auto first = LogicalVarHash{}(pair.first);
-        const auto second = LogicalVarHash{}(pair.second);
-        return first ^ (second + std::size_t{0x9e3779b9u}
-                        + (first << 6) + (first >> 2));
-    }
-};
-
-struct PairEqual {
-    bool operator()(const Pair& lhs, const Pair& rhs) const noexcept {
-        return LogicalVarEqual{}(lhs.first, rhs.first)
-            && LogicalVarEqual{}(lhs.second, rhs.second);
-    }
-};
-
-using SetPair = std::unordered_set<Pair, PairHash, PairEqual>;
-
-// CHR++ also needs instructions for displaying/comparing the mutable set.
-namespace chr {
-template <>
-struct XXHash<SetPair> {
-    static void update(const SetPair& pairs) {
-        std::size_t hash = 0;
-        for (const auto& pair : pairs) {
-            hash += PairHash{}(pair);
-        }
-        // Set iteration order must not affect its hash.
-        XXHash<std::size_t>::update(pairs.size());
-        XXHash<std::size_t>::update(hash);
-    }
-};
-
-template <>
-struct Type_instruction_wrapper<SetPair, false> {
-    static std::string to_string(const SetPair& pairs) {
-        return "SetPair(size=" + std::to_string(pairs.size()) + ")";
-    }
-    static void update_hash(const SetPair& pairs) {
-        XXHash<SetPair>::update(pairs);
-    }
-    static bool is_equal(const SetPair& lhs, const SetPair& rhs) {
-        if (lhs.size() != rhs.size()) return false;
-        for (const auto& pair : lhs) {
-            if (rhs.find(pair) == rhs.end()) return false;
-        }
-        return true;
-    }
-};
-}
-
-SetPair makeSetPair(const LogicalVar& x, const LogicalVar& y) {
-    return SetPair{Pair{x, y}};
-}
-
-chr::ES_CHR stock_pair(chr::Logical_var_mutable<SetPair>& stock,
-                       const LogicalVar& x, const LogicalVar& y) {
-    // No rule depends on the set contents: avoid waking stock during collection.
-    return stock.update_mutable(false, [&](SetPair& pairs) {
-        pairs.emplace(x, y);
-    });
-}
-
-std::vector<Pair> extend_transitive_pairs(SetPair& pairs) {
-    using Adjacency = std::unordered_map<LogicalVar, std::vector<LogicalVar>,
-                                         LogicalVarHash, LogicalVarEqual>;
-    Adjacency successors;
-    for (const auto& pair : pairs) {
-        successors[pair.first].push_back(pair.second);
-    }
-
-    std::vector<Pair> additions;
-    // Traverse a fixed adjacency index, not iterators of the growing pair set.
-    for (const auto& entry : successors) {
-        const auto& source = entry.first;
-        std::unordered_set<LogicalVar, LogicalVarHash, LogicalVarEqual> visited;
-        std::vector<LogicalVar> pending;
-        for (const auto& target : entry.second) {
-            if (visited.insert(target).second) pending.push_back(target);
-        }
-        for (std::size_t i = 0; i < pending.size(); ++i) {
-            // Copy before push_back can reallocate pending.
-            const LogicalVar target = pending[i];
-            if (pairs.emplace(source, target).second) {
-                additions.emplace_back(source, target);
-            }
-            const auto next = successors.find(target);
-            if (next == successors.end()) continue;
-            for (const auto& neighbour : next->second) {
-                if (visited.insert(neighbour).second) pending.push_back(neighbour);
-            }
-        }
-    }
-    // Starting from neighbours includes self pairs only when a cycle exists.
-    return additions;
-}
-
-template <typename Space>
-chr::ES_CHR post_trans_closure(Space& space, const LogicalVar& property,
-                              chr::Logical_var_mutable<SetPair>& stock,
-                              bool& posted) {
-    std::vector<Pair> additions;
-    const auto status = stock.update_mutable(false, [&](SetPair& pairs) {
-        additions = extend_transitive_pairs(pairs);
-    });
-    if (status == chr::ES_CHR::FAILURE) return status;
-
-    // Each new pair was inserted in the set before posting it exactly once.
-    // Direct CHR transitivity is disabled, so these calls do not recurse into it.
-    for (const auto& pair : additions) {
-        if (space.owlObjectPropertyAssertion(pair.first, property, pair.second)
-            == chr::ES_CHR::FAILURE) return chr::ES_CHR::FAILURE;
-        posted = true;
-    }
-    return chr::ES_CHR::SUCCESS;
-}
-
-template <typename Space>
-chr::ES_CHR post_all_trans_closures(Space& space) {
-    using Stock = std::pair<LogicalVar, chr::Logical_var_mutable<SetPair>>;
-    std::unordered_map<LogicalVar, std::size_t, LogicalVarHash, LogicalVarEqual>
-        closedSizes;
-
-    for (;;) {
-        // Other rules may have added edges for any transitive property since
-        // the last round. Collection finishes before any closure is posted.
-        if (space.collect_transitive_pairs() == chr::ES_CHR::FAILURE)
-            return chr::ES_CHR::FAILURE;
-
-        std::vector<Stock> stocks;
-        auto it = space.get_stock_store().begin();
-        while (!it.at_end()) {
-            stocks.emplace_back(std::get<1>(*it), std::get<2>(*it));
-            ++it;
-        }
-
-        bool posted = false;
-        for (auto& stock : stocks) {
-            const auto previous = closedSizes.find(stock.first);
-            if (previous != closedSizes.end()
-                && previous->second == (*stock.second).size()) continue;
-            if (post_trans_closure(space, stock.first, stock.second, posted)
-                == chr::ES_CHR::FAILURE) return chr::ES_CHR::FAILURE;
-            closedSizes[stock.first] = (*stock.second).size();
-        }
-        // No new closure assertion means all other rules are also saturated.
-        if (!posted) return chr::ES_CHR::SUCCESS;
-    }
-}
 /**
 *
 *\ingroup Examples
 
-<CHR name="OWL2" parameters="bool flag">
+<CHR name="OWL2" parameters="bool flag, bool flag2">
     // === Contraintes ===
     <chr_constraint>
             owlPrefix(?int,?int),
@@ -414,11 +265,7 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
 			owlClassAssertion(?int,?int,+bool),
 			owlDisjointClass(?int,?int),
             owlNegativeObjectAssertion(?int,?int,?int),
-            // Positive object assertions: (subject, property, object).
             owlObjectPropertyAssertion(?int,?int,?int),
-            // Assertions selected for functional/inverse-functional joins.
-            functionalObjAssertion(?int,?int,?int),
-            inverseFunctionalObjAssertion(?int,?int,?int),
             owlSameIndividual(?int,?int),
             owlDifferentIndividual(?int,?int),
             owlInverseObjectProperty(?int,?int),
@@ -431,7 +278,12 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
             owlFunctionalObjectProperty(?int,+int),
             owlFunctionalDataProperty(?int,+int),
             owlInverseFunctionalObjectProperty(?int,+int),
-            owlTransitiveObjectProperty(?int),
+            owlTransitiveObjectProperty(?int,+int),
+            transitivePhase(+int,+bool),
+            transitiveEdge(?int,?int,?int),
+            transitivePreparedEdge(?int,?int,?int),
+            transitivePending(?int,?int,?int),
+            transitiveReach(?int,?int,?int),
             owlDataPropertyAssertion(?int,?int,+Value),
             owlNegativeDataAssertion(?int,?int,+Value),
             owlDataPropertyRange(?int,+std::shared_ptr<[AnySimpleType]>),
@@ -506,17 +358,12 @@ chr::ES_CHR post_all_trans_closures(Space& space) {
             queryObjAssertionSubjectWithId(+std::string,+std::string,+int),
             queryEngineeringStudentsWithId(+std::string,+std::string,+std::string,+std::string,+std::string,+int),
             queryComplexStudentsWithId(+std::string,+std::string,+std::string,+std::string,+std::string,+int),
-            go_stock(?int,?int,?int),
-            stock(?int,-SetPair),
-            collect_transitive_pairs(),
-            do_closure()
+            transitiveWakeup()
             
 
 
-//suppression des doublons
+//removal of duplicates
 owlObjectPropertyAssertion(X,P,Y) #passive \ owlObjectPropertyAssertion(X,P,Y) <=>  true ;;
-functionalObjAssertion(X,P,Y) #passive \ functionalObjAssertion(X,P,Y) <=> true ;;
-inverseFunctionalObjAssertion(X,P,Y) #passive \ inverseFunctionalObjAssertion(X,P,Y) <=> true ;;
 owlClassAssertion(X,A,B) #passive \ owlClassAssertion(X,A,B) <=> true ;;
 owlPrefix(X,Y) #passive \ owlPrefix(X,Y) <=> true ;;
 owlClass(C) #passive \ owlClass(C) <=> true ;;
@@ -543,10 +390,10 @@ owlDisjointObjectProperty(A,B) #passive \ owlDisjointObjectProperty(A,B) <=> tru
 owlDisjointDataProperty(A,B) #passive \ owlDisjointDataProperty(A,B) <=> true ;;
 owlReflexiveObjectProperty(P) #passive \ owlReflexiveObjectProperty(P) <=> true ;;
 owlIrreflexiveObjectProperty(P) #passive \ owlIrreflexiveObjectProperty(P) <=> true ;;
-owlFunctionalObjectProperty(P,X) #passive \ owlFunctionalObjectProperty(P,X) <=> true ;;
-owlFunctionalDataProperty(P,X) #passive \ owlFunctionalDataProperty(P,X) <=> true ;;
-owlInverseFunctionalObjectProperty(P,X) #passive \ owlInverseFunctionalObjectProperty(P,X) <=> true ;;
-owlTransitiveObjectProperty(P) #passive \ owlTransitiveObjectProperty(P) <=> true ;;
+owlFunctionalObjectProperty(P,N) #passive \ owlFunctionalObjectProperty(P,N) <=> true ;;
+owlFunctionalDataProperty(P,N) #passive \ owlFunctionalDataProperty(P,N) <=> true ;;
+owlInverseFunctionalObjectProperty(P,N) #passive \ owlInverseFunctionalObjectProperty(P,N) <=> true ;;
+owlTransitiveObjectProperty(P,N) #passive \ owlTransitiveObjectProperty(P,N) <=> true ;;
 owlDataPropertyAssertion(X,P,Y) #passive \ owlDataPropertyAssertion(X,P,Y) <=> true ;;
 owlNegativeDataAssertion(X,P,Y) #passive \ owlNegativeDataAssertion(X,P,Y) <=> true ;;
 owlDataPropertyRange(P,R) #passive \ owlDataPropertyRange(P,R) <=> true ;;
@@ -585,7 +432,6 @@ queryObjAssertionSubjectUri(URIP,URIO) #passive \ queryObjAssertionSubjectUri(UR
 queryObjAssertionSubject(P,O,ID) #passive \ queryObjAssertionSubject(P,O,ID) <=> true ;;
 queryObjAssertionClassUri(URIP,URIC) #passive \ queryObjAssertionClassUri(URIP,URIC) <=> true ;;
 queryObjAssertionClass(P,C) #passive \ queryObjAssertionClass(P,C) <=> true ;;
-queryObjAssertionSubject(P,O,ID) #passive \ queryObjAssertionSubject(P,O,ID) <=> true ;;
 queryEquivalentClass(X) #passive \ queryEquivalentClass(X) <=> true ;;
 queryClassificationReal(X) #passive \ queryClassificationReal(X) <=> true ;;
 querySuperClassOfReal(I,C) #passive \ querySuperClassOfReal(I,C) <=> true ;;
@@ -603,6 +449,10 @@ owlOneOf(C,S) #passive \ owlOneOf(C,S) <=> true ;;
 owlOneOfLoop(C,IT,ITEND) #passive \ owlOneOfLoop(C,IT,ITEND) <=> true ;;
 classification() #passive \ classification()<=> true ;;
 owlHasKey(C,P,I,N) #passive \ owlHasKey(C,P,I,N) <=> true ;;
+transitivePending(P,X,Y) #passive \ transitivePending(P,X,Y) <=> true ;;
+transitiveReach(P,X,Y) #passive \ transitiveReach(P,X,Y) <=> true ;;
+transitiveEdge(P,X,Y) #passive \ transitiveEdge(P,X,Y) <=> true ;;
+
 
 //ComplementOf: remove false assertion if individual is actually in the complement class
 owlClassAssertion(X,NOTA,true) \ owlClassAssertion(X,NOTA,false) <=>  true ;;
@@ -629,6 +479,8 @@ NegativeDataAssertion @ owlNegativeDataAssertion(X,P,Y),owlDataPropertyAssertion
 //owlIrreflexiveObjectProperty(P) is true if the property P is an irreflexive object property
 irreflexiveProperty @ owlIrreflexiveObjectProperty(P),owlObjectPropertyAssertion(X,P,X)<=> failure();;
  
+
+
 //if c1 complementOf c2 and x rdf:type c1 and  x rdf:type c2 it fail
 complementOf @ owlComplementOf(A,NOTA) , owlClassAssertion(X,A,true), owlClassAssertion(X,NOTA,true)<=> failure();;
 
@@ -652,6 +504,7 @@ owlSubclassOf(A,B), owlSubclassOf(B,A) =>> A!=B | owlEquivalentClass(A,B);;
 
 
 //owl:Nothing is a subclass of every class
+
 owlClass(C) , logicalName(URIC,C) #passive, logicalName(owlNothing, OwlNothingVar) #passive =>> owlSubclassOf(OwlNothingVar,C);;
 
 //Object property: every object property is a sub-property of itself and equivalent to itself
@@ -730,7 +583,7 @@ DifferentIndividual @ owlDifferentIndividual(X,Y) ,owlSameIndividual(X,Y) <=>  f
 
 //owlInverseObjectProperty( P1,P2 ) is true if P1 is the inverse object property of P2
 inverseProperty @ owlInverseObjectProperty(P1,P2) , owlObjectPropertyAssertion(X,P1,Y) =>> owlObjectPropertyAssertion(Y,P2,X);;
-owlInverseObjectProperty(P1,P2) =>> owlInverseObjectProperty(P2,P1)  ;;
+owlInverseObjectProperty(P1,P2) =>> flag2 |   std::exchange(flag2, false), owlInverseObjectProperty(P2,P1) , std::exchange(flag2, true) ;;
 
 
 //owlAsymmetricObjectProperty(P) is true if P is an asymmetric object property
@@ -780,8 +633,8 @@ r0 @ owlIntersectionOf(C,S) =>> owlIntersectionOfLoop(C,(*S).begin(),(*S).end(),
 //IntersectionOf loop: recursive case - process each class in the intersection and continue with incremented index
 r1 @ owlIntersectionOfLoop(C,IT,ITEND,I) <=> IT!=ITEND | owlIntersectionClass(C,**IT,I),owlIntersectionOfLoop(C,std::next(*IT),ITEND,I+1);;
 
-//IntersectionOf first pass: add all individuals of the first class as candidates for the intersection
-r2 @ owlClassAssertion(X,V,true) , owlIntersectionClass(C,V,0) =>> owlCandidatsIntersection(X,C,0) ;;
+// The first intersection component is already checked; continue at index 1.
+r2 @ owlClassAssertion(X,V,true) , owlIntersectionClass(C,V,0) =>> owlCandidatsIntersection(X,C,1) ;;
 
 //IntersectionOf filtering: if individual belongs to the new class and was a candidate, it remains a candidate for next round
 r3 @ owlIntersectionClass(C,V,I) , owlCandidatsIntersection(X,C,I) ,owlClassAssertion(X,V,true)  =>> owlCandidatsIntersection(X,C,I+1) ;;
@@ -798,9 +651,6 @@ r7 @owlIntersectionClass(C1,Component,_), owlSubclassOf(C2,C1) =>> C1!=C2 | owlS
 //IntersectionOf subclass reverse (generic version for N components):
 // If A is a subclass of ALL components of intersection I, then A ⊆ I
 // Iteratively check whether A is a subclass of each component
-
-// Passive rule to prevent duplicates
-intersectionSubclassCheck(C,A,I) #passive \ intersectionSubclassCheck(C,A,I) <=> true ;;
 
 // Start checking when A is a subclass of the component at index 0
 r8a @ owlSubclassOf(A,V), owlIntersectionClass(C,V,0) =>> intersectionSubclassCheck(C,A,1) ;;
@@ -929,33 +779,56 @@ owlObjectPropertyAssertion(X,P,V), owlObjectPropertyAssertion(Y,P,V), owlHasKey(
 owlDataPropertyAssertion(X,P,V), owlDataPropertyAssertion(Y,P,V), owlHasKey(C,P,I,N) \ owlHasKeyCheck(C,X,Y,I,N) <=> owlHasKeyCheck(C,X,Y,I+1,N) ;;
 owlHasKeyCheck(C,X,Y,N,N) <=> owlSameIndividual(X,Y) ;;
 
+
+
+
 //owlSymmetricObjectProperty(P) is true if P is a symmetric object property
-symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)=>> flag && X!=Y  |
-        std::exchange(flag, false),
-        owlObjectPropertyAssertion(Y,P,X),
-        std::exchange(flag, true) ;;
+// Symmetry propagation with a global guard against nested applications.
+symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
+    =>> flag && X!=Y |
+          std::exchange(flag, false), owlObjectPropertyAssertion(Y,P,X) ,   std::exchange(flag, true);;
 
-// Collect only assertions whose property is explicitly marked transitive.
-// This phase runs after normal CHR saturation and is repeated after each closure.
-// Collection only updates sets, so each pass needs no propagation history.
-collectTransitivePairs @ collect_transitive_pairs(), owlTransitiveObjectProperty(P) #passive, owlObjectPropertyAssertion(X,P,Y) #passive =>> go_stock(X,P,Y) ;;
-
-// One mutable set of (X,Y) pairs per transitive property P.
-stock(P,S) #passive \ go_stock(X,P,Y) <=> stock_pair(S,X,Y) ;;
-go_stock(X,P,Y) <=> stock(P,makeSetPair(X,Y)) ;;
-collect_transitive_pairs() <=> success() ;;
-
-// A single trigger computes the global fixed point, including effects of
-// inverse properties, subproperties, property chains and the other OWL rules.
-do_closure() <=> post_all_trans_closures(*this)  ;;
+// Alternative symmetry rule without the global guard (which is just an optimisaiton).
+// symmetricProperty @ owlSymmetricObjectProperty(P),owlObjectPropertyAssertion(X,P,Y)
+//     =>> X!=Y | owlObjectPropertyAssertion(Y,P,X) ;;
 
 
+// Classical transitivity can be used instead of the incremental closure rules below.
+// This version can be slower on ontologies with many assertions involving transitive properties.
+// transitiveObjectProperty @ owlTransitiveObjectProperty(P,0), owlObjectPropertyAssertion(X,P,Y),owlObjectPropertyAssertion(Y,P,Z) =>> owlObjectPropertyAssertion(X,P,Z) ;;
 
+// Incremental transitive closure: process new assertions in batches.
+// Discard a candidate whose edge is already in the base graph.
+transitiveEdge(P,X,Y) #passive \ transitivePending(P,X,Y) <=> true ;;
+// Discard a candidate whose pair has already been reached.
+transitiveReach(P,X,Y) \ transitivePending(P,X,Y) <=> true ;;
 
+// Collect assertions of transitive properties and request processing.
+owlTransitiveObjectProperty(P,0),owlObjectPropertyAssertion(X,P,Y)=>> transitivePending(P,X,Y),transitiveWakeup() ;;
+// Start preparing a batch if the controller is idle.
+transitivePhase(0,_) #passive , transitiveWakeup() <=> transitivePhase(2,false) ;;
+// Ignore wakeups while processing; pending candidates will be picked up afterwards.
+transitiveWakeup()<=> true ;;
+// Prepare a new edge and remember that this batch contains work.
+transitivePending(P,X,Y) # passive,transitivePhase(2,_) <=>  transitivePreparedEdge(P,X,Y), transitivePhase(2,true);;
+// Consume each prepared edge so it is integrated and seeded only once.
+transitivePhase(1,_) \ transitivePreparedEdge(P,X,Y) #passive <=> transitiveEdge(P,X,Y), transitiveReach(P,X,Y) ;;
+// After integration, collect any candidates produced during propagation.
+transitivePhase(1,_) <=> transitivePhase(2,false) ;;
+
+// Publish the object property assertion corresponding to the reached pair.
+transitiveReach(P,X,Y) =>> owlObjectPropertyAssertion(X,P,Y) ;;
+// Extend paths when either a new reached pair or a new base edge arrives.
+transitiveReach(P,X,Y),transitiveEdge(P,Y,Z) =>> transitiveReach(P,X,Z) ;;
+
+// Integrate and propagate the newly prepared edges.
+transitivePhase(2,true) <=> transitivePhase(1,false) ;;
+// No new edges are ready: return to the idle state until another assertion arrives.
+transitivePhase(2,false) <=> transitivePhase(0,false) ;;
 
 // every class is a subclass of owl:Thing, every individual is an instance of owl:Thing
-owlClass(T),logicalName(owlThing,T) #passive, owlClass(C) =>> C!=T | owlSubclassOf(C,T);;
-owlClass(T),logicalName(owlThing,T) #passive, owlNamedIndividual(X) =>> owlClassAssertion(X,T,true);;
+owlClass(T),logicalName(owlThing,T) #passive , owlClass(C) =>> C!=T | owlSubclassOf(C,T);;
+owlClass(T),logicalName(owlThing,T) #passive , owlNamedIndividual(X) =>> owlClassAssertion(X,T,true);;
 
 //Display result: convert logical name to URI and display
 res(URIC) =>> display(URIC);;
@@ -1113,6 +986,7 @@ int main(int argc, char* argv[])
     std::ofstream traceLog(argc > 3 ? argv[3] : "traces3.txt");
     if (!traceLog) {
         std::cerr << "Impossible d'ouvrir le fichier des traces CHR++." << std::endl;
+
         return 1;
     }
     chr::Log::set_output(traceLog);
@@ -1156,33 +1030,29 @@ int main(int argc, char* argv[])
     }
 
     const auto start = std::chrono::steady_clock::now();
-    auto space = OWL2::create(true);
-    bool closureSucceeded = false;
+    auto space = OWL2::create(true,true);
+
     CHR_RUN(
+
+        chr::Logical_var<int> owlNothingLogicalVar;
+        space->logicalName(owlNothing, owlNothingLogicalVar);
+
+
+
+        ParserCowl<OWL2> parser(filename, *space);
+
+        if (axiomLog.is_open()) {
+            parser.setOutput(axiomLog);
+        }
+        parser.load();  
     
-    chr::Logical_var<int> owlNothingLogicalVar;
-    space->logicalName(owlNothing, owlNothingLogicalVar);
-
-
-    ParserCowl<OWL2> parser(filename, *space);
-
-    if (axiomLog.is_open()) {
-        parser.setOutput(axiomLog);
-    }
-    parser.load();
-
-    // Normal rules have saturated; compute transitive closure before queries.
-    closureSucceeded = space->do_closure() != chr::ES_CHR::FAILURE;
-    if (!closureSucceeded) {
-        std::cerr << "Contradiction détectée pendant la fermeture transitive." << std::endl;
-    } else {
         const std::string queryNamespace = parser.getQueryNamespace();
         const auto queryUri = [&queryNamespace](const char* name) {
             return "<" + queryNamespace + name + ">";
         };
 
-        space->realisation();
-        space->classification();
+       space->realisation();
+       space->classification();
     
         space->queryObjAssertionUri(queryUri("isMemberOf"));
         space->queryObjAssertionUri(queryUri("isPartOf"));
@@ -1202,10 +1072,12 @@ int main(int argc, char* argv[])
         space->queryObjAssertionUri(queryUri("hasSameHomeTownWith"));
         space->queryEngineeringStudentsUri(queryUri("Student"),queryUri("isStudentOf"),queryUri("isPartOf"),queryUri("hasCollegeDiscipline"),queryUri("Engineering"));
         space->queryComplexStudentsUri(queryUri("Student"),queryUri("Organization"),queryUri("hasDean"),queryUri("teachesCourse"),queryUri("takesCourse"));
-    }
+    
+    
+
  )
     const auto end = std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed = end - start;
     std::cout << "temps " << elapsed.count() << std::endl;
-    exit (closureSucceeded ? 0 : 1);
+    exit (0);
 }

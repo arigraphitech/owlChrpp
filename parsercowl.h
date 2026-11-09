@@ -2748,7 +2748,7 @@ void ParserCowl<T>:: iterateTransObjProp(ParserCowl<T>* parser, CowlAny *axiom){
     PARSER_LOG_CSTRING(stream, propUri.c_str());
     PARSER_LOG(stream, " est transitive");
 
-    parser->space->owlTransitiveObjectProperty(propVar);
+    parser->space->owlTransitiveObjectProperty(propVar,0);
     PARSER_LOG(stream, "\n");
 
 }
@@ -3053,6 +3053,9 @@ template <typename T>
 bool ParserCowl<T>::load()
 {
     resetStats();
+
+    // Initialize the incremental closure controller before reading the ontology.
+    this->space->transitivePhase(0,false);
 
     //test d'insertion dans l'espace CHR++
 
