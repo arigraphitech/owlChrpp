@@ -3917,9 +3917,8 @@ Declaration(NamedIndividual(:U0WC0D3VP1))
 Declaration(NamedIndividual(:VideoGame))
 Declaration(NamedIndividual(:null))
 
-############################
 #   Object Properties
-############################
+
 
 # Object Property: :dislikes (:dislikes)
 
@@ -4416,9 +4415,9 @@ ObjectPropertyDomain(:worksFor :Employee)
 ObjectPropertyRange(:worksFor :Organization)
 
 
-############################
+
 #   Data Properties
-############################
+
 
 # Data Property: :hasAge (:hasAge)
 
@@ -4464,9 +4463,9 @@ DataPropertyDomain(:hasTitle :Person)
 
 
 
-############################
+
 #   Classes
-############################
+
 
 # Class: :AeronauticalEngineering (:AeronauticalEngineering)
 
@@ -4996,9 +4995,9 @@ SubClassOf(:WomanCollege :College)
 SubClassOf(:WomanCollege ObjectIntersectionOf(:College ObjectAllValuesFrom(:hasStudent ObjectComplementOf(:Man))))
 
 
-############################
+
 #   Named Individuals
-############################
+
 
 # Individual: :AbstractPainting (:AbstractPainting)
 

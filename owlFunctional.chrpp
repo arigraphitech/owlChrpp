@@ -873,16 +873,16 @@ rule3 @ queryInstance(X,C)<=> display("false");;
 //teste realisation : CR owlBENCH
 resultRealisation(URIX,URIY) =>> ! prefixIntern(URIY)| storeRealisation(URIX,URIY);;
 //cas general x et c sont differents
-realisation @ realisation(), owlClassAssertion(X,C,true) #passive, logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive =>> URIX!=emptyString | resultRealisation(URIX,URIC);;
+realisation @ realisation(), owlClassAssertion(X,C,true) #passive, logicalName(URIC,C) #passive ,logicalName(URIX,X) #passive =>> resultRealisation(URIX,URIC);;
 // Cas spécial : X et C sont la même variable (punning)
-realisationPunning @ realisation(), owlClassAssertion(X,X,true) #passive, logicalName(URI,X) #passive =>> resultRealisation(URI,URI);;
+realisationPunning @ realisation(), owlClassAssertion(X,X,true) #passive, logicalName(URI,X) #passive =>>  resultRealisation(URI,URI);;
 
 //teste classification : CT owlBENCH
 //regle pour n'avoir en sortie que les subclassof stricte pas bidirectionnel(equivalent) comme pelet
 owlEquivalentClass(X,Y)  #passive , logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive \ resultClassification(URIX,URIY) <=> true ;;
-resultClassification(URIX,URIY) =>> ! prefixIntern(URIY) &&     ! prefixIntern(URIX) | storeClassification(URIX,URIY);;
+resultClassification(URIX,URIY) =>> !prefixIntern(URIX) && ! prefixIntern(URIY)| storeClassification(URIX,URIY);;
 
-classification(), owlSubclassOf(X,Y)  #passive, logicalName(URIX,X) #passive , logicalName(URIY,Y) #passive ,  logicalName(owlNothing, OwlNothingVar) #passive =>> URIX!=owlNothing | resultClassification(URIX,URIY);;
+classification(), owlSubclassOf(X,Y) #passive, logicalName(URIX,X) #passive, logicalName(URIY,Y) #passive =>> URIX!=owlNothing  | resultClassification(URIX,URIY);;
 classification(), owlSubclassOf(X,X) #passive , logicalName(URIX,X) #passive  =>> resultClassification(URIX,URIX) ;;
 
 //translate sparql querries (OWLBENCH)
@@ -1030,6 +1030,7 @@ int main(int argc, char* argv[])
     }
 
     const auto start = std::chrono::steady_clock::now();
+    auto end2 =start ;
     auto space = OWL2::create(true,true);
 
     CHR_RUN(
@@ -1050,10 +1051,11 @@ int main(int argc, char* argv[])
         const auto queryUri = [&queryNamespace](const char* name) {
             return "<" + queryNamespace + name + ">";
         };
+        end2 = std::chrono::steady_clock::now();
 
-       space->realisation();
-       space->classification();
-    
+        space->classification();
+        space->realisation();
+   /*
         space->queryObjAssertionUri(queryUri("isMemberOf"));
         space->queryObjAssertionUri(queryUri("isPartOf"));
         space->queryDataAssertionUri(queryUri("hasAge"));
@@ -1072,12 +1074,13 @@ int main(int argc, char* argv[])
         space->queryObjAssertionUri(queryUri("hasSameHomeTownWith"));
         space->queryEngineeringStudentsUri(queryUri("Student"),queryUri("isStudentOf"),queryUri("isPartOf"),queryUri("hasCollegeDiscipline"),queryUri("Engineering"));
         space->queryComplexStudentsUri(queryUri("Student"),queryUri("Organization"),queryUri("hasDean"),queryUri("teachesCourse"),queryUri("takesCourse"));
-    
+    */
     
 
  )
     const auto end = std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed = end - start;
-    std::cout << "temps " << elapsed.count() << std::endl;
+    const std::chrono::duration<double> elapsed2 = end2 - start;
+    std::cout << "temps " << elapsed.count() << "    ,    "<<elapsed2.count() <<std::endl;
     exit (0);
 }
